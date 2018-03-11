@@ -28,6 +28,7 @@ module Network.Serverless.Execute
 
 --------------------------------------------------------------------------------
 import Data.Void
+import Data.Monoid
 import System.IO
 import System.Exit
 import System.Process.Typed
@@ -61,15 +62,15 @@ execute b d c = do
     ExecutorSucceeded a -> return a
 
 spawn ::
-   Backend
-  ->  Closure (Dict (Serializable a))
+     Backend
+  -> Closure (Dict (Serializable a))
   -> Closure (IO a)
   -> IO (IO (ExecutorStatus a))
 spawn b d c = return . liftIO . readTVarIO =<< spawnInternal b d c
 
 spawnInternal ::
-   Backend
-  ->   Closure (Dict (Serializable a))
+     Backend
+  -> Closure (Dict (Serializable a))
   -> Closure (IO a)
   -> IO (TVar (ExecutorStatus a))
 spawnInternal b d c = liftIO $ runBackend d c b

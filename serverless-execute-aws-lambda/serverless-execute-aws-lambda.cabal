@@ -1,0 +1,28 @@
+name:                serverless-execute-aws-lambda
+version:             0.1.0.0
+homepage:            https://github.com/utdemir/serverless-batch
+license:             BSD3
+license-file:        LICENSE
+author:              Utku Demir
+maintainer:          me@utdemir.com
+copyright:           Utku Demir
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+extra-source-files:  README.md
+
+library
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  exposed-modules:     Network.Serverless.Execute.Lambda
+  ghc-options:         -Wall
+  build-depends:       base >= 4.7 && < 5
+                     , serverless-execute
+                     , amazonka
+                     , amazonka-s3
+                     , amazonka-lambda
+                     , amazonka-cloudformation
+                     , stratosphere
+                     , zip-archive
+                     , file-embed
+                     , split
