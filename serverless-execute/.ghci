@@ -1,0 +1,3 @@
+:set -isrc/
+:set -Wall
+:set -fobject-code

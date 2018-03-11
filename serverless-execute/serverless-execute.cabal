@@ -1,0 +1,42 @@
+name:                serverless-execute
+version:             0.1.0.0
+homepage:            https://github.com/utdemir/serverless-execute
+license:             BSD3
+license-file:        LICENSE
+author:              Utku Demir
+maintainer:          me@utdemir.com
+copyright:           Utku Demir
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+extra-source-files:  README.md
+
+library
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  exposed-modules:     Network.Serverless.Execute
+  ghc-options:         -Wall
+  build-depends:       base >= 4.7 && < 5
+                     , binary
+                     , text
+                     , bytestring
+                     , distributed-closure
+                     , typed-process
+                     , http-conduit
+                     , stm
+                     , transformers
+                     , exceptions
+                     , constraints
+
+test-suite tests
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Test.hs
+  default-language: Haskell2010
+  ghc-options:      -Wall -threaded
+  build-depends:    base >=4.7 && < 5
+                  , serverless-execute
+                  , bytestring
+                  , tasty
+                  , tasty-hunit
+                  , unix
