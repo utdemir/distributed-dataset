@@ -4,6 +4,7 @@ module Main where
 
 --------------------------------------------------------------------------------
 import System.Posix.Process
+import System.IO
 import Test.Tasty
 import Test.Tasty.HUnit
 --------------------------------------------------------------------------------

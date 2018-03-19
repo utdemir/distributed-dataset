@@ -19,6 +19,7 @@ module Network.Serverless.Execute
   , submittedDesc
   , startedDesc
   , localProcessBackend
+  , const_SERVERLESS_EXECUTOR_MODE
 
   -- Re-exports
   , Dict (..)

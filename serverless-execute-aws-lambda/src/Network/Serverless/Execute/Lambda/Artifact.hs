@@ -2,12 +2,19 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QuasiQuotes #-}
 
-module Network.Serverless.Execute.Lambda.Artifact where
+module Network.Serverless.Execute.Lambda.Artifact
+  ( mkArtifact
+  , artifactChecksum
+  , artifactSize
+  , Artifact (..)
+  ) where
 
 --------------------------------------------------------------------------------
+import           Data.Digest.Pure.SHA
 import System.Environment
-import Data.FileEmbed
+import Data.String.Interpolate
 import Data.Monoid
 import Control.Monad
 import System.Directory (doesFileExist)
@@ -18,6 +25,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Except
 import qualified Data.ByteString.Lazy as BL
 import System.Process.Typed
+import Network.Serverless.Execute
 --------------------------------------------------------------------------------
 
 newtype HandlerPy =
@@ -26,24 +34,29 @@ newtype HandlerPy =
 newtype MainHs =
   MainHs BL.ByteString
 
-newtype DeploymentZip =
-  DeploymentZip BL.ByteString
+newtype Artifact =
+  Artifact { artifactToByteString :: BL.ByteString }
 
-mkArtifact :: IO BL.ByteString
+mkArtifact :: IO Artifact
 mkArtifact = do
-  mainHs <- getExecutablePath >>= mkMainHs >>= \case
-    Left err -> error $ T.unpack err
-    Right t -> return t
-  case mkDeploymentZip handlerPy mainHs of
-    DeploymentZip bl -> return bl
+  mainHs <-
+    getExecutablePath >>= mkMainHs >>= \case
+      Left err -> error $ T.unpack err
+      Right t -> return t
+  return $ archiveArtifact handlerPy mainHs
 
+artifactChecksum :: Artifact -> T.Text
+artifactChecksum = T.pack . showDigest . sha1 . artifactToByteString
 
-mkDeploymentZip :: HandlerPy -> MainHs -> DeploymentZip
-mkDeploymentZip (HandlerPy handler) (MainHs executable) =
-  DeploymentZip . fromArchive $ archive
+artifactSize :: Artifact -> Integer
+artifactSize = fromIntegral . BL.length . artifactToByteString
+
+archiveArtifact :: HandlerPy -> MainHs -> Artifact
+archiveArtifact (HandlerPy handler) (MainHs executable) =
+  Artifact . fromArchive $ archive
   where
     archive =
-      addEntryToArchive (toEntry "hander.py" 0 handler) $
+      addEntryToArchive (toEntry "handler.py" 0 handler) $
       addEntryToArchive
         (toEntry "hs-main" 0 executable)
           { eExternalFileAttributes = 0b10000 -- rwx
@@ -51,7 +64,17 @@ mkDeploymentZip (HandlerPy handler) (MainHs executable) =
       emptyArchive
 
 handlerPy :: HandlerPy
-handlerPy = HandlerPy $ BL.fromStrict $(embedFile "static/handler.py")
+handlerPy = HandlerPy $ BL.fromStrict $ T.encodeUtf8 $ T.pack [i|
+from base64 import *
+import subprocess
+
+def handle(event, context):
+    popen = subprocess.Popen(
+       ["./hs-main", "#{const_SERVERLESS_EXECUTOR_MODE}"],
+       stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    (out, _) = popen.communicate(b64decode(event["d"]))
+    return { "d": b64encode(out) }
+|]
 
 mkMainHs :: FilePath -> IO (Either T.Text MainHs)
 mkMainHs fp =

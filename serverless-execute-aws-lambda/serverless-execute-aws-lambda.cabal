@@ -15,6 +15,9 @@ library
   hs-source-dirs:      src
   default-language:    Haskell2010
   exposed-modules:     Network.Serverless.Execute.Lambda
+  other-modules:       Network.Serverless.Execute.Lambda.Types
+                     , Network.Serverless.Execute.Lambda.Artifact
+                     , Network.Serverless.Execute.Lambda.Deploy
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , serverless-execute
@@ -24,5 +27,32 @@ library
                      , amazonka-cloudformation
                      , stratosphere
                      , zip-archive
-                     , file-embed
+                     , interpolate
                      , split
+                     , SHA
+                     , base64-bytestring
+                     , text
+                     , time
+                     , typed-process
+                     , bytestring
+                     , lens
+                     , aeson
+                     , amazonka-core
+                     , transformers
+                     , vector
+                     , unordered-containers
+                     , exceptions
+                     , directory
+
+test-suite tests
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Test.hs
+  default-language: Haskell2010
+  ghc-options:      -Wall -static -optl-static -optl-pthread -fPIC
+  build-depends:    base >=4.7 && < 5
+                  , serverless-execute
+                  , serverless-execute-aws-lambda
+                  , tasty
+                  , tasty-hunit
+                  , unix
