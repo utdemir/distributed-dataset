@@ -42,10 +42,9 @@ data DeployException
   deriving Show
 
 instance Exception DeployException where
-  displayException (InvalidFile fpath desc)
-    = T.unpack $ "Error reading " <> T.pack fpath <> ": " <> desc
-  displayException (AWSError hdr desc)
-    = T.unpack $ hdr <> ": " <> desc
+  displayException (InvalidFile fpath desc) =
+    T.unpack $ "Error reading " <> T.pack fpath <> ": " <> desc
+  displayException (AWSError hdr desc) = T.unpack $ hdr <> ": " <> desc
 
 --------------------------------------------------------------------------------
 

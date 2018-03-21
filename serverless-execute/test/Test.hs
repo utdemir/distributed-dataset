@@ -4,11 +4,11 @@ module Main where
 
 --------------------------------------------------------------------------------
 import System.Posix.Process
-import System.IO
 import Test.Tasty
 import Test.Tasty.HUnit
 --------------------------------------------------------------------------------
 import Network.Serverless.Execute
+import Network.Serverless.Execute.LocalProcessBackend
 --------------------------------------------------------------------------------
 
 main :: IO ()
