@@ -1,13 +1,18 @@
 module Network.Serverless.Execute.Backend
-  ( Backend (..)
+  (
+    -- * Writing a 'Backend'.
+    Backend (..)
   , BackendM
   , const_SERVERLESS_EXECUTOR_MODE
+
+    -- * Reporting status
   , ExecutorFinalStatus (..)
   , ExecutorStatus(..)
   , ExecutorPendingStatus (..)
   , waiting, waitingDesc
   , submitted, submittedDesc
   , started, startedDesc
+
 
   -- * Re-exports
   , liftIO
@@ -25,8 +30,6 @@ import Network.Serverless.Execute.Internal
 
 pendingStatus :: ExecutorPendingStatus -> BackendM ()
 pendingStatus s = BackendM ask >>= liftIO . ($ s)
-
--- | When writing a Backend, you can use these to report the status
 
 waiting :: BackendM ()
 waiting = pendingStatus $ ExecutorWaiting Nothing

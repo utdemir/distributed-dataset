@@ -25,10 +25,8 @@ import Control.Concurrent
 --------------------------------------------------------------------------------
 
 -- |
--- On serverless-batch, we run the same binary both in the users machine (called
--- "driver") and the remote environment (called "executor"). The executable starts
--- in driver mode by default, and runs in the executor mode only if
--- @argv[1] == const_SERVERLESS_EXECUTOR_MODE@.
+-- We switch to executor mode only when  @argv[1] == const_SERVERLESS_EXECUTOR_MODE@.
+--
 const_SERVERLESS_EXECUTOR_MODE :: String
 const_SERVERLESS_EXECUTOR_MODE = "SERVERLESS_EXECUTOR_MODE"
 
