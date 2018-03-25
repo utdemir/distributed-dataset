@@ -20,6 +20,7 @@ import Control.Concurrent.STM
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader
 import Data.Void
+import Data.Monoid ((<>))
 import System.Environment
 import Control.Concurrent
 --------------------------------------------------------------------------------

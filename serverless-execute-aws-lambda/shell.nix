@@ -1,3 +1,3 @@
-{ pkgs ? import ../../nixpkgs {} }:
+{ compiler ? "ghc822" }:
 
-(import ./lib.nix { inherit pkgs; }).devEnv
+(import ../. { inherit compiler; }).serverless-execute-aws-lambda.env

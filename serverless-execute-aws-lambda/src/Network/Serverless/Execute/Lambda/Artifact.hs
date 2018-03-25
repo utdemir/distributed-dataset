@@ -25,7 +25,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Except
 import qualified Data.ByteString.Lazy as BL
 import System.Process.Typed
-import Network.Serverless.Execute
+import Network.Serverless.Execute.Backend
 --------------------------------------------------------------------------------
 
 newtype HandlerPy =

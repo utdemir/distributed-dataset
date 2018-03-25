@@ -166,12 +166,12 @@ initialTemplate =
          S.lfTimeout ?~
          S.Literal 10
        ]) &
-  S.parameters ?~
+  S.templateParameters ?~
   S.Parameters
     [ S.parameter parameterS3Bucket "String"
     , S.parameter parameterS3Key "String"
     ] &
-  S.outputs ?~
+  S.templateOutputs ?~
   S.Outputs
     [ S.output "func" (S.Ref "func")
     ]

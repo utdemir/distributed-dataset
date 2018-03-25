@@ -9,7 +9,6 @@ module Network.Serverless.Execute.Lambda
 
 --------------------------------------------------------------------------------
 import Network.AWS
-import Network.Serverless.Execute
 import qualified Data.Text as T
 import Data.Monoid
 import qualified Data.ByteString.Lazy as BL
@@ -20,6 +19,7 @@ import Control.Monad.Catch
 import Data.ByteString.Base64 as B64
 import Control.Monad.IO.Class
 import Data.Time
+import Network.Serverless.Execute.Backend
 --------------------------------------------------------------------------------
 import Network.Serverless.Execute.Lambda.Deploy
 import Network.Serverless.Execute.Lambda.Artifact

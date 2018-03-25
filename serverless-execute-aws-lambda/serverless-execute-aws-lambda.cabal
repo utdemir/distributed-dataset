@@ -56,3 +56,4 @@ test-suite tests
                   , tasty
                   , tasty-hunit
                   , unix
+                  , amazonka
