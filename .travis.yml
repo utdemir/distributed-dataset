@@ -4,7 +4,7 @@ script: $COMMAND
 
 env:
   - COMMAND="nix-build --argstr compiler ghc802"
-  - COMMAND="nix-build --argstr compiler ghc823"
+  - COMMAND="nix-build --argstr compiler ghc822"
   - COMMAND="nix-build --argstr compiler ghc841"
   - COMMAND="stack build --resolver lts-10.9"
   - COMMAND="stack build --resolver lts-10.9"
