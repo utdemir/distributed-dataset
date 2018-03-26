@@ -1,4 +1,4 @@
-resolver: lts-11.1
+resolver: lts-10.9
 
 packages:
   - serverless-execute
@@ -12,6 +12,3 @@ extra-deps:
   - amazonka-s3-1.5.0
 
 allow-newer: true
-
-nix:
-  enable: true

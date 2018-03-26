@@ -3,6 +3,8 @@ language: nix
 script: nix-build -argstr compiler $COMPILER
 
 env:
-  - COMPILER=ghc802
-  - COMPILER=ghc823
-  - COMPILER=ghc841
+  - COMMAND="nix-build --argstr compiler ghc802"
+  - COMMAND="nix-build --argstr compiler ghc823"
+  - COMMAND="nix-build --argstr compiler ghc841"
+  - COMMAND="stack build --resolver lts-10.9"
+  - COMMAND="stack build --resolver lts-10.9"
