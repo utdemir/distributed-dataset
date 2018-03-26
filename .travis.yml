@@ -1,6 +1,6 @@
 language: nix
 
-script: nix-build -argstr compiler $COMPILER
+script: $COMMAND
 
 env:
   - COMMAND="nix-build --argstr compiler ghc802"
