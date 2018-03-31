@@ -29,7 +29,7 @@ Status: Design phase.
 
 * Working prototype of serverless-batch.
 * Make Stack work. The main problem is getting the dependencies compiling.
-* Make sure everything compiles with the newer GHC versions (see .travis.yml).
+* Make sure everything compiles on Travis. Currently stack does not work and Nix times out.
 * Create another backend for `serverless-execute` to see if the abstraction holds.
 * Document everything.
 * Try to get free credits from a cloud provider.
