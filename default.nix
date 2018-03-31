@@ -73,7 +73,7 @@ haskellPackages = pkgs.haskell.packages.${compiler}.override {
 };
 
 prepareDev = se: drv:
-  pkgs.haskell.lib.addBuildDepends drv (
+  pkgs.haskell.lib.addBuildDepends se.${drv} (
     pkgs.lib.optionals pkgs.lib.inNixShell [
       se.stylish-haskell se.cabal-install
     ]
@@ -83,9 +83,9 @@ in
 
 {
   serverless-execute =
-    prepareDev haskellPackages (haskellPackages.serverless-execute);
+    prepareDev haskellPackages "serverless-execute";
   serverless-execute-aws-lambda =
-    prepareDev haskellPackages (haskellPackages.serverless-execute-aws-lambda);
+    prepareDev haskellPackages "serverless-execute-aws-lambda";
   serverless-batch =
-    prepareDev haskellPackages (haskellPackages.serverless-batch);
+    prepareDev haskellPackages "serverless-batch";
 }
