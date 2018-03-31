@@ -2,7 +2,6 @@ name:                serverless-execute-aws-lambda
 version:             0.1.0.0
 homepage:            https://github.com/utdemir/serverless-batch
 license:             BSD3
-license-file:        LICENSE
 author:              Utku Demir
 maintainer:          me@utdemir.com
 copyright:           Utku Demir
