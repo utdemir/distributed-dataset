@@ -24,3 +24,13 @@ Status: Working prototype.
 A DSL for describing data transformations.
 
 Status: Design phase.
+
+# TODO
+
+* Working prototype of serverless-batch.
+* Make Stack work. The main problem is getting the dependencies compiling.
+* Make sure everything compiles with the newer GHC versions (see .travis.yml).
+* Create another backend for `serverless-execute` to see if the abstraction holds.
+* Document everything.
+* Try to get free credits from a cloud provider.
+* Performance benchmarks.
