@@ -9,7 +9,6 @@ copyright:           Utku Demir
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
-extra-source-files:  README.md
 
 library
   hs-source-dirs:      src
