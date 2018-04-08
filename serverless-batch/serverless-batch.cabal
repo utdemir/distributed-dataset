@@ -15,7 +15,12 @@ library
   exposed-modules:     Network.Serverless.Batch
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
+                     , binary
                      , serverless-execute
                      , distributed-closure
                      , pipes
                      , bytestring
+                     , fgl
+                     , fgl-visualize
+                     , universum
+                     , transformers

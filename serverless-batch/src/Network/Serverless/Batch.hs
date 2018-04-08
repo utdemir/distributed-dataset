@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE StaticPointers #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -7,24 +8,26 @@
 module Network.Serverless.Batch where
 
 --------------------------------------------------------------------------------
-import GHC.Generics
-import Data.Typeable
-import Control.Distributed.Closure
-import qualified Data.ByteString as BS
 import Pipes
+import Data.Typeable
+import qualified Pipes.Prelude as P
+--------------------------------------------------------------------------------
+import Network.Serverless.Execute
+import Network.Serverless.Batch.IO
 --------------------------------------------------------------------------------
 
 data Dataset a where
-  Read :: Typeable a => Closure Source -> Dataset a
-  Map :: (Typeable a, Typeable b) => Closure (a -> b) -> Dataset a -> Dataset b
-  Filter :: Closure (a -> Bool) -> Dataset a -> Dataset a
-  Join
+  DRead :: Typeable a => Source -> FilePath -> Dataset a
+  DBoundary :: Dataset a -> Dataset a
+  DMap :: (Typeable a, Typeable b) => Closure (a -> b) -> Dataset a -> Dataset b
+  DFilter :: Typeable a => Closure (a -> Bool) -> Dataset a -> Dataset a
+  DJoin
     :: Closure (a -> t)
     -> Closure (b -> t)
     -> Dataset a
     -> Dataset b
     -> Dataset (t, a, b)
-  AggrByKey
+  DAggrByKey
     :: (Typeable a, Typeable b, Typeable k)
     => Aggr a b
     -> Closure (a -> k)
@@ -32,34 +35,59 @@ data Dataset a where
     -> Dataset (k, b)
 
 instance Show (Dataset a) where
-  show (Map c a) = show a ++ " -> Map[" ++ show (typeRep c) ++ "]"
-  show (Filter _ a) = show a ++ " -> Filter"
-  show (Join _ _ a b) = "(" ++ show a ++ ", " ++ show b ++ ") -> Join"
-  show (AggrByKey aggr extr a)
+  show (DRead _ _) = "Read[" ++ show (typeRep (Proxy @a)) ++ "]"
+  show (DBoundary a) = show a ++ "-> Boundary"
+  show (DMap c a) = show a ++ " -> Map[" ++ show (typeRep c) ++ "]"
+  show (DFilter _ a) = show a ++ " -> Filter"
+  show (DJoin _ _ a b) = "(" ++ show a ++ ", " ++ show b ++ ") -> Join"
+  show (DAggrByKey aggr extr a)
     = show a ++ " -> Aggr" ++ "[" ++ show (typeOf aggr) ++ ", " ++ show (typeRep extr) ++ "]"
-  show (Read _) = "Read[" ++ show (typeRep (Proxy @a)) ++ "]"
 
 data Action where
-  Write :: Sink -> Dataset a -> Action
+  Write :: Closure Sink -> FilePath -> Dataset a -> Action
 
 instance Show Action where
-  show (Write _ a) = show a ++ " -> Write"
+  show (Write _ _ a) = show a ++ " -> Write"
+
+runAction :: Backend -> Action -> IO ()
+runAction _ = print
 
 --------------------------------------------------------------------------------
 
-newtype Seek = Seek Integer
-  deriving (Show, Eq, Ord, Generic)
+data SimplifiedDataset a where
+  SDRead :: Source -> FilePath -> SimplifiedDataset a
+  SDBoundary :: SimplifiedDataset a -> SimplifiedDataset a
+  SDNarrow
+    :: (Typeable a, Typeable b)
+    => Closure (Pipe a b IO ())
+    -> SimplifiedDataset a
+    -> SimplifiedDataset b
+  SDWide
+    :: (Typeable a, Typeable b)
+    => Closure (Pipe a (Int, b) IO ())
+    -> SimplifiedDataset a
+    -> SimplifiedDataset b
+  SDReadCorresponding
+    :: SimplifiedDataset a
+    -> SimplifiedDataset b
+    -> Closure (Pipe (Either a b) c IO ())
+    -> SimplifiedDataset c
 
-data Source = Source
-  { sourceProducer :: Seek -> Producer BS.ByteString IO ()
-  , sourceSize :: IO Integer
-  }
-
-data Sink = Sink
-  { sinkConsumer :: Consumer BS.ByteString IO ()
-  }
+simplify :: Dataset a -> SimplifiedDataset a
+simplify (DRead s p)
+  = SDRead s p
+simplify (DBoundary d)
+  = SDBoundary (simplify d)
+simplify (DMap f d)
+  = SDNarrow (static P.map `cap` f) (simplify d)
+simplify (DFilter f d)
+  = SDNarrow (static P.filter `cap` f) (simplify d)
+simplify (DJoin ka kb da db)
+  = SDReadCorresponding undefined undefined undefined
 
 --------------------------------------------------------------------------------
 
 data Aggr a b =
   forall t. Aggr (Closure (a -> t, t -> t -> t, t -> b))
+
+--------------------------------------------------------------------------------

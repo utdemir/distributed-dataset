@@ -13,7 +13,7 @@ Run arbitrary IO actions on FaaS services, backend agnostic.
 
 Status: Working prototype.
 
-## serverless-execute-aws-lambda
+### serverless-execute-aws-lambda
 
 An AWS Lambda backend for `serverless-execute`.
 
