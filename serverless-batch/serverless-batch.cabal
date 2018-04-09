@@ -16,11 +16,11 @@ library
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , binary
-                     , serverless-execute
-                     , distributed-closure
-                     , pipes
                      , bytestring
+                     , distributed-closure
                      , fgl
                      , fgl-visualize
-                     , universum
+                     , hashable
+                     , pipes
+                     , serverless-execute
                      , transformers

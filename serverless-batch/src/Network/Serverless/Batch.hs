@@ -22,26 +22,19 @@ data Dataset a where
   DMap :: (Typeable a, Typeable b) => Closure (a -> b) -> Dataset a -> Dataset b
   DFilter :: Typeable a => Closure (a -> Bool) -> Dataset a -> Dataset a
   DJoin
-    :: Closure (a -> t)
+    :: Closure (Dict (Typeable t))
+    -> Closure (a -> t)
     -> Closure (b -> t)
     -> Dataset a
     -> Dataset b
     -> Dataset (t, a, b)
-  DAggrByKey
-    :: (Typeable a, Typeable b, Typeable k)
-    => Aggr a b
-    -> Closure (a -> k)
-    -> Dataset a
-    -> Dataset (k, b)
 
 instance Show (Dataset a) where
   show (DRead _ _) = "Read[" ++ show (typeRep (Proxy @a)) ++ "]"
   show (DBoundary a) = show a ++ "-> Boundary"
   show (DMap c a) = show a ++ " -> Map[" ++ show (typeRep c) ++ "]"
   show (DFilter _ a) = show a ++ " -> Filter"
-  show (DJoin _ _ a b) = "(" ++ show a ++ ", " ++ show b ++ ") -> Join"
-  show (DAggrByKey aggr extr a)
-    = show a ++ " -> Aggr" ++ "[" ++ show (typeOf aggr) ++ ", " ++ show (typeRep extr) ++ "]"
+  show (DJoin _ _ _ a b) = "(" ++ show a ++ ", " ++ show b ++ ") -> Join"
 
 data Action where
   Write :: Closure Sink -> FilePath -> Dataset a -> Action
@@ -82,12 +75,13 @@ simplify (DMap f d)
   = SDNarrow (static P.map `cap` f) (simplify d)
 simplify (DFilter f d)
   = SDNarrow (static P.filter `cap` f) (simplify d)
-simplify (DJoin ka kb da db)
-  = SDReadCorresponding undefined undefined undefined
-
---------------------------------------------------------------------------------
-
-data Aggr a b =
-  forall t. Aggr (Closure (a -> t, t -> t -> t, t -> b))
-
---------------------------------------------------------------------------------
+simplify (DJoin d ka kb da db) = undefined
+--  case unclosure d of
+--    Dict ->
+--      SDReadCorresponding
+--      (SDWide (static (\ka -> P.map (\a -> (partition (ka a), a))) `cap` ka) (simplify da))
+--      (undefined)
+--      (undefined)
+--  where
+--    partition :: k -> Int
+--    partition = undefined
