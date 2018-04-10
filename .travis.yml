@@ -1,7 +1,7 @@
 language: nix
 
 script:
-  - sh -c "$COMMAND"
+  - timeout 30m sh -c "$COMMAND"
 
 env:
   - COMMAND="nix-build --argstr compiler ghc802"
