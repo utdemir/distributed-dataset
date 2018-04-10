@@ -19,7 +19,6 @@ library
                      , bytestring
                      , distributed-closure
                      , fgl
-                     , fgl-visualize
                      , hashable
                      , pipes
                      , serverless-execute

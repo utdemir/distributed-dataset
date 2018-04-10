@@ -95,7 +95,7 @@ prepareDev = se: drv:
 addCompilerName = drv:
   drv.overrideAttrs (old: { name = "${old.name}-${compiler}"; });
 
-output = n: addCompilerName (prepareDev haskellPackages n)
+output = n: addCompilerName (prepareDev haskellPackages n);
 
 in
 

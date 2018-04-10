@@ -7,5 +7,4 @@ env:
   - COMMAND="nix-build --argstr compiler ghc802"
   - COMMAND="nix-build --argstr compiler ghc822"
   - COMMAND="nix-build --argstr compiler ghc841"
-  - COMMAND="nix-env -i stack && stack build --resolver lts-10.9"
-  - COMMAND="nix-env -i stack && stack build --resolver lts-11.2"
+  - COMMAND="nix-env -i stack && stack build"

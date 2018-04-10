@@ -1,14 +1,17 @@
-resolver: lts-10.9
+resolver: lts-10.10
 
 packages:
   - serverless-execute
   - serverless-execute-aws-lambda
+  - serverless-batch
 
 extra-deps:
-  - amazonka-1.5.0
-  - amazonka-cloudformation-1.5.0
-  - amazonka-core-1.5.0
-  - amazonka-lambda-1.5.0
-  - amazonka-s3-1.5.0
+  - stratosphere-0.19.1
 
 allow-newer: true
+
+nix: 
+  enable: true
+  packages:
+    - zlib
+    - unzip
