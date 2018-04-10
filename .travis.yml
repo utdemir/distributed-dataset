@@ -8,3 +8,9 @@ env:
   - COMMAND="nix-build --argstr compiler ghc822"
   - COMMAND="nix-build --argstr compiler ghc841"
   - COMMAND="nix-env -i stack && stack build"
+
+cache:
+  directories:
+    - /nix
+    - $HOME/.stack
+  timeout: 10000

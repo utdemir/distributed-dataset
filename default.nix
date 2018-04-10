@@ -11,13 +11,19 @@ pkgs' = if pkgs == null
           }) {}
         else pkgs;
 
-# https://github.com/brendanhay/amazonka/pull/456
+# ghc8.4 support: https://github.com/brendanhay/amazonka/pull/456
 # amazonkaSrc = pkgs'.fetchFromGitHub {
 #   owner = "brendanhay"; repo = "amazonka";
 #   rev = "78b2736448f81e09b712b8d01cef3d1f45fb02ac";
 #   sha256 = "1217cf3562i029lj47az7m1qsk7fn9rrjjqhknl4gf5l21s4h0fa";
 # };
-amazonkaSrc = ../amazonka;
+# conduit-1.3 support: https://github.com/brendanhay/amazonka/pull/454
+amazonkaSrc = pkgs'.fetchFromGitHub {
+   owner = "brendanhay"; repo = "amazonka";
+   rev = "97273545cf37672bec0cdcf78a9d68c274bbb6c2";
+   sha256 = "02kp531j5a1046yx4lr01df93r4r0a4a7h6ak9ky91d5iyqg6ih6";
+};
+# amazonkaSrc = ../amazonka;
 
 haskellPackages = pkgs'.haskell.packages.${compiler}.override {
   overrides = se: su: {
