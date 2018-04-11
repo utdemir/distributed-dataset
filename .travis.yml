@@ -1,16 +1,23 @@
 language: nix
 
-script:
-  - timeout 30m sh -c "$COMMAND"
-
 env:
   - COMMAND="nix-build --argstr compiler ghc802"
   - COMMAND="nix-build --argstr compiler ghc822"
   - COMMAND="nix-build --argstr compiler ghc841"
   - COMMAND="nix-env -i stack && stack build"
 
+script:
+  - timeout 30m sh -c "$COMMAND"
+
+before_install:
+  -  [[ -d nixcache ]] && nix copy --all --no-check-sigs --from $HOME/nixcache || true
+
+before-cache:
+  - rm -r nixcache/; mkdir nixcache/
+  - nix copy --all --no-check-sigs --to $HOME/nixcache
+
 cache:
   directories:
-    - /nix
+    - $HOME/nixcache
     - $HOME/.stack
   timeout: 10000
