@@ -10,7 +10,7 @@ script:
   - timeout 30m sh -c "$COMMAND"
 
 before_install:
-  -  [[ -d nixcache ]] && nix copy --all --no-check-sigs --from $HOME/nixcache || true
+  - [[ -d nixcache ]] && nix copy --all --no-check-sigs --from $HOME/nixcache || true
 
 before-cache:
   - rm -r nixcache/; mkdir nixcache/
