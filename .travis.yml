@@ -12,8 +12,8 @@ script:
 before_install:
   - "[[ -d $HOME/nixcache ]] && nix copy --all --no-check-sigs --from $HOME/nixcache || true"
 
-before-cache:
-  - rm -r nixcache/; mkdir nixcache/
+before_cache:
+  - rm -r $HOME/nixcache/; mkdir $HOME/nixcache/
   - nix copy --all --no-check-sigs --to $HOME/nixcache
 
 cache:
