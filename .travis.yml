@@ -4,10 +4,10 @@ env:
   - COMMAND="nix-build --argstr compiler ghc802"
   - COMMAND="nix-build --argstr compiler ghc822"
   - COMMAND="nix-build --argstr compiler ghc841"
-  - COMMAND="nix-env -i stack && travis_wait 30 stack build"
+  - COMMAND="nix-env -i stack && stack build"
 
 script:
-  - timeout 30m sh -c "$COMMAND"
+  - travis_wait 30 timeout 30m sh -c "$COMMAND"
 
 before_install:
   - "[[ -d $HOME/nixcache ]] && nix copy --all --no-check-sigs --from $HOME/nixcache || true"
