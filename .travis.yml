@@ -4,7 +4,7 @@ env:
   - COMMAND="nix-build --argstr compiler ghc802"
   - COMMAND="nix-build --argstr compiler ghc822"
   - COMMAND="nix-build --argstr compiler ghc841"
-  - COMMAND="nix-env -i stack && stack build"
+  - COMMAND="nix-env -i stack && travis_wait 30 stack build"
 
 script:
   - timeout 30m sh -c "$COMMAND"
