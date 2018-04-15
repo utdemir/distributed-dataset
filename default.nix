@@ -94,7 +94,7 @@ haskellPackages = pkgs'.haskell.packages.${compiler}.override {
 prepareDev = se: drv:
   pkgs'.haskell.lib.addBuildDepends se.${drv} (
     pkgs'.lib.optionals pkgs'.lib.inNixShell [
-      se.stylish-haskell se.cabal-install
+      se.cabal-install
     ]
   );
 
