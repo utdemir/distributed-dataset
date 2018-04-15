@@ -14,6 +14,7 @@ before_install:
   - "[[ -d $HOME/nixcache ]] && nix copy --all --no-check-sigs --from $HOME/nixcache || true"
 
 before_cache:
+  - nix-store --verify --check-contents
   - nix copy --all --no-check-sigs --to $HOME/nixcache
 
 cache:
