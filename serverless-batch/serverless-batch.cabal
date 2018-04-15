@@ -17,9 +17,11 @@ library
   build-depends:       base >= 4.7 && < 5
                      , binary
                      , bytestring
+                     , constraints
                      , distributed-closure
                      , fgl
                      , hashable
                      , pipes
+                     , pipes-parse
                      , serverless-execute
                      , transformers
