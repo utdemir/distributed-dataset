@@ -11,7 +11,7 @@ script:
   - timeout 30m sh -c "$COMMAND"
 
 before_install:
-  - "[[ -d $HOME/nixcache ]] && nix copy --all --no-check-sigs --from $HOME/nixcache || true"
+  - nix copy --all --no-check-sigs --from $HOME/nixcache
 
 before_cache:
   - nix-store --verify --check-contents
