@@ -8,7 +8,7 @@ env:
   - COMMAND="nix-env -i stack && stack build"
 
 script:
-  - travis_wait 40 sleep 30m &
+  - travis_wait 45 sleep 40m &
   - timeout 40m sh -c "$COMMAND"
 
 before_install:
