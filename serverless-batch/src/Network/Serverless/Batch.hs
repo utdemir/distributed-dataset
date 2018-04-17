@@ -95,12 +95,12 @@ simplify (DJoin dta dtb dtk dhk dok (ka :: Closure (a -> k)) (kb :: Closure (b -
       (SDWide
         dta
         dta
-        (static (\dhk dok ka -> pSort @a dok >-> pPartitionBy @a @k dhk ka) `cap` dhk `cap` dok `cap` ka)
+        undefined -- (static (\dhk dok ka -> pSort @a dok >-> pPartitionBy @a @k dhk ka) `cap` dhk `cap` dok `cap` ka)
         (simplify dsa))
       (SDWide
         dtb
         dtb
-        (static (\dhk dok kb -> pSort @b dok >-> pPartitionBy @b @k dhk kb) `cap` dhk `cap` dok `cap` kb)
+        undefined -- (static (\dhk dok kb -> pSort @b dok >-> pPartitionBy @b @k dhk kb) `cap` dhk `cap` dok `cap` kb)
         (simplify dsb))
       (static (pMerge @a @b) `cap` ka `cap` kb)
 
