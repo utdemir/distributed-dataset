@@ -1,0 +1,13 @@
+version: 2
+jobs:
+  nix-ghc802:
+    docker:
+      - image: nixos/nix:1.11
+    steps:
+      - checkout
+      - run: nix-build --argstr compiler ghc802
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - nix-ghc802

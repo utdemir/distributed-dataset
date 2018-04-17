@@ -25,3 +25,4 @@ library
                      , pipes-parse
                      , serverless-execute
                      , transformers
+                     , these
