@@ -28,3 +28,6 @@ workflows:
   build_and_test:
     jobs:
       - nix-ghc802
+      - nix-ghc822
+      - nix-ghc841
+      - stack
