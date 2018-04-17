@@ -1,11 +1,28 @@
+base: &base
+  docker:
+    - image: nixos/nix:1.11
+  steps:
+    - checkout
+    - run: sh -c "$CMD"
+
 version: 2
 jobs:
   nix-ghc802:
-    docker:
-      - image: nixos/nix:1.11
-    steps:
-      - checkout
-      - run: nix-build --argstr compiler ghc802
+    <<: *base
+    environment:
+      CMD: nix-build --argstr compiler ghc802
+  nix-ghc822:
+    <<: *base
+    environment:
+      CMD: nix-build --argstr compiler ghc822
+  nix-ghc841:
+    <<: *base
+    environment:
+      CMD: nix-build --argstr compiler ghc841
+  stack:
+    <<: *base
+    environment:
+      CMD: nix-env -i stack && stack build
 workflows:
   version: 2
   build_and_test:
