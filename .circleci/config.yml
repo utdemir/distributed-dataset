@@ -1,33 +1,30 @@
-base: &base
+nix-base: &nix-base
   docker:
     - image: nixos/nix:1.11
   steps:
     - checkout
-    - run: sh -c "$CMD"
+    - run: nix-build --argstr compiler "$COMPILER"
 
 version: 2
 jobs:
   nix-ghc802:
-    <<: *base
+    <<: *nix-base
     environment:
-      CMD: nix-build --argstr compiler ghc802
+      COMPILER: ghc802
   nix-ghc822:
-    <<: *base
+    <<: *nix-base
     environment:
-      CMD: nix-build --argstr compiler ghc822
-  nix-ghc841:
-    <<: *base
-    environment:
-      CMD: nix-build --argstr compiler ghc841
+      COMPILER: ghc822
   stack:
-    <<: *base
-    environment:
-      CMD: nix-env -i stack iana-etc nss-cacert && stack build
+    docker:
+      - image: fpco/stack-build:lts-10.10
+    steps:
+      - checkout
+      - run: stack build
 workflows:
   version: 2
   build_and_test:
     jobs:
       - nix-ghc802
       - nix-ghc822
-      - nix-ghc841
       - stack
