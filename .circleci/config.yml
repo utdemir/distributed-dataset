@@ -22,7 +22,7 @@ jobs:
   stack:
     <<: *base
     environment:
-      CMD: nix-env -i stack nss-cacert && stack build
+      CMD: nix-env -i stack iana-etc && stack build
 workflows:
   version: 2
   build_and_test:
