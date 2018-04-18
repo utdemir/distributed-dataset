@@ -102,7 +102,7 @@ simplify (DJoin dta dtb dtk dhk dok (ka :: Closure (a -> k)) (kb :: Closure (b -
         dtb
         undefined -- (static (\dhk dok kb -> pSort @b dok >-> pPartitionBy @b @k dhk kb) `cap` dhk `cap` dok `cap` kb)
         (simplify dsb))
-      (static (pMerge @a @b) `cap` ka `cap` kb)
+      undefined -- (static (pMerge @a @b) `cap` ka `cap` kb)
 
 pPartitionBy ::
      forall a b. Dict (Hashable b) -> (a -> b) -> Pipe a (Int, a) IO ()
