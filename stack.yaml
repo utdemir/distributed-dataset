@@ -13,4 +13,8 @@ allow-newer: true
 nix: 
   packages:
     - zlib
+    - zlibStatic.static
+    - glibc
+    - glibc.static
+    - (gmp.override { withStatic = true; })
     - unzip

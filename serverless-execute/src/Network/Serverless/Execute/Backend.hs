@@ -1,3 +1,9 @@
+{-|
+You only need this module if you want to create a new backend for serverless-execute.
+
+See 'Network.Serverless.Execute.LocalProcessBackend' for a minimal example.
+-}
+
 module Network.Serverless.Execute.Backend
   (
     -- * Writing a 'Backend'.

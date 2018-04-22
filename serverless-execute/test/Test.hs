@@ -13,7 +13,7 @@ import Network.Serverless.Execute.LocalProcessBackend
 
 main :: IO ()
 main = do
-  serverlessGuard
+  initServerless
   defaultMain tests
 
 tests :: TestTree

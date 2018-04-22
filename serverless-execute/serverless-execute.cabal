@@ -24,7 +24,6 @@ library
                      , bytestring
                      , distributed-closure
                      , typed-process
-                     , http-conduit
                      , stm
                      , transformers
                      , exceptions
@@ -38,7 +37,6 @@ test-suite tests
   ghc-options:      -Wall -threaded
   build-depends:    base >=4.7 && < 5
                   , serverless-execute
-                  , bytestring
                   , tasty
                   , tasty-hunit
                   , unix

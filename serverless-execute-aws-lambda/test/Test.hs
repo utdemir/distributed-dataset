@@ -19,7 +19,7 @@ import Network.Serverless.Execute.Lambda
 
 main :: IO ()
 main = do
-  serverlessGuard
+  initServerless
   aws <- hasAWSEnv
   if aws
     then defaultMain tests

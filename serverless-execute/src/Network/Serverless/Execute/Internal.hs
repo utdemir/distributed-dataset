@@ -5,7 +5,16 @@
 {-# LANGUAGE StaticPointers #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Network.Serverless.Execute.Internal where
+module Network.Serverless.Execute.Internal
+  ( const_SERVERLESS_EXECUTOR_MODE
+  , initServerless
+  , Backend (..)
+  , BackendM (..)
+  , ExecutorStatus (..)
+  , ExecutorPendingStatus (..)
+  , ExecutorFinalStatus (..)
+  , runBackend
+  ) where
 
 --------------------------------------------------------------------------------
 import System.IO
@@ -27,23 +36,22 @@ import Control.Concurrent
 
 -- |
 -- We switch to executor mode only when  @argv[1] == const_SERVERLESS_EXECUTOR_MODE@.
---
 const_SERVERLESS_EXECUTOR_MODE :: String
 const_SERVERLESS_EXECUTOR_MODE = "SERVERLESS_EXECUTOR_MODE"
 
 -- |
--- On serverless-batch, we run the same binary both in the users machine (called
+-- On serverless-execute, we run the same binary both in the users machine (called
 -- "driver") and in the remote environment (called "executor"). In order for the
 -- program to act according to where it is, you should call this function as the
 -- first thing in your @main@:
 --
 -- @
 -- main = do
---   serverlessGuard
+--   initServerless
 --   ...
 -- @
-serverlessGuard :: IO ()
-serverlessGuard = do
+initServerless :: IO ()
+initServerless = do
   getArgs >>= \case
     [x]
       | x == const_SERVERLESS_EXECUTOR_MODE -> vacuous runExecutor
@@ -78,7 +86,7 @@ data Backend = Backend
   }
 
 -- |
--- BackendM is a `MonadIO`, but also has the ability to report the status of the
+-- BackendM is essentially `IO`, but also has the ability to report the status of the
 -- executor.
 newtype BackendM a =
   BackendM (ReaderT (ExecutorPendingStatus -> IO ()) IO a)

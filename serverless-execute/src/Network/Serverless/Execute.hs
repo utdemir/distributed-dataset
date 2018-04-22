@@ -2,7 +2,7 @@
 
 module Network.Serverless.Execute
   ( Backend
-  , serverlessGuard
+  , initServerless
   , execute
 
   -- * Exceptions

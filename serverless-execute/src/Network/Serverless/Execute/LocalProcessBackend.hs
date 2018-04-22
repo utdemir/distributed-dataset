@@ -6,6 +6,8 @@ import System.Process.Typed
 import Network.Serverless.Execute.Backend
 --------------------------------------------------------------------------------
 
+-- |
+-- A 'Backend' which uses local processes as executors.
 localProcessBackend :: Backend
 localProcessBackend = Backend $ \stdin' -> do
   executable <- liftIO getExecutablePath
