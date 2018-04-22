@@ -22,7 +22,7 @@ import qualified Stratosphere                 as S
 import qualified Data.Vector as V
 import qualified Data.HashMap.Strict as HM
 import Data.Aeson (object, Value(Array))
-import Control.Lens
+import Lens.Micro
 import Network.AWS.Waiter
 import Network.AWS
 import qualified Network.AWS.S3 as S3
@@ -84,20 +84,23 @@ awsCreateStack :: StackName
 awsCreateStack (StackName stackName) (S3Loc (BucketName bucketName) path) tpl = do
   csrs <-
     send $
-    createStack stackName & csTemplateBody ?~
-    (T.decodeUtf8 . BL.toStrict $ S.encodeTemplate tpl) &
-    csCapabilities <>~
-    [CapabilityIAM] &
-    csParameters <>~
-    [ parameter & pParameterKey ?~ parameterS3Bucket & pParameterValue ?~
-      bucketName
-    , parameter & pParameterKey ?~ parameterS3Key & pParameterValue ?~ path
-    ]
+      createStack stackName
+        & csTemplateBody ?~
+            (T.decodeUtf8 . BL.toStrict $ S.encodeTemplate tpl)
+        & csCapabilities .~ [CapabilityIAM]
+        & csParameters .~
+            [ parameter
+                & pParameterKey ?~ parameterS3Bucket
+                & pParameterValue ?~ bucketName
+            , parameter
+                & pParameterKey ?~ parameterS3Key
+                & pParameterValue ?~ path
+            ]
   unless (csrs ^. csrsResponseStatus == 200) $
     throwM $
-    AWSError
-      "CloudFormation stack creation failed."
-      ("Status code: " <> T.pack (show $ csrs ^. csrsResponseStatus))
+     AWSError
+       "CloudFormation stack creation failed."
+        ("Status code: " <> T.pack (show $ csrs ^. csrsResponseStatus))
   stackId <-
     case csrs ^. csrsStackId of
       Nothing ->

@@ -19,27 +19,27 @@ library
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , serverless-execute
-                     , amazonka
-                     , amazonka-s3
-                     , amazonka-lambda
-                     , amazonka-cloudformation
-                     , stratosphere
-                     , zip-archive
-                     , interpolate
                      , SHA
+                     , aeson
+                     , amazonka
+                     , amazonka-cloudformation
+                     , amazonka-core
+                     , amazonka-lambda
+                     , amazonka-s3
                      , base64-bytestring
+                     , bytestring
+                     , directory
+                     , exceptions
+                     , interpolate
+                     , microlens
+                     , stratosphere
                      , text
                      , time
-                     , typed-process
-                     , bytestring
-                     , lens
-                     , aeson
-                     , amazonka-core
                      , transformers
-                     , vector
+                     , typed-process
                      , unordered-containers
-                     , exceptions
-                     , directory
+                     , vector
+                     , zip-archive
 
 test-suite tests
   type:             exitcode-stdio-1.0

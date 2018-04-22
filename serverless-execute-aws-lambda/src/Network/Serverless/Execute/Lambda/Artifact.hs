@@ -12,7 +12,7 @@ module Network.Serverless.Execute.Lambda.Artifact
   ) where
 
 --------------------------------------------------------------------------------
-import           Data.Digest.Pure.SHA
+import Data.Digest.Pure.SHA
 import System.Environment
 import Data.String.Interpolate
 import Data.Monoid
@@ -82,7 +82,7 @@ mkMainHs fp =
   where
     existence =
       liftIO (doesFileExist fp) >>= \case
-        False -> throwE $ "File does not exist: " <> (T.pack fp)
+        False -> throwE $ "File does not exist: " <> T.pack fp
         True -> return ()
     file = do
       ret <-
