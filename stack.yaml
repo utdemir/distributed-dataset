@@ -3,7 +3,6 @@ resolver: lts-10.10
 packages:
   - serverless-execute
   - serverless-execute-aws-lambda
-  - serverless-batch
 
 extra-deps:
   - stratosphere-0.19.1
