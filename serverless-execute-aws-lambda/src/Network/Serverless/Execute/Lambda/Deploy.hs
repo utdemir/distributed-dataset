@@ -1,9 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Network.Serverless.Execute.Lambda.Deploy where
+module Network.Serverless.Execute.Lambda.Deploy
+  ( withStack
+  , awsUploadObject
+  , awsInvoke
+  , DeployException (AWSError)
+  ) where
 
 --------------------------------------------------------------------------------
 import qualified Data.Text as T

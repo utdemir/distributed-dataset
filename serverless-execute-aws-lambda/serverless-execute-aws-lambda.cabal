@@ -26,7 +26,6 @@ library
                      , stratosphere
                      , zip-archive
                      , interpolate
-                     , split
                      , SHA
                      , base64-bytestring
                      , text
@@ -53,5 +52,4 @@ test-suite tests
                   , serverless-execute-aws-lambda
                   , tasty
                   , tasty-hunit
-                  , unix
                   , amazonka
