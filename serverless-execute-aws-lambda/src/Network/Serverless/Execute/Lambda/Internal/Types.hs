@@ -1,4 +1,6 @@
-module Network.Serverless.Execute.Lambda.Types where
+{-# LANGUAGE OverloadedStrings #-}
+
+module Network.Serverless.Execute.Lambda.Internal.Types where
 
 --------------------------------------------------------------------------------
 import Data.Text (Text)
@@ -13,14 +15,6 @@ data S3Loc = S3Loc BucketName Text
 newtype StackName = StackName { unStackName :: Text }
   deriving (Eq, Show)
 
-newtype StackId = StackId { unStackId :: Text }
-  deriving (Eq, Show)
-
 newtype LambdaId = LambdaId Text
   deriving (Eq, Show)
 
-data LambdaBackendOptions = LambdaBackendOptions
-  { _lboBucket :: Text
-  , _lboPrefix :: Text
-  , _lboStackPrefix :: Text
-  }

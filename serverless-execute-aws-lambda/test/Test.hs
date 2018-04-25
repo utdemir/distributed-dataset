@@ -44,6 +44,5 @@ tests =
         r <-
           withLambdaBackend opts $ \backend ->
             execute backend (static Dict) (static (return $ Just @Integer 42))
-        print r
         r @?= Just 42
   ]

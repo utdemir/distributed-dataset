@@ -4,12 +4,7 @@ packages:
   - serverless-execute
   - serverless-execute-aws-lambda
 
-extra-deps:
-  - stratosphere-0.19.1
-
-allow-newer: true
-
-nix: 
+nix:
   packages:
     - zlib
     - zlibStatic.static

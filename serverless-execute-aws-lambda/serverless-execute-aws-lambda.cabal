@@ -13,14 +13,17 @@ library
   hs-source-dirs:      src
   default-language:    Haskell2010
   exposed-modules:     Network.Serverless.Execute.Lambda
-  other-modules:       Network.Serverless.Execute.Lambda.Types
-                     , Network.Serverless.Execute.Lambda.Artifact
-                     , Network.Serverless.Execute.Lambda.Deploy
+  other-modules:       Network.Serverless.Execute.Lambda.Internal.Types
+                     , Network.Serverless.Execute.Lambda.Internal.Constants
+                     , Network.Serverless.Execute.Lambda.Internal.Stack
+                     , Network.Serverless.Execute.Lambda.Internal.Archive
+                     , Network.Serverless.Execute.Lambda.Internal.Invoke
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , serverless-execute
                      , SHA
                      , aeson
+                     , aeson-qq
                      , amazonka
                      , amazonka-cloudformation
                      , amazonka-core
@@ -38,7 +41,6 @@ library
                      , transformers
                      , typed-process
                      , unordered-containers
-                     , vector
                      , zip-archive
 
 test-suite tests
