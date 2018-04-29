@@ -54,7 +54,15 @@ def handle(event, context):
     (out, _) = popen.communicate(b64decode(event["d"]))
     client.send_message(
       QueueUrl=queue_url,
-      MessageBody=b64encode(out)
+      MessageBody=b64encode(out),
+      MessageAttributes={
+        "Id": {
+            "DataType": "Number",
+            "StringValue": str(event["i"])
+        }
+      }
+    )
+
 |]
 
 {-
@@ -63,7 +71,7 @@ And we read the current executable.
 Since it'll run on AWS Lambda, it needs to be a statically linked Linux
 executable, so we do a preliminary check here. We're calling the "file"
 command here instead of using libmagic, because trying to statically compile
-it caused problems in my system.
+it caused problems on my system.
 -}
 mkHsMain :: IO BS.ByteString
 mkHsMain = do

@@ -18,6 +18,7 @@ library
                      , Network.Serverless.Execute.Lambda.Internal.Stack
                      , Network.Serverless.Execute.Lambda.Internal.Archive
                      , Network.Serverless.Execute.Lambda.Internal.Invoke
+                     , Network.AWS.Lambda.Invoke.Fixed
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , serverless-execute
@@ -29,12 +30,17 @@ library
                      , amazonka-core
                      , amazonka-lambda
                      , amazonka-s3
+                     , amazonka-sqs
+                     , async
                      , base64-bytestring
                      , bytestring
+                     , containers
                      , directory
-                     , exceptions
+                     , safe-exceptions
+                     , fmt
                      , interpolate
                      , microlens
+                     , random
                      , stratosphere
                      , text
                      , time

@@ -17,4 +17,3 @@ newtype StackName = StackName { unStackName :: Text }
 
 newtype LambdaId = LambdaId Text
   deriving (Eq, Show)
-

@@ -12,6 +12,7 @@ import Network.AWS.Auth (AuthError)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Control.Exception
+import Control.Concurrent
 --------------------------------------------------------------------------------
 import Network.Serverless.Execute
 import Network.Serverless.Execute.Lambda
@@ -39,7 +40,10 @@ tests :: TestTree
 tests =
   testGroup
     "Tests"
-    [ testCase "creates backend" $ do withLambdaBackend opts $ const (return ())
+    [ testCase "creates backend" $ do
+        withLambdaBackend opts $ \_ -> do
+          threadDelay $ 5*1000*1000
+          return ()
     , testCase "runs the function" $ do
         r <-
           withLambdaBackend opts $ \backend ->

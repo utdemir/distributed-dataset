@@ -1,0 +1,28 @@
+name: examples
+
+ghc-options:      -Wall -static -optl-static -optl-pthread -fPIC
+
+executables:
+  lambda:
+    main: lambda.hs
+    dependencies:
+      - base
+      - serverless-execute
+      - serverless-execute-aws-lambda
+      - async
+      - text
+      - http-conduit
+  gh:
+    main: gh.hs
+    dependencies:
+      - base
+      - serverless-execute
+      - serverless-execute-aws-lambda
+      - async
+      - containers
+      - lens-aeson
+      - conduit
+      - conduit-combinators
+      - http-conduit
+      - bzlib-conduit
+      - ndjson-conduit

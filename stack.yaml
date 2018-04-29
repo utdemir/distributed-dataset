@@ -3,9 +3,11 @@ resolver: lts-10.10
 packages:
   - serverless-execute
   - serverless-execute-aws-lambda
+  - examples
 
 nix:
   packages:
+    - file
     - zlib
     - zlibStatic.static
     - glibc

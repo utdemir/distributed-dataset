@@ -10,6 +10,8 @@ This module creates an environment for the Lambda function.
 module Network.Serverless.Execute.Lambda.Internal.Stack
   ( withStack
   , StackInfo (..)
+  , awsUploadObject
+  , awsObjectExists
   ) where
 
 --------------------------------------------------------------------------------
@@ -18,16 +20,20 @@ import qualified Data.Text.Encoding as T
 import Data.Maybe
 import Data.List
 import Data.Monoid
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Control.Monad
-import Control.Monad.Catch
+import Control.Exception.Safe
 import qualified Stratosphere                 as S
 import qualified Data.HashMap.Strict as HM
 import Data.Aeson (Value(Object))
 import Lens.Micro
+import Lens.Micro.Extras
 import Network.AWS.Waiter
+import qualified Network.AWS.S3 as S3
 import Network.AWS hiding (environment)
 import Network.AWS.Lambda
+
 import Network.AWS.CloudFormation
 import Data.Aeson.QQ
 --------------------------------------------------------------------------------
@@ -105,7 +111,8 @@ seRole =
   S.IAMRoleProperties $
   S.iamRole assumeRolePolicy
   & S.iamrPolicies ?~
-    [ S.iamRolePolicy sqsAccessPolicy (S.Literal "sqs-access")
+    [ S.iamRolePolicy sqsAccessPolicy (S.Literal "sqs")
+    , S.iamRolePolicy cloudwatchPolicy (S.Literal "cloudwatch")
     ]
   where
     assumeRolePolicy = valueToObject [aesonQQ|
@@ -132,6 +139,20 @@ seRole =
         }]
       }
     |]
+    cloudwatchPolicy = valueToObject [aesonQQ|
+      {
+        "Version": "2012-10-17",
+        "Statement": [{
+          "Action": [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents"
+          ],
+          "Effect": "Allow",
+          "Resource": "arn:aws:logs:*:*:*"
+        }]
+      }
+    |]
     valueToObject = \case
       Object hm -> hm
       _ -> error "invariant violation"
@@ -151,6 +172,32 @@ templateOutputAnswerQueue = "answerQueue"
 
 templateOutputDeadLetterQueue :: T.Text
 templateOutputDeadLetterQueue = "deadLetterQueue"
+
+--------------------------------------------------------------------------------
+
+{-
+Before creating a stack, we need to upload the artifact to S3.
+-}
+awsUploadObject :: S3Loc -> BS.ByteString -> AWS ()
+awsUploadObject (S3Loc (BucketName bucket) path) contents = do
+  pors <- send $ S3.putObject
+                   (S3.BucketName bucket)
+                   (S3.ObjectKey path)
+                   (toBody contents)
+  unless (pors ^. S3.porsResponseStatus == 200) $
+    throwM . StackException $
+      "Upload failed. Status code: " <> T.pack (show $ pors ^. S3.porsResponseStatus)
+
+awsObjectExists :: S3Loc -> AWS Bool
+awsObjectExists (S3Loc (BucketName bucket) path) = do
+  lrs <- send $
+    S3.listObjectsV (S3.BucketName bucket)
+      & S3.lPrefix ?~ path
+  unless (lrs ^. S3.lrsResponseStatus == 200) $
+    throwM . StackException $
+      "List objects failed. Status code: " <> T.pack (show lrs)
+  let files = map (view S3.oKey) (lrs ^. S3.lrsContents)
+  return $ any (\(S3.ObjectKey k) -> k == path) files
 
 --------------------------------------------------------------------------------
 
@@ -186,40 +233,40 @@ seCreateStack (StackName stackName) (S3Loc (BucketName bucketName) path) = do
             ]
   unless (csrs ^. csrsResponseStatus == 200) $
     throwM $
-     AWSException
+     StackException
        ("CloudFormation stack creation request failed." <> T.pack (show csrs))
   stackId <-
     case csrs ^. csrsStackId of
       Nothing ->
         throwM $
-        AWSException
+        StackException
           "Could not determine stack id."
       Just xs -> return xs
 
   await stackCreateComplete (describeStacks & dStackName ?~ stackId) >>= \case
     AcceptSuccess -> return ()
     err ->
-      throwM . AWSException $ "CloudFormation stack creation failed." <> T.pack (show err)
+      throwM . StackException $ "CloudFormation stack creation failed." <> T.pack (show err)
 
   dsrs <- send $ describeStacks & dStackName ?~ stackName
   unless (dsrs ^. dsrsResponseStatus == 200) $
-    throwM . AWSException $
+    throwM . StackException $
       "CloudFormation describeStack failed. Status code: "
       <> T.pack (show $ dsrs ^. dsrsResponseStatus)
   stackRs <- case dsrs ^. dsrsStacks of
     x:[] -> return x
-    _ -> throwM $ AWSException "Unexpected answer from DescribeStacks."
+    _ -> throwM $ StackException "Unexpected answer from DescribeStacks."
 
   func <- case lookupOutput stackRs templateOutputFunc of
-    Nothing -> throwM $ AWSException "Could not determine function name."
+    Nothing -> throwM $ StackException "Could not determine function name."
     Just t -> return t
 
   answerQueue <- case lookupOutput stackRs templateOutputAnswerQueue of
-    Nothing -> throwM $ AWSException "Could not determine answerQueue URL."
+    Nothing -> throwM $ StackException "Could not determine answerQueue URL."
     Just t -> return t
 
   deadLetterQueue <- case lookupOutput stackRs templateOutputDeadLetterQueue of
-    Nothing -> throwM $ AWSException "Could not determine deadLetterQueue URL."
+    Nothing -> throwM $ StackException "Could not determine deadLetterQueue URL."
     Just t -> return t
 
   _ <- send $
@@ -243,15 +290,15 @@ seCreateStack (StackName stackName) (S3Loc (BucketName bucketName) path) = do
       st ^. sOutputs
 
 seDeleteStack :: StackInfo -> AWS ()
-seDeleteStack = void . send . deleteStack . siId
+seDeleteStack = const $ return () -- void . send . deleteStack . siId
 
 --------------------------------------------------------------------------------
 
-data AWSException
-  = AWSException T.Text
+data StackException
+  = StackException T.Text
   deriving Show
 
-instance Exception AWSException
+instance Exception StackException
 
 --------------------------------------------------------------------------------
 
@@ -261,4 +308,3 @@ withStack env name loc f = do
   where
     create = runResourceT . runAWS env $ seCreateStack name loc
     destroy = runResourceT . runAWS env . seDeleteStack
-

@@ -19,6 +19,7 @@ module Network.Serverless.Execute.Internal
 --------------------------------------------------------------------------------
 import System.IO
 import System.Exit
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Control.Distributed.Closure
 import Data.Text (Text)
@@ -79,7 +80,7 @@ type ExecutorClosure = Closure (IO ())
 --
 --   * <http://hackage.haskell.org/package/serverless-execute-aws-lambda serverless-execute-aws-lambda>
 data Backend = Backend
-  { bExecute :: BL.ByteString -> BackendM BL.ByteString
+  { bExecute :: BS.ByteString -> BackendM BS.ByteString
   -- ^ Should run the current binary in the target environment, put the given
   -- string as standard input and return the executables answer on the standard
   -- output.
@@ -118,7 +119,7 @@ runBackend dict cls (Backend backend) =
   case unclosure dict of
     Dict -> do
       let BackendM m =
-            backend $ encode @ExecutorClosure (toExecutorClosure dict cls)
+            backend $ BL.toStrict $ encode @ExecutorClosure (toExecutorClosure dict cls)
       t <- atomically (newTVar $ ExecutorPending (ExecutorWaiting Nothing))
       _ <-
         forkIO $ do
@@ -138,9 +139,9 @@ toExecutorClosure dict cls =
   case unclosure dict of
     Dict -> static (\Dict i -> i >>= BL.putStr . encode) `cap` dict `cap` cls
 
-parseAnswer :: Binary a => BL.ByteString -> ExecutorFinalStatus a
+parseAnswer :: Binary a => BS.ByteString -> ExecutorFinalStatus a
 parseAnswer bs =
-  case decodeOrFail bs of
+  case decodeOrFail (BL.fromStrict bs) of
     Left (_, _, err) -> ExecutorFailed $ "Error decoding answer: " <> T.pack err
     Right (_, _, a) -> ExecutorSucceeded a
 

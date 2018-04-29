@@ -19,9 +19,10 @@ opts = LambdaBackendOptions { _lboBucket = "serverless-batch"
 
 main :: IO ()
 main = do
-  serverlessGuard
+  initServerless
   withLambdaBackend opts $ \backend ->
-    forConcurrently_ ([1 .. 10000] :: [Int]) $ \i -> do
+    forConcurrently_ ([1 .. 100] :: [Int]) $ \i -> do
+      putStrLn $ "invoking lambda " ++ show i
       ip <- execute backend (static Dict) (static whatismyip)
       putStrLn $ "lambda " ++ show i ++ ": " ++ T.unpack ip
 

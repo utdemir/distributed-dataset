@@ -3,9 +3,12 @@
 
 --------------------------------------------------------------------------------
 import Control.Concurrent.Async
-import qualified Data.Text.Encoding as T
-import qualified Data.Text as T
+import qualified Data.Map as M
+import Data.Conduit
+import Data.Conduit.BZlib
 import Network.HTTP.Simple
+import qualified Data.Conduit.JSON.NewlineDelimited as NDJ
+import qualified Data.Conduit.Combinators as C
 --------------------------------------------------------------------------------
 import Network.Serverless.Execute
 import Network.Serverless.Execute.Lambda
@@ -19,11 +22,15 @@ opts = LambdaBackendOptions { _lboBucket = "serverless-batch"
 
 main :: IO ()
 main = do
-  serverlessGuard
+  initServerless
   withLambdaBackend opts $ \backend ->
-    forConcurrently_ ([1 .. 10000] :: [Int]) $ \i -> do
-      ip <- execute backend (static Dict) (static whatismyip)
-      putStrLn $ "lambda " ++ show i ++ ": " ++ T.unpack ip
+    undefined
 
-whatismyip :: IO T.Text
-whatismyip = T.decodeUtf8 . getResponseBody <$> httpBS "http://api.ipify.org"
+processUrl :: String -> IO (M.Map String Int)
+processUrl str = do
+  req <- parseRequest str
+  runConduitRes $
+    httpSource req getResponseBody
+      .| bunzip2
+      .| NDJ.valueParser
+      .| C.foldMap undefined
