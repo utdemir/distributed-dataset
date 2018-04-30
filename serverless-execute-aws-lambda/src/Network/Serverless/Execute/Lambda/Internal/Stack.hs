@@ -83,7 +83,7 @@ seTemplate =
            "handler.handle"
            (S.GetAtt "role" "Arn")
            (S.Literal S.Python27)
-         & S.lfTimeout ?~ S.Literal 10
+         & S.lfTimeout ?~ S.Literal 300
          & S.lfDeadLetterConfig ?~
              S.LambdaFunctionDeadLetterConfig (Just $ S.GetAtt "deadLetterQueue" "Arn")
        , S.resource "role" seRole

@@ -18,11 +18,17 @@ executables:
       - base
       - serverless-execute
       - serverless-execute-aws-lambda
+      - aeson
       - async
       - containers
+      - lens
       - lens-aeson
+      - monoidal-containers
+      - text
+      - time
+      - vector
       - conduit
       - conduit-combinators
+      - conduit-extra
       - http-conduit
-      - bzlib-conduit
       - ndjson-conduit

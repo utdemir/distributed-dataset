@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 14a3498e2a658f7c14dd669eb33e249ef92fa32254e7e21498ee257ff333a03f
+-- hash: 1904e29efe4b1391da10a60407aa0247380ecb7d150b5694b731dc59b3a555e0
 
 name:           examples
 version:        0.0.0
@@ -15,17 +15,23 @@ executable gh
       Paths_examples
   ghc-options: -Wall -static -optl-static -optl-pthread -fPIC -split-sections
   build-depends:
-      async
+      aeson
+    , async
     , base
-    , bzlib-conduit
     , conduit
     , conduit-combinators
+    , conduit-extra
     , containers
     , http-conduit
+    , lens
     , lens-aeson
+    , monoidal-containers
     , ndjson-conduit
     , serverless-execute
     , serverless-execute-aws-lambda
+    , text
+    , time
+    , vector
   default-language: Haskell2010
 
 executable lambda
