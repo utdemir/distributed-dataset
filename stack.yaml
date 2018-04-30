@@ -10,6 +10,8 @@ nix:
     - file
     - zlib
     - zlibStatic.static
+    - bzip2
+    - (bzip2.override { linkStatic = true; })
     - glibc
     - glibc.static
     - (gmp.override { withStatic = true; })

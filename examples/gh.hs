@@ -23,6 +23,7 @@ opts = LambdaBackendOptions { _lboBucket = "serverless-batch"
 main :: IO ()
 main = do
   initServerless
+
   withLambdaBackend opts $ \backend ->
     undefined
 
