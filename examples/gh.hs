@@ -2,6 +2,7 @@
 {-# LANGUAGE StaticPointers #-}
 
 --------------------------------------------------------------------------------
+import Control.Monad
 import Control.Concurrent
 import Control.Concurrent.Async
 import qualified Data.Map as M
@@ -15,6 +16,7 @@ import Data.Aeson.Lens
 import Data.Monoid
 import Control.Lens
 import Data.Time.Calendar
+import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Data.Conduit.JSON.NewlineDelimited as NDJ
@@ -34,7 +36,7 @@ main :: IO ()
 main = do
   initServerless
   withLambdaBackend opts $ \backend -> do
-    asyncs <- mapM (\u -> threadDelay (1000) >> async (spawn backend u)) urls
+    asyncs <- mapM (\u -> threadDelay 10000 >> async (spawn backend u)) urls
     result <- mconcat <$> mapM wait asyncs
     M.toList (MM.getMonoidalMap result)
       & sortOn snd
@@ -42,7 +44,7 @@ main = do
       & take 10
       & mapM_ print
 
-spawn :: Backend -> String -> IO (MM.MonoidalMap T.Text (Sum Integer))
+spawn :: Backend -> String -> IO (MM.MonoidalMap T.Text (Sum Int))
 spawn backend url = do
   putStrLn $ "Spawning function for: " ++ url
   r <- execute
@@ -55,11 +57,11 @@ spawn backend url = do
 urls :: [String]
 urls =
   [ "http://data.gharchive.org/" ++ d ++ "-" ++ t ++ ".json.gz"
-  | d <- showGregorian <$> [fromGregorian 2017 1 1 .. fromGregorian 2017 12 31]
+  | d <- showGregorian <$> [fromGregorian 2017 1 1 .. fromGregorian 2018 5 1]
   , t <- show <$> [(0::Int)..23]
   ]
 
-processUrl :: String -> IO (M.Map T.Text (Sum Integer))
+processUrl :: String -> IO (M.Map T.Text (Sum Int))
 processUrl str = do
   req <- parseRequest str
   res <- runConduitRes $
@@ -69,10 +71,11 @@ processUrl str = do
       .| C.foldMap processObject
   return $ MM.getMonoidalMap res
 
-processObject :: Value -> MM.MonoidalMap T.Text (Sum Integer)
-processObject v =
-  mconcat
-    [ maybe mempty (flip MM.singleton (Sum 1)) (c ^? key "author" . key "name" . _String)
-    | c <- maybe [] V.toList $ v ^? key "payload" . key "commits" . _Array
-    , any (T.isInfixOf "monad" . T.toLower) (c ^? key "message" . _String)
-    ]
+processObject :: Value -> MM.MonoidalMap T.Text (Sum Int)
+processObject v = fromMaybe mempty $ do
+  name <- v ^? key "actor" . key "login" . _String
+  commits <- V.toList <$> v ^? key "payload" . key "commits" . _Array
+  let msgs = catMaybes $ map (^? key "message" . _String) commits
+      count = length $ filter (T.isInfixOf "monad" . T.toLower) msgs
+  guard $ count > 0
+  return $ MM.singleton name (Sum count)
