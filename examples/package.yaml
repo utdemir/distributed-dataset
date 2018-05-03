@@ -24,6 +24,7 @@ executables:
       - lens
       - lens-aeson
       - monoidal-containers
+      - split
       - text
       - time
       - vector

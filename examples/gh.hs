@@ -2,21 +2,22 @@
 {-# LANGUAGE StaticPointers #-}
 
 --------------------------------------------------------------------------------
-import Control.Monad
-import Control.Concurrent
-import Control.Concurrent.Async
+import Control.Monad (guard)
+import Control.Concurrent (threadDelay)
+import Control.Concurrent.Async (async, wait)
 import qualified Data.Map as M
 import qualified Data.Map.Monoidal as MM
-import Data.List
-import Data.Conduit
-import Data.Conduit.Zlib
-import Network.HTTP.Simple
-import Data.Aeson
-import Data.Aeson.Lens
-import Data.Monoid
-import Control.Lens
-import Data.Time.Calendar
-import Data.Maybe
+import Data.List (sortOn)
+import Data.List.Split (chunksOf)
+import Data.Conduit ((.|), runConduitRes)
+import Data.Conduit.Zlib (ungzip)
+import Network.HTTP.Simple (parseRequest, httpSource, getResponseBody)
+import Data.Aeson (Value)
+import Data.Aeson.Lens (key, _String, _Array)
+import Data.Monoid (mconcat, Sum (Sum))
+import Control.Lens ((^?), (&))
+import Data.Time.Calendar (Day, showGregorian, fromGregorian)
+import Data.Maybe (fromMaybe, catMaybes)
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Data.Conduit.JSON.NewlineDelimited as NDJ
@@ -36,30 +37,38 @@ main :: IO ()
 main = do
   initServerless
   withLambdaBackend opts $ \backend -> do
-    asyncs <- mapM (\u -> threadDelay 10000 >> async (spawn backend u)) urls
-    result <- mconcat <$> mapM wait asyncs
-    M.toList (MM.getMonoidalMap result)
-      & sortOn snd
-      & reverse
-      & take 10
-      & mapM_ print
+    asyncs <- mapM
+      (\u -> threadDelay 10000 >> async (spawn backend u))
+      (chunksOf 5 allUrls)
+    result <- mconcat . mconcat <$> mapM wait asyncs
+    result
+      & M.toList . MM.getMonoidalMap
+      & reverse . sortOn snd
+      & mapM_ print . take 50
 
-spawn :: Backend -> String -> IO (MM.MonoidalMap T.Text (Sum Int))
-spawn backend url = do
-  putStrLn $ "Spawning function for: " ++ url
+spawn :: Backend -> [String] -> IO [MM.MonoidalMap T.Text (Sum Int)]
+spawn backend urls = do
+  putStrLn $ "Spawning function for: " ++ show urls
   r <- execute
     backend
     (static Dict)
-    (static processUrl `cap` cpure (static Dict) url)
-  putStrLn $ "Got response from: " ++ url
-  return $ MM.MonoidalMap r
+    (static (mapM processUrl) `cap` cpure (static Dict) urls)
+  putStrLn $ "Got response from: " ++ show urls
+  return $ MM.MonoidalMap <$> r
 
-urls :: [String]
-urls =
+
+allUrls :: [String]
+allUrls =
   [ "http://data.gharchive.org/" ++ d ++ "-" ++ t ++ ".json.gz"
-  | d <- showGregorian <$> [fromGregorian 2017 1 1 .. fromGregorian 2018 5 1]
+  | d <- showGregorian <$> [startDate .. endDate]
   , t <- show <$> [(0::Int)..23]
   ]
+
+startDate :: Day
+startDate = fromGregorian 2017 12 1
+
+endDate :: Day
+endDate = fromGregorian 2017 31 31
 
 processUrl :: String -> IO (M.Map T.Text (Sum Int))
 processUrl str = do
