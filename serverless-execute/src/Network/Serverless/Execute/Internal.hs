@@ -1,9 +1,9 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE StaticPointers #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StaticPointers             #-}
+{-# LANGUAGE TypeApplications           #-}
 
 module Network.Serverless.Execute.Internal
   ( const_SERVERLESS_EXECUTOR_MODE
@@ -17,22 +17,22 @@ module Network.Serverless.Execute.Internal
   ) where
 
 --------------------------------------------------------------------------------
-import System.IO
-import System.Exit
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BL
-import Control.Distributed.Closure
-import Data.Text (Text)
-import Data.Binary
-import qualified Data.Text as T
-import Control.Monad.Catch
-import Control.Concurrent.STM
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Reader
-import Data.Void
-import Data.Monoid ((<>))
-import System.Environment
-import Control.Concurrent
+import           Control.Concurrent
+import           Control.Concurrent.STM
+import           Control.Distributed.Closure
+import           Control.Monad.Catch
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Reader
+import           Data.Binary
+import qualified Data.ByteString             as BS
+import qualified Data.ByteString.Lazy        as BL
+import           Data.Monoid                 ((<>))
+import           Data.Text                   (Text)
+import qualified Data.Text                   as T
+import           Data.Void
+import           System.Environment
+import           System.Exit
+import           System.IO
 --------------------------------------------------------------------------------
 
 -- |
@@ -133,7 +133,7 @@ runBackend dict cls (Backend backend) =
           atomically $ writeTVar t (ExecutorFinished r)
           return ()
       return t
-  
+
 toExecutorClosure :: Closure (Dict (Serializable a)) -> Closure (IO a) -> Closure (IO ())
 toExecutorClosure dict cls =
   case unclosure dict of

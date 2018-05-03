@@ -1,21 +1,22 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE StaticPointers #-}
+{-# LANGUAGE StaticPointers      #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Main where
 
 --------------------------------------------------------------------------------
-import Data.Functor
-import Network.AWS (newEnv, Credentials(Discover))
-import Network.AWS.Auth (AuthError)
-import Test.Tasty
-import Test.Tasty.HUnit
-import Control.Exception
-import Control.Concurrent
+import           Control.Concurrent
+import           Control.Exception
+import           Data.Functor
+import           Network.AWS                       (Credentials (Discover),
+                                                    newEnv)
+import           Network.AWS.Auth                  (AuthError)
+import           Test.Tasty
+import           Test.Tasty.HUnit
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute
-import Network.Serverless.Execute.Lambda
+import           Network.Serverless.Execute
+import           Network.Serverless.Execute.Lambda
 --------------------------------------------------------------------------------
 
 main :: IO ()

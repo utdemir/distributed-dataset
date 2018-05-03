@@ -1,7 +1,7 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE BinaryLiterals #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE BinaryLiterals    #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 {-
 This module contains the executables for the Lambda function.
@@ -15,20 +15,21 @@ module Network.Serverless.Execute.Lambda.Internal.Archive
   ) where
 
 --------------------------------------------------------------------------------
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
-import Data.Digest.Pure.SHA
-import Data.String.Interpolate
-import System.Process.Typed
-import Control.Exception
-import Codec.Archive.Zip hiding (Archive)
-import Control.Monad
-import Data.Function
+import           Codec.Archive.Zip                                    hiding
+                                                                       (Archive)
+import           Control.Exception
+import           Control.Monad
+import qualified Data.ByteString                                      as BS
+import qualified Data.ByteString.Lazy                                 as BL
+import           Data.Digest.Pure.SHA
+import           Data.Function
+import           Data.String.Interpolate
+import qualified Data.Text                                            as T
+import qualified Data.Text.Encoding                                   as T
+import           System.Process.Typed
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute.Backend
-import Network.Serverless.Execute.Lambda.Internal.Constants
+import           Network.Serverless.Execute.Backend
+import           Network.Serverless.Execute.Lambda.Internal.Constants
 --------------------------------------------------------------------------------
 
 {-

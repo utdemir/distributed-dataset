@@ -1,7 +1,7 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 {-
 This module creates an environment for the Lambda function.
@@ -15,30 +15,30 @@ module Network.Serverless.Execute.Lambda.Internal.Stack
   ) where
 
 --------------------------------------------------------------------------------
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
-import Data.Maybe
-import Data.List
-import Data.Monoid
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BL
-import Control.Monad
-import Control.Exception.Safe
-import qualified Stratosphere                 as S
-import qualified Data.HashMap.Strict as HM
-import Data.Aeson (Value(Object))
-import Lens.Micro
-import Lens.Micro.Extras
-import Network.AWS.Waiter
-import qualified Network.AWS.S3 as S3
-import Network.AWS hiding (environment)
-import Network.AWS.Lambda
+import           Control.Exception.Safe
+import           Control.Monad
+import           Data.Aeson                                           (Value (Object))
+import qualified Data.ByteString                                      as BS
+import qualified Data.ByteString.Lazy                                 as BL
+import qualified Data.HashMap.Strict                                  as HM
+import           Data.List
+import           Data.Maybe
+import           Data.Monoid
+import qualified Data.Text                                            as T
+import qualified Data.Text.Encoding                                   as T
+import           Lens.Micro
+import           Lens.Micro.Extras
+import           Network.AWS                                          hiding (environment)
+import           Network.AWS.Lambda
+import qualified Network.AWS.S3                                       as S3
+import           Network.AWS.Waiter
+import qualified Stratosphere                                         as S
 
-import Network.AWS.CloudFormation
-import Data.Aeson.QQ
+import           Data.Aeson.QQ
+import           Network.AWS.CloudFormation
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute.Lambda.Internal.Types
-import Network.Serverless.Execute.Lambda.Internal.Constants
+import           Network.Serverless.Execute.Lambda.Internal.Constants
+import           Network.Serverless.Execute.Lambda.Internal.Types
 --------------------------------------------------------------------------------
 
 {-
@@ -210,9 +210,9 @@ not support referring to stack variables inside, so we need to patch the functio
 afterwards to add the URL to the environment
 -}
 data StackInfo = StackInfo
-  { siId :: T.Text
-  , siFunc :: T.Text
-  , siAnswerQueue :: T.Text
+  { siId              :: T.Text
+  , siFunc            :: T.Text
+  , siAnswerQueue     :: T.Text
   , siDeadLetterQueue :: T.Text
   }
 
@@ -255,15 +255,15 @@ seCreateStack (StackName stackName) (S3Loc (BucketName bucketName) path) = do
       <> T.pack (show $ dsrs ^. dsrsResponseStatus)
   stackRs <- case dsrs ^. dsrsStacks of
     x:[] -> return x
-    _ -> throwM $ StackException "Unexpected answer from DescribeStacks."
+    _    -> throwM $ StackException "Unexpected answer from DescribeStacks."
 
   func <- case lookupOutput stackRs templateOutputFunc of
     Nothing -> throwM $ StackException "Could not determine function name."
-    Just t -> return t
+    Just t  -> return t
 
   answerQueue <- case lookupOutput stackRs templateOutputAnswerQueue of
     Nothing -> throwM $ StackException "Could not determine answerQueue URL."
-    Just t -> return t
+    Just t  -> return t
 
   deadLetterQueue <- case lookupOutput stackRs templateOutputDeadLetterQueue of
     Nothing -> throwM $ StackException "Could not determine deadLetterQueue URL."

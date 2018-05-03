@@ -1,10 +1,10 @@
 module Network.Serverless.Execute.LocalProcessBackend where
 
 --------------------------------------------------------------------------------
-import System.Process.Typed
-import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy               as BL
+import           System.Process.Typed
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute.Backend
+import           Network.Serverless.Execute.Backend
 --------------------------------------------------------------------------------
 
 -- |

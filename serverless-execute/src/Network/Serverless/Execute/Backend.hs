@@ -26,12 +26,12 @@ module Network.Serverless.Execute.Backend
   ) where
 
 --------------------------------------------------------------------------------
-import System.Environment
-import Data.Text (Text)
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Reader
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Reader
+import           Data.Text                           (Text)
+import           System.Environment
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute.Internal
+import           Network.Serverless.Execute.Internal
 --------------------------------------------------------------------------------
 
 pendingStatus :: ExecutorPendingStatus -> BackendM ()

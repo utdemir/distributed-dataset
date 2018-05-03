@@ -1,35 +1,35 @@
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module Network.Serverless.Execute.Lambda.Internal.Invoke
   ( withInvoke
   ) where
 
 --------------------------------------------------------------------------------
-import qualified Data.ByteString as BS
-import qualified Data.Map.Strict as M
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
-import qualified Data.HashMap.Strict as HM
-import Control.Concurrent.Async
-import Text.Read
-import Data.Maybe
-import Lens.Micro
-import Data.Monoid
-import Control.Exception.Safe
-import Data.ByteString.Base64 as B64
-import Data.Aeson (toJSON)
-import Control.Monad
-import Control.Concurrent.MVar
-import Network.AWS
-import Network.AWS.SQS
-import Network.AWS.Lambda
+import           Control.Concurrent.Async
+import           Control.Concurrent.MVar
+import           Control.Exception.Safe
+import           Control.Monad
+import           Data.Aeson                                       (toJSON)
+import qualified Data.ByteString                                  as BS
+import           Data.ByteString.Base64                           as B64
+import qualified Data.HashMap.Strict                              as HM
+import qualified Data.Map.Strict                                  as M
+import           Data.Maybe
+import           Data.Monoid
+import qualified Data.Text                                        as T
+import qualified Data.Text.Encoding                               as T
+import           Lens.Micro
+import           Network.AWS
+import           Network.AWS.Lambda
+import           Network.AWS.SQS
+import           Text.Read
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute.Backend
-import Network.Serverless.Execute.Lambda.Internal.Stack (StackInfo (..))
-import Network.AWS.Lambda.Invoke.Fixed
+import           Network.AWS.Lambda.Invoke.Fixed
+import           Network.Serverless.Execute.Backend
+import           Network.Serverless.Execute.Lambda.Internal.Stack (StackInfo (..))
 --------------------------------------------------------------------------------
 
 {-
@@ -41,13 +41,13 @@ the responses.
 -}
 data LambdaState = LambdaState
   { lsInvocations :: M.Map Int (IO BS.ByteString -> IO ())
-  , lsNextId :: Int
+  , lsNextId      :: Int
   }
 
 data LambdaEnv = LambdaEnv
   { leState :: MVar LambdaState
   , leStack :: StackInfo
-  , leEnv :: Env
+  , leEnv   :: Env
   }
 
 newLambdaEnv :: Env -> StackInfo -> IO LambdaEnv

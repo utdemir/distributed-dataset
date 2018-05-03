@@ -3,7 +3,7 @@
 module Network.Serverless.Execute.Lambda.Internal.Types where
 
 --------------------------------------------------------------------------------
-import Data.Text (Text)
+import           Data.Text (Text)
 --------------------------------------------------------------------------------
 
 newtype BucketName = BucketName Text

@@ -3,7 +3,7 @@
 module Network.Serverless.Execute.Lambda.Internal.Constants where
 
 --------------------------------------------------------------------------------
-import Data.Text (Text)
+import           Data.Text (Text)
 --------------------------------------------------------------------------------
 
 hsMainName :: String

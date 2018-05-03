@@ -1,13 +1,13 @@
-{-# LANGUAGE TypeFamilies       #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving       #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module Network.AWS.Lambda.Invoke.Fixed where
 
 --------------------------------------------------------------------------------
-import Network.AWS.Lambda
-import Network.AWS.Prelude
-import Network.AWS.Request
-import Network.AWS.Response
+import           Network.AWS.Lambda
+import           Network.AWS.Prelude
+import           Network.AWS.Request
+import           Network.AWS.Response
 --------------------------------------------------------------------------------
 
 newtype FixedInvoke = FixedInvoke Invoke

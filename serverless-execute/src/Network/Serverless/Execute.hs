@@ -16,13 +16,13 @@ module Network.Serverless.Execute
   ) where
 
 --------------------------------------------------------------------------------
-import Data.Text (Text)
-import Control.Monad.IO.Class
-import Control.Monad.Catch
-import Control.Distributed.Closure
-import Control.Concurrent.STM
+import           Control.Concurrent.STM
+import           Control.Distributed.Closure
+import           Control.Monad.Catch
+import           Control.Monad.IO.Class
+import           Data.Text                           (Text)
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute.Internal
+import           Network.Serverless.Execute.Internal
 --------------------------------------------------------------------------------
 
 -- |
@@ -45,7 +45,7 @@ execute b d c = do
       ExecutorPending _ -> retry
       ExecutorFinished a -> return a
   case r of
-    ExecutorFailed err -> throwM $ ExecutorFailedException err
+    ExecutorFailed err  -> throwM $ ExecutorFailedException err
     ExecutorSucceeded a -> return a
 
 spawnInternal ::

@@ -1,30 +1,32 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE StaticPointers #-}
+{-# LANGUAGE StaticPointers    #-}
 
 --------------------------------------------------------------------------------
-import Control.Monad (guard)
-import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (async, wait)
-import qualified Data.Map as M
-import qualified Data.Map.Monoidal as MM
-import Data.List (sortOn)
-import Data.List.Split (chunksOf)
-import Data.Conduit ((.|), runConduitRes)
-import Data.Conduit.Zlib (ungzip)
-import Network.HTTP.Simple (parseRequest, httpSource, getResponseBody)
-import Data.Aeson (Value)
-import Data.Aeson.Lens (key, _String, _Array)
-import Data.Monoid (mconcat, Sum (Sum))
-import Control.Lens ((^?), (&))
-import Data.Time.Calendar (Day, showGregorian, fromGregorian)
-import Data.Maybe (fromMaybe, catMaybes)
-import qualified Data.Text as T
-import qualified Data.Vector as V
+import           Control.Concurrent                 (threadDelay)
+import           Control.Concurrent.Async           (async, wait)
+import           Control.Lens                       ((&), (^?))
+import           Control.Monad                      (guard)
+import           Data.Aeson                         (Value)
+import           Data.Aeson.Lens                    (key, _Array, _String)
+import           Data.Conduit                       (runConduitRes, (.|))
+import qualified Data.Conduit.Combinators           as C
 import qualified Data.Conduit.JSON.NewlineDelimited as NDJ
-import qualified Data.Conduit.Combinators as C
+import           Data.Conduit.Zlib                  (ungzip)
+import           Data.List                          (sortOn)
+import           Data.List.Split                    (chunksOf)
+import qualified Data.Map                           as M
+import qualified Data.Map.Monoidal                  as MM
+import           Data.Maybe                         (catMaybes, fromMaybe)
+import           Data.Monoid                        (Sum (Sum), mconcat)
+import qualified Data.Text                          as T
+import           Data.Time.Calendar                 (Day, fromGregorian,
+                                                     showGregorian)
+import qualified Data.Vector                        as V
+import           Network.HTTP.Simple                (getResponseBody,
+                                                     httpSource, parseRequest)
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute
-import Network.Serverless.Execute.Lambda
+import           Network.Serverless.Execute
+import           Network.Serverless.Execute.Lambda
 --------------------------------------------------------------------------------
 
 opts :: LambdaBackendOptions

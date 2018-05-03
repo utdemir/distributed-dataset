@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE StaticPointers #-}
+{-# LANGUAGE StaticPointers    #-}
 
 --------------------------------------------------------------------------------
-import Control.Concurrent.Async
-import qualified Data.Text.Encoding as T
-import qualified Data.Text as T
-import Network.HTTP.Simple
+import           Control.Concurrent.Async          (forConcurrently_)
+import qualified Data.Text                         as T
+import qualified Data.Text.Encoding                as T
+import           Network.HTTP.Simple               (getResponseBody, httpBS)
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute
-import Network.Serverless.Execute.Lambda
+import           Network.Serverless.Execute
+import           Network.Serverless.Execute.Lambda
 --------------------------------------------------------------------------------
 
 opts :: LambdaBackendOptions

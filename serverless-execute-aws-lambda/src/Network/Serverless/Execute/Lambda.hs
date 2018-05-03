@@ -1,6 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module Network.Serverless.Execute.Lambda
   ( withLambdaBackend
@@ -8,25 +8,25 @@ module Network.Serverless.Execute.Lambda
   ) where
 
 --------------------------------------------------------------------------------
-import Network.AWS
-import qualified Data.Text as T
-import Data.Monoid
-import Network.Serverless.Execute.Backend
-import Data.Time.Clock
-import Data.Bool
-import Data.Time.Format
-import Lens.Micro
-import Fmt
+import           Data.Bool
+import           Data.Monoid
+import qualified Data.Text                                          as T
+import           Data.Time.Clock
+import           Data.Time.Format
+import           Fmt
+import           Lens.Micro
+import           Network.AWS
+import           Network.Serverless.Execute.Backend
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute.Lambda.Internal.Stack
-import Network.Serverless.Execute.Lambda.Internal.Invoke
-import Network.Serverless.Execute.Lambda.Internal.Archive
-import Network.Serverless.Execute.Lambda.Internal.Types
+import           Network.Serverless.Execute.Lambda.Internal.Archive
+import           Network.Serverless.Execute.Lambda.Internal.Invoke
+import           Network.Serverless.Execute.Lambda.Internal.Stack
+import           Network.Serverless.Execute.Lambda.Internal.Types
 --------------------------------------------------------------------------------
 
 data LambdaBackendOptions = LambdaBackendOptions
-  { _lboBucket :: T.Text
-  , _lboPrefix :: T.Text
+  { _lboBucket      :: T.Text
+  , _lboPrefix      :: T.Text
   , _lboStackPrefix :: T.Text
   }
 

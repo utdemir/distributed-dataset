@@ -3,12 +3,12 @@
 module Main where
 
 --------------------------------------------------------------------------------
-import System.Posix.Process
-import Test.Tasty
-import Test.Tasty.HUnit
+import           System.Posix.Process
+import           Test.Tasty
+import           Test.Tasty.HUnit
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute
-import Network.Serverless.Execute.LocalProcessBackend
+import           Network.Serverless.Execute
+import           Network.Serverless.Execute.LocalProcessBackend
 --------------------------------------------------------------------------------
 
 main :: IO ()
