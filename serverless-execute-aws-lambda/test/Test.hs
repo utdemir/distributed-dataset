@@ -1,17 +1,13 @@
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StaticPointers      #-}
-{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StaticPointers    #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module Main where
 
 --------------------------------------------------------------------------------
 import           Control.Concurrent
-import           Control.Exception
-import           Data.Functor
-import           Network.AWS                       (Credentials (Discover),
-                                                    newEnv)
-import           Network.AWS.Auth                  (AuthError)
+import           System.Environment
 import           Test.Tasty
 import           Test.Tasty.HUnit
 --------------------------------------------------------------------------------
@@ -22,14 +18,9 @@ import           Network.Serverless.Execute.Lambda
 main :: IO ()
 main = do
   initServerless
-  aws <- hasAWSEnv
-  if aws
-    then defaultMain tests
-    else putStrLn "AWS credentials not found, skipping tests."
-
-hasAWSEnv :: IO Bool
-hasAWSEnv =
-  (newEnv Discover $> True) `catch` (\(_ :: AuthError) -> return False)
+  lookupEnv "ENABLE_AWS_TESTS" >>= \case
+    Nothing -> putStrLn "ENV[ENABLE_AWS_TESTS] is not set, skipping."
+    Just _ -> defaultMain tests
 
 opts :: LambdaBackendOptions
 opts = LambdaBackendOptions { _lboBucket = "serverless-batch"
