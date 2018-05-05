@@ -6,7 +6,7 @@ packages:
   - examples
 
 extra-deps:
-  - git: git@github.com:brendanhay/amazonka
+  - git: https://github.com/brendanhay/amazonka.git
     commit: 9aa47c267631339a32a1a4ea373b1319145662e2
     subdirs:
       - core
