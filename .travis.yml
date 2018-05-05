@@ -26,7 +26,7 @@ matrix:
       compiler: ": #stack default"
       addons: {apt: {packages: [libgmp-dev]}}
     - env: BUILD=stack ARGS="--stack-yaml lts-11.7.yaml"
-      compiler: ": #stack 7.8.4"
+      compiler: ": #stack 11.7"
       addons: {apt: {packages: [libgmp-dev]}}
     - env: BUILD=stack ARGS="--resolver nightly"
       compiler: ": #stack nightly"

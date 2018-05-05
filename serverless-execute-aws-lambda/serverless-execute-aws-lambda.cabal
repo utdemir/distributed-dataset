@@ -40,7 +40,6 @@ library
                      , fmt
                      , interpolate
                      , microlens
-                     , microlens-th
                      , random
                      , stratosphere < 0.15.0
                      , text

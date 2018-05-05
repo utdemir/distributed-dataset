@@ -41,7 +41,7 @@ const_SERVERLESS_EXECUTOR_MODE :: String
 const_SERVERLESS_EXECUTOR_MODE = "SERVERLESS_EXECUTOR_MODE"
 
 -- |
--- On serverless-execute, we run the same binary both in the users machine (called
+-- On serverless-execute, we run the same binary both in your machine (called
 -- "driver") and in the remote environment (called "executor"). In order for the
 -- program to act according to where it is, you should call this function as the
 -- first thing in your @main@:

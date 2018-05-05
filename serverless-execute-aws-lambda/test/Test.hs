@@ -23,10 +23,7 @@ main = do
     Just _ -> defaultMain tests
 
 opts :: LambdaBackendOptions
-opts = LambdaBackendOptions { _lboBucket = "serverless-batch"
-                            , _lboPrefix = "testprefix"
-                            , _lboStackPrefix = "serverlessbatchtest"
-                            }
+opts = lambdaBackendOptions "serverless-batch"
 
 tests :: TestTree
 tests =

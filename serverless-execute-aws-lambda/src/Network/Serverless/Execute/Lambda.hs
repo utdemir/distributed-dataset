@@ -1,15 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeApplications  #-}
 
 module Network.Serverless.Execute.Lambda
   ( withLambdaBackend
+  -- * Options
   , LambdaBackendOptions
   , lambdaBackendOptions
-  , lboBucket
   , lboPrefix
-  , lboStackPrefix
   , lboMemory
   ) where
 
@@ -22,8 +20,7 @@ import           Data.Time.Format                                   (defaultTime
                                                                      formatTime)
 import           Fmt                                                (fixedF,
                                                                      (+|), (|+))
-import           Lens.Micro                                         ((^.))
-import           Lens.Micro.TH                                      (makeLenses)
+import           Lens.Micro                                         ((^.), Lens', lens)
 import           Network.AWS                                        (Credentials (Discover),
                                                                      envRegion,
                                                                      newEnv,
@@ -36,24 +33,6 @@ import           Network.Serverless.Execute.Lambda.Internal.Invoke
 import           Network.Serverless.Execute.Lambda.Internal.Stack
 import           Network.Serverless.Execute.Lambda.Internal.Types
 --------------------------------------------------------------------------------
-
-data LambdaBackendOptions = LambdaBackendOptions
-  { _lboBucket      :: T.Text
-  , _lboPrefix      :: T.Text
-  , _lboStackPrefix :: T.Text
-  , _lboMemory      :: Int
-  }
-
-makeLenses ''LambdaBackendOptions
-
-lambdaBackendOptions :: T.Text -> LambdaBackendOptions
-lambdaBackendOptions bucket =
-  LambdaBackendOptions { _lboBucket = bucket
-                       , _lboPrefix = "serverless-execute"
-                       , _lboStackPrefix = "serverless-execute"
-                       , _lboMemory = 128
-                       }
-
 
 withLambdaBackend :: LambdaBackendOptions -> (Backend -> IO a) -> IO a
 withLambdaBackend LambdaBackendOptions {..} f = do
@@ -78,7 +57,7 @@ withLambdaBackend LambdaBackendOptions {..} f = do
   time <-
     T.pack . formatTime defaultTimeLocale "%Y%m%d%H%M%S" <$> getCurrentTime
   let stackOptions =
-        StackOptions { soName = StackName (_lboStackPrefix <> "-" <> time <> "-" <> cksum)
+        StackOptions { soName = StackName (_lboPrefix <> "-" <> time <> "-" <> cksum)
                      , soLambdaMemory = _lboMemory
                      , soLambdaCode = s3loc
                      }
@@ -92,3 +71,30 @@ withLambdaBackend LambdaBackendOptions {..} f = do
     putStrLn $ "Dead Letter Queue: " +| siDeadLetterQueue si |+ ""
     withInvoke env si $ \invoke ->
       f $ Backend invoke
+
+--------------------------------------------------------------------------------
+
+data LambdaBackendOptions = LambdaBackendOptions
+  { _lboBucket      :: T.Text
+  , _lboPrefix      :: T.Text
+  , _lboMemory      :: Int
+  }
+
+lambdaBackendOptions :: T.Text -- Name of the S3 bucket to store the deployment archive in.
+                     -> LambdaBackendOptions
+lambdaBackendOptions bucket =
+  LambdaBackendOptions { _lboBucket = bucket
+                       , _lboPrefix = "serverless-execute"
+                       , _lboMemory = 128
+                       }
+
+-- | Desired memory for the Lambda functions.
+--   Default: 128
+lboMemory :: Lens' LambdaBackendOptions Int
+lboMemory = lens _lboMemory (\s t -> s { _lboMemory = t })
+
+-- | Prefix of the name of deployment archive and the CloudFormation stack.
+--   Default: "serverless-execute"
+lboPrefix :: Lens' LambdaBackendOptions T.Text
+lboPrefix = lens _lboPrefix (\s t -> s { _lboPrefix = t })
+
