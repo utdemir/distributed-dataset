@@ -42,7 +42,7 @@ library
                      , microlens
                      , microlens-th
                      , random
-                     , stratosphere >= 0.14.0 && < 0.15.0
+                     , stratosphere < 0.15.0
                      , text
                      , time
                      , transformers
