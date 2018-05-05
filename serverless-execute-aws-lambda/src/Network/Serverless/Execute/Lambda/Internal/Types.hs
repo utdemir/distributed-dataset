@@ -17,3 +17,9 @@ newtype StackName = StackName { unStackName :: Text }
 
 newtype LambdaId = LambdaId Text
   deriving (Eq, Show)
+
+data StackOptions =
+  StackOptions { soName :: StackName
+               , soLambdaMemory :: Int
+               , soLambdaCode :: S3Loc
+               }

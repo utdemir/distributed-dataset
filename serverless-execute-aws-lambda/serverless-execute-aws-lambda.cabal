@@ -40,8 +40,9 @@ library
                      , fmt
                      , interpolate
                      , microlens
+                     , microlens-th
                      , random
-                     , stratosphere
+                     , stratosphere >= 0.14.0 && < 0.15.0
                      , text
                      , time
                      , transformers

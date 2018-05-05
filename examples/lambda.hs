@@ -12,10 +12,7 @@ import           Network.Serverless.Execute.Lambda
 --------------------------------------------------------------------------------
 
 opts :: LambdaBackendOptions
-opts = LambdaBackendOptions { _lboBucket = "serverless-batch"
-                            , _lboPrefix = "testprefix"
-                            , _lboStackPrefix = "serverlessbatchtest"
-                            }
+opts = lambdaBackendOptions "serverless-batch"
 
 main :: IO ()
 main = do

@@ -10,10 +10,11 @@ extra-deps:
     commit: 9aa47c267631339a32a1a4ea373b1319145662e2
     subdirs:
       - core
-      - cloudformiation
-      - lambda
-      - s3
-      - sqs
+      - amazonka
+      - amazonka-cloudformation
+      - amazonka-lambda
+      - amazonka-s3
+      - amazonka-sqs
 
 nix:
   packages:

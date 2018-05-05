@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -32,8 +34,7 @@ import           Network.AWS                                          hiding (en
 import           Network.AWS.Lambda
 import qualified Network.AWS.S3                                       as S3
 import           Network.AWS.Waiter
-import qualified Stratosphere                                         as S
-
+import qualified Stratosphere             as S
 import           Data.Aeson.QQ
 import           Network.AWS.CloudFormation
 --------------------------------------------------------------------------------
@@ -70,8 +71,8 @@ The components are:
     an SQS queue (answerQueue) to gather the results. We use another queue
     (deadLetterQueue) for collecting the failures.
 -}
-seTemplate :: S.Template
-seTemplate =
+seTemplate :: StackOptions -> S.Template
+seTemplate StackOptions{..} =
   S.template
     (S.Resources
        [ S.resource "func" $
@@ -84,6 +85,7 @@ seTemplate =
            (S.GetAtt "role" "Arn")
            (S.Literal S.Python27)
          & S.lfTimeout ?~ S.Literal 300
+         & S.lfMemorySize ?~ S.Literal (fromIntegral soLambdaMemory)
          & S.lfDeadLetterConfig ?~
              S.LambdaFunctionDeadLetterConfig (Just $ S.GetAtt "deadLetterQueue" "Arn")
        , S.resource "role" seRole
@@ -216,12 +218,14 @@ data StackInfo = StackInfo
   , siDeadLetterQueue :: T.Text
   }
 
-seCreateStack :: StackName -> S3Loc -> AWS StackInfo
-seCreateStack (StackName stackName) (S3Loc (BucketName bucketName) path) = do
+seCreateStack :: StackOptions -> AWS StackInfo
+seCreateStack options@(StackOptions { soName = StackName stackName
+                                    , soLambdaCode = S3Loc (BucketName bucketName) path}) = do
   csrs <-
     send $
       createStack stackName
-        & csTemplateBody ?~ (T.decodeUtf8 . BL.toStrict $ S.encodeTemplate seTemplate)
+        & csTemplateBody ?~
+            (T.decodeUtf8 . BL.toStrict . S.encodeTemplate $ seTemplate options)
         & csCapabilities .~ [CapabilityIAM]
         & csParameters .~
             [ parameter
@@ -302,9 +306,9 @@ instance Exception StackException
 
 --------------------------------------------------------------------------------
 
-withStack :: Env -> StackName -> S3Loc -> (StackInfo -> IO a) -> IO a
-withStack env name loc f = do
+withStack :: StackOptions -> Env -> (StackInfo -> IO a) -> IO a
+withStack opts env f = do
   bracket create destroy f
   where
-    create = runResourceT . runAWS env $ seCreateStack name loc
+    create = runResourceT . runAWS env $ seCreateStack opts
     destroy = runResourceT . runAWS env . seDeleteStack

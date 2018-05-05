@@ -1,23 +1,36 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeApplications  #-}
 
 module Network.Serverless.Execute.Lambda
   ( withLambdaBackend
-  , LambdaBackendOptions(..)
+  , LambdaBackendOptions
+  , lambdaBackendOptions
+  , lboBucket
+  , lboPrefix
+  , lboStackPrefix
+  , lboMemory
   ) where
 
 --------------------------------------------------------------------------------
-import           Data.Bool
-import           Data.Monoid
+import           Data.Bool                                          (bool)
+import           Data.Monoid                                        ((<>))
 import qualified Data.Text                                          as T
-import           Data.Time.Clock
-import           Data.Time.Format
-import           Fmt
-import           Lens.Micro
-import           Network.AWS
-import           Network.Serverless.Execute.Backend
+import           Data.Time.Clock                                    (getCurrentTime)
+import           Data.Time.Format                                   (defaultTimeLocale,
+                                                                     formatTime)
+import           Fmt                                                (fixedF,
+                                                                     (+|), (|+))
+import           Lens.Micro                                         ((^.))
+import           Lens.Micro.TH                                      (makeLenses)
+import           Network.AWS                                        (Credentials (Discover),
+                                                                     envRegion,
+                                                                     newEnv,
+                                                                     runAWS,
+                                                                     runResourceT)
 --------------------------------------------------------------------------------
+import           Network.Serverless.Execute.Backend
 import           Network.Serverless.Execute.Lambda.Internal.Archive
 import           Network.Serverless.Execute.Lambda.Internal.Invoke
 import           Network.Serverless.Execute.Lambda.Internal.Stack
@@ -28,7 +41,19 @@ data LambdaBackendOptions = LambdaBackendOptions
   { _lboBucket      :: T.Text
   , _lboPrefix      :: T.Text
   , _lboStackPrefix :: T.Text
+  , _lboMemory      :: Int
   }
+
+makeLenses ''LambdaBackendOptions
+
+lambdaBackendOptions :: T.Text -> LambdaBackendOptions
+lambdaBackendOptions bucket =
+  LambdaBackendOptions { _lboBucket = bucket
+                       , _lboPrefix = "serverless-execute"
+                       , _lboStackPrefix = "serverless-execute"
+                       , _lboMemory = 128
+                       }
+
 
 withLambdaBackend :: LambdaBackendOptions -> (Backend -> IO a) -> IO a
 withLambdaBackend LambdaBackendOptions {..} f = do
@@ -52,10 +77,14 @@ withLambdaBackend LambdaBackendOptions {..} f = do
 
   time <-
     T.pack . formatTime defaultTimeLocale "%Y%m%d%H%M%S" <$> getCurrentTime
-  let stackName = StackName (_lboStackPrefix <> "-" <> time <> "-" <> cksum)
+  let stackOptions =
+        StackOptions { soName = StackName (_lboStackPrefix <> "-" <> time <> "-" <> cksum)
+                     , soLambdaMemory = _lboMemory
+                     , soLambdaCode = s3loc
+                     }
 
   putStrLn "Creating stack."
-  withStack env stackName s3loc $ \si -> do
+  withStack stackOptions env $ \si -> do
     putStrLn "Stack created."
     putStrLn $ "Stack Id: " +| siId si |+ ""
     putStrLn $ "Func: " +| siFunc si |+ ""

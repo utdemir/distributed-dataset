@@ -156,7 +156,8 @@ sqsReceiveSome queue = do
 withInvoke :: Env -> StackInfo -> ((BS.ByteString -> BackendM BS.ByteString) -> IO a) -> IO a
 withInvoke env stack f = do
   le <- newLambdaEnv env stack
-  _ <- async $ catchAny (answerThread le) $ \ex -> print ex
+  void . sequence . replicate 4 $
+    async $ catchAny (answerThread le) $ \ex -> print ex
   f $ liftIO . execute le
 
 --------------------------------------------------------------------------------
