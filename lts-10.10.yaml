@@ -1,0 +1,22 @@
+resolver: lts-10.10
+
+packages:
+  - serverless-execute
+  - serverless-execute-aws-lambda
+  - examples
+
+extra-deps:
+  - async-pool-0.9.0.2
+  - http-client-0.5.12.1
+
+nix:
+  packages:
+    - file
+    - zlib
+    - zlibStatic.static
+    - bzip2
+    - (bzip2.override { linkStatic = true; })
+    - glibc
+    - glibc.static
+    - (gmp.override { withStatic = true; })
+    - unzip

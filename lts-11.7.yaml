@@ -1,0 +1,28 @@
+resolver: lts-11.7
+
+packages:
+  - serverless-execute
+  - serverless-execute-aws-lambda
+  - examples
+
+extra-deps:
+  - git: git@github.com:brendanhay/amazonka
+    commit: 9aa47c267631339a32a1a4ea373b1319145662e2
+    subdirs:
+      - core
+      - cloudformiation
+      - lambda
+      - s3
+      - sqs
+
+nix:
+  packages:
+    - file
+    - zlib
+    - zlibStatic.static
+    - bzip2
+    - (bzip2.override { linkStatic = true; })
+    - glibc
+    - glibc.static
+    - (gmp.override { withStatic = true; })
+    - unzip
