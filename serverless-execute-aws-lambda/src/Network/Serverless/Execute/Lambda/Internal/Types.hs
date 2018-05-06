@@ -15,9 +15,6 @@ data S3Loc = S3Loc BucketName Text
 newtype StackName = StackName { unStackName :: Text }
   deriving (Eq, Show)
 
-newtype LambdaId = LambdaId Text
-  deriving (Eq, Show)
-
 data StackOptions =
   StackOptions { soName :: StackName
                , soLambdaMemory :: Int

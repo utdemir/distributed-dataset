@@ -1,9 +1,32 @@
 {-# LANGUAGE LambdaCase #-}
 
+-- |
+-- This module provides a common interface for executing IO actions on FaaS (Function
+-- as a Service) providers like <https://aws.amazon.com/lambda AWS Lambda>.
+--
+-- It uses @StaticPointers@ language extension and 'distributed-closure' library
+-- for serializing closures to run remotely.
+-- <https://ocharles.org.uk/blog/guest-posts/2014-12-23-static-pointers.html This blog post>
+-- is a good introduction for those.
+--
+-- In short, if you you need a @'Closure' a@:
+--
+--     * If @a@ is statically known (eg. a top level value, or if it does not
+--   depend on anything on the scope), use @static@ keyword coming from
+--   @StaticPointers@ extension.
+--
+--     * If @a@ is a runtime value, use 'cpure' to lift it to 'Closure a'. It will ask
+--   for a @('Closure' ('Dict' ('Serializable' a)))@. If there is @('Binary' a)@ and
+--   @('Typeable' a)@ instances, you can just use @(static 'Dict')@ for that.
+--
+-- One important constraint when using this library is that it assumes the remote
+-- environment is capable of executing the exact same binary. On most cases, this
+-- requires your host environment to be Linux. In future I plan to provide a set
+-- of scripts using Docker to overcome this limitation.
 module Network.Serverless.Execute
-  ( Backend
+  ( execute
   , initServerless
-  , execute
+  , Backend
 
   -- * Exceptions
   , ExecutorFailedException (..)
@@ -26,9 +49,22 @@ import           Network.Serverless.Execute.Internal
 --------------------------------------------------------------------------------
 
 -- |
--- Runs the given action on the 'Backend'.
+-- Executes the given function using the 'Backend'.
 --
 -- Can throw 'ExecutorFailedException'.
+--
+-- @
+-- {-\# LANGUAGE StaticPointers #-}
+--
+-- import Network.Serverless.Execute
+-- import Network.Serverless.Execute.LocalProcessBackend
+--
+-- main :: IO ()
+-- main = do
+--   'initServerless'
+--   ret <- 'execute' 'localProcessBackend' (static 'Dict') (static (return "Hello World!"))
+--   putStrLn ret
+-- @
 execute :: Backend
            -- ^ Backend to execute the function.
         -> Closure (Dict (Serializable a))
@@ -38,7 +74,7 @@ execute :: Backend
            -- ^ Function to execute.
         -> IO a
 execute b d c = do
-  t <- spawnInternal b d c
+  t <- runBackend d c b
   r <-
     liftIO . atomically $
     readTVar t >>= \case
@@ -47,13 +83,6 @@ execute b d c = do
   case r of
     ExecutorFailed err  -> throwM $ ExecutorFailedException err
     ExecutorSucceeded a -> return a
-
-spawnInternal ::
-     Backend
-  -> Closure (Dict (Serializable a))
-  -> Closure (IO a)
-  -> IO (TVar (ExecutorStatus a))
-spawnInternal b d c = liftIO $ runBackend d c b
 
 --------------------------------------------------------------------------------
 

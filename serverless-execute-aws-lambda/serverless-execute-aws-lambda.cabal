@@ -1,5 +1,5 @@
 name:                serverless-execute-aws-lambda
-version:             0.1.0.0
+version:             0.1.0
 homepage:            https://github.com/utdemir/serverless-batch
 license:             BSD3
 author:              Utku Demir
@@ -8,6 +8,9 @@ copyright:           Utku Demir
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
+
+description:
+    <https://aws.amazon.com/lambda AWS Lambda> backend for <http://hackage.haskell.org/package/serverless-execute serverless-execute>.
 
 library
   hs-source-dirs:      src
@@ -35,17 +38,14 @@ library
                      , base64-bytestring
                      , bytestring
                      , containers
-                     , directory
                      , fmt
                      , interpolate
                      , lens
                      , lens-aeson
-                     , random
                      , safe-exceptions
                      , stratosphere < 0.15.0
                      , text
                      , time
-                     , transformers
                      , typed-process
                      , unordered-containers
                      , zip-archive
@@ -59,7 +59,6 @@ test-suite tests
   build-depends:    base >=4.7 && < 5
                   , serverless-execute
                   , serverless-execute-aws-lambda
-                  , amazonka
                   , tasty
                   , tasty-hunit
                   , text

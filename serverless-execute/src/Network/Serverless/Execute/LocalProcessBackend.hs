@@ -8,7 +8,7 @@ import           Network.Serverless.Execute.Backend
 --------------------------------------------------------------------------------
 
 -- |
--- A 'Backend' which uses local processes as executors.
+-- A 'Backend' which uses local processes as executors. Useful for testing.
 localProcessBackend :: Backend
 localProcessBackend = Backend $ \stdin' -> do
   executable <- liftIO getExecutablePath

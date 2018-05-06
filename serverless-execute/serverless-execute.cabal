@@ -1,5 +1,5 @@
 name:                serverless-execute
-version:             0.1.0.0
+version:             0.1.0
 homepage:            https://github.com/utdemir/serverless-batch
 license:             BSD3
 license-file:        LICENSE
@@ -9,6 +9,14 @@ copyright:           Utku Demir
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
+
+description:
+    This library provides an interface for executing IO actions on FaaS
+    offerings like AWS Lambda.
+    .
+    It currently only supports AWS Lambda using <http://hackage.haskell.org/package/serverless-execute-aws-lambda serverless-execute-aws-lambda> library.
+    .
+    See "Network.Serverless.Execute" module for the usage.
 
 library
   hs-source-dirs:      src
@@ -20,14 +28,14 @@ library
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , binary
-                     , text
                      , bytestring
-                     , distributed-closure
-                     , typed-process
-                     , stm
-                     , transformers
-                     , exceptions
                      , constraints
+                     , distributed-closure
+                     , exceptions
+                     , stm
+                     , text
+                     , transformers
+                     , typed-process
 
 test-suite tests
   type:             exitcode-stdio-1.0
