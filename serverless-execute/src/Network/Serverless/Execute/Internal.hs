@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
@@ -33,6 +34,7 @@ import           Data.Void
 import           System.Environment
 import           System.Exit
 import           System.IO
+import GHC.Generics
 --------------------------------------------------------------------------------
 
 -- |
@@ -105,6 +107,9 @@ data ExecutorPendingStatus
 data ExecutorFinalStatus a
   = ExecutorFailed Text
   | ExecutorSucceeded a
+  deriving (Generic)
+
+instance Binary a => Binary (ExecutorFinalStatus a)
 
 -- |
 -- Given an IO action and a static proof that the result is 'Serializable', this
@@ -137,11 +142,17 @@ runBackend dict cls (Backend backend) =
 toExecutorClosure :: Closure (Dict (Serializable a)) -> Closure (IO a) -> Closure (IO ())
 toExecutorClosure dict cls =
   case unclosure dict of
-    Dict -> static (\Dict i -> i >>= BL.putStr . encode) `cap` dict `cap` cls
+    Dict -> static run `cap` dict `cap` cls
+  where
+    run :: forall a. Dict (Serializable a) -> IO a -> IO ()
+    run Dict a =
+      (a >>= BL.putStr . encode . ExecutorSucceeded)
+        `catch` (\(ex :: SomeException) ->
+          BL.putStr . encode . ExecutorFailed @a $
+            "Exception from executor: " <> T.pack (show ex))
 
 parseAnswer :: Binary a => BS.ByteString -> ExecutorFinalStatus a
 parseAnswer bs =
   case decodeOrFail (BL.fromStrict bs) of
     Left (_, _, err) -> ExecutorFailed $ "Error decoding answer: " <> T.pack err
-    Right (_, _, a) -> ExecutorSucceeded a
-
+    Right (_, _, a) -> a

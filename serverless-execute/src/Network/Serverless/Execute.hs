@@ -6,7 +6,7 @@ module Network.Serverless.Execute
   , execute
 
   -- * Exceptions
-  , ExecutorFailedException
+  , ExecutorFailedException (..)
 
   -- * Re-exports
   , Closure
@@ -58,5 +58,5 @@ spawnInternal b d c = liftIO $ runBackend d c b
 --------------------------------------------------------------------------------
 
 newtype ExecutorFailedException = ExecutorFailedException Text
-  deriving Show
+  deriving (Show, Eq)
 instance Exception ExecutorFailedException
