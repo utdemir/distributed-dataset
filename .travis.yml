@@ -15,10 +15,6 @@ before_install:
   - export PATH=$HOME/.local/bin:$PATH
   - travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
-install:
-  # Build dependencies
-  - timeout 30m stack --no-terminal --install-ghc -j 1 test --only-dependencies
-
 script:
   # Build the package, its tests, and its docs and run the tests
-  - timeout 30m stack --no-terminal test --haddock --no-haddock-deps
+  - timeout 30m stack -j 1 --no-terminal test --haddock --no-haddock-deps
