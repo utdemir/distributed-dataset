@@ -17,8 +17,8 @@ before_install:
 
 install:
   # Build dependencies
-  - timeout 30 stack --no-terminal --install-ghc -j 1 test --only-dependencies
+  - timeout 30m stack --no-terminal --install-ghc -j 1 test --only-dependencies
 
 script:
   # Build the package, its tests, and its docs and run the tests
-  - timeout 30 stack --no-terminal test --haddock --no-haddock-deps
+  - timeout 30m stack --no-terminal test --haddock --no-haddock-deps
