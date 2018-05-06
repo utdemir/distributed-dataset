@@ -36,11 +36,12 @@ library
                      , bytestring
                      , containers
                      , directory
-                     , safe-exceptions
                      , fmt
                      , interpolate
-                     , microlens
+                     , lens
+                     , lens-aeson
                      , random
+                     , safe-exceptions
                      , stratosphere < 0.15.0
                      , text
                      , time
@@ -58,6 +59,7 @@ test-suite tests
   build-depends:    base >=4.7 && < 5
                   , serverless-execute
                   , serverless-execute-aws-lambda
+                  , amazonka
                   , tasty
                   , tasty-hunit
-                  , amazonka
+                  , text

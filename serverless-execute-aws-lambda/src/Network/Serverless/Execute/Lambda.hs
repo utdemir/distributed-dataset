@@ -20,7 +20,7 @@ import           Data.Time.Format                                   (defaultTime
                                                                      formatTime)
 import           Fmt                                                (fixedF,
                                                                      (+|), (|+))
-import           Lens.Micro                                         ((^.), Lens', lens)
+import           Control.Lens                                       ((^.), Lens', lens)
 import           Network.AWS                                        (Credentials (Discover),
                                                                      envRegion,
                                                                      newEnv,

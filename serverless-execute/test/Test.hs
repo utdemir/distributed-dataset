@@ -1,11 +1,11 @@
-{-# LANGUAGE StaticPointers #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StaticPointers    #-}
 
 module Main where
 
 --------------------------------------------------------------------------------
-import Control.Exception (try)
-import           System.Posix.Process
+import           Control.Exception                              (try)
+import           System.Posix.Process                           (getProcessID)
 import           Test.Tasty
 import           Test.Tasty.HUnit
 --------------------------------------------------------------------------------

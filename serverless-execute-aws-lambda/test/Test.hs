@@ -7,6 +7,9 @@ module Main where
 
 --------------------------------------------------------------------------------
 import           Control.Concurrent
+import           Control.Exception                 (try)
+import           Data.Monoid                       ((<>))
+import qualified Data.Text                         as T
 import           System.Environment
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -18,9 +21,12 @@ import           Network.Serverless.Execute.Lambda
 main :: IO ()
 main = do
   initServerless
-  lookupEnv "ENABLE_AWS_TESTS" >>= \case
-    Nothing -> putStrLn "ENV[ENABLE_AWS_TESTS] is not set, skipping."
-    Just _ -> defaultMain tests
+  tests_ <- lookupEnv "ENABLE_AWS_TESTS" >>= \case
+    Nothing -> do
+      putStrLn "ENV[ENABLE_AWS_TESTS] is not set, skipping."
+      return $ testGroup "No tests" []
+    Just _ -> return tests
+  defaultMain tests_
 
 opts :: LambdaBackendOptions
 opts = lambdaBackendOptions "serverless-batch"
@@ -38,4 +44,11 @@ tests =
           withLambdaBackend opts $ \backend ->
             execute backend (static Dict) (static (return $ Just @Integer 42))
         r @?= Just 42
-  ]
+    , testCase "handles oom" $ do
+        r <-
+          try $ withLambdaBackend opts $ \backend ->
+            execute backend (static Dict) (static (return $ T.replicate (2^32) "h"))
+        r @?= Left (ExecutorFailedException $
+                      "Backend threw an exception: InvokeException " <>
+                      "\"Lambda function failed.\"")
+    ]

@@ -28,8 +28,7 @@ import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text                                            as T
 import qualified Data.Text.Encoding                                   as T
-import           Lens.Micro
-import           Lens.Micro.Extras
+import           Control.Lens
 import           Network.AWS                                          hiding (environment)
 import           Network.AWS.Lambda
 import qualified Network.AWS.S3                                       as S3

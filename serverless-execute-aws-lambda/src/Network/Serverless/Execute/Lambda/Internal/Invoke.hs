@@ -12,7 +12,7 @@ import           Control.Concurrent.Async
 import           Control.Concurrent.MVar
 import           Control.Exception.Safe
 import           Control.Monad
-import           Data.Aeson                                       (toJSON)
+import          qualified Data.Aeson as A
 import qualified Data.ByteString                                  as BS
 import           Data.ByteString.Base64                           as B64
 import qualified Data.HashMap.Strict                              as HM
@@ -21,7 +21,8 @@ import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text                                        as T
 import qualified Data.Text.Encoding                               as T
-import           Lens.Micro
+import           Control.Lens
+import Data.Aeson.Lens
 import           Network.AWS
 import           Network.AWS.Lambda
 import           Network.AWS.SQS
@@ -76,8 +77,8 @@ execute LambdaEnv{..} input = do
   irs <- runResourceT . runAWS leEnv $ do
     send . FixedInvoke $ invoke
       (siFunc leStack)
-      (HM.fromList [ ("d", toJSON . T.decodeUtf8 $ B64.encode input)
-                   , ("i", toJSON id')
+      (HM.fromList [ ("d", A.toJSON . T.decodeUtf8 $ B64.encode input)
+                   , ("i", A.toJSON id')
                    ]
       )
       & iInvocationType ?~ Event
@@ -124,6 +125,28 @@ answerThread LambdaEnv {..} = runResourceT . runAWS leEnv . forever $ do
         Just (Right x) -> return x
 
 {-
+And then we listen from answerQueue for the responses
+-}
+deadLetterThread :: LambdaEnv -> IO ()
+deadLetterThread LambdaEnv {..} = runResourceT . runAWS leEnv . forever $ do
+  msgs <- sqsReceiveSome $ siDeadLetterQueue leStack
+  forM_ msgs $ \msg -> do
+    id' <- liftIO $ decodeId msg
+    liftIO . modifyMVar_ leState $ \s ->
+      case M.updateLookupWithKey (\_ _ -> Nothing) id' (lsInvocations s) of
+        (Nothing, _) -> return s
+        (Just x, s') -> s { lsInvocations = s' } <$ x failure
+  where
+    failure :: IO a
+    failure = throwIO . InvokeException $ "Lambda function failed."
+
+    decodeId :: Message -> IO Int
+    decodeId msg = case msg ^? mBody . _Just . key "i" . _Number of
+      Nothing -> throwIO . InvokeException $
+          "Can not find Id: " <> T.pack (show msg)
+      Just x -> return $ truncate x
+
+{-
 A helper function to read from SQS queues.
 -}
 sqsReceiveSome :: T.Text -> AWS [Message]
@@ -156,8 +179,9 @@ sqsReceiveSome queue = do
 withInvoke :: Env -> StackInfo -> ((BS.ByteString -> BackendM BS.ByteString) -> IO a) -> IO a
 withInvoke env stack f = do
   le <- newLambdaEnv env stack
-  void . sequence . replicate 4 $
-    async $ catchAny (answerThread le) $ \ex -> print ex
+  let answerT = async $ catchAny (answerThread le) $ \ex -> print ex
+      deadLetterT = async $ catchAny (deadLetterThread le) $ \ex -> print ex
+  void . sequence $ replicate 4 answerT ++ replicate 2 deadLetterT
   f $ liftIO . execute le
 
 --------------------------------------------------------------------------------
