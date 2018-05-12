@@ -19,7 +19,6 @@ executables:
       - serverless-execute
       - serverless-execute-aws-lambda
       - aeson
-      - async
       - containers
       - lens
       - lens-aeson

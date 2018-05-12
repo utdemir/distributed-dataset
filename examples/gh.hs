@@ -27,22 +27,25 @@ import           Data.Time.Calendar                 (fromGregorian,
 import qualified Data.Vector                        as V
 import           Network.HTTP.Simple                (getResponseBody,
                                                      httpSource, parseRequest)
+import           Text.Printf                        (printf)
 --------------------------------------------------------------------------------
 import           Network.Serverless.Execute
-import           Network.Serverless.Execute.Utils
 import           Network.Serverless.Execute.Lambda
+import           Network.Serverless.Execute.Utils
 --------------------------------------------------------------------------------
 
 -- In gharchive, data is stored as gzipped JSON files for every hour since 2012.
 --
 -- Here we're iterating through every hour in 2017 and creating the urls to
--- download.
+-- process.
 allUrls :: [String]
-allUrls =
-  [ "http://data.gharchive.org/" ++ d ++ "-" ++ t ++ ".json.gz"
-  | d <- showGregorian <$> [fromGregorian 2017 8 1 .. fromGregorian 2017 12 31]
-  , t <- show <$> [(0::Int)..23]
-  ]
+allUrls = do
+  let (start, end) = ( fromGregorian 2018 1 1
+                     , fromGregorian 2018 5 10
+                     )
+  date <- showGregorian <$> [start..end]
+  time <- show <$> [(0::Int)..23]
+  return $ "http://data.gharchive.org/" ++ date ++ "-" ++ time ++ ".json.gz"
 
 -- Entrance point.
 main :: IO ()
@@ -54,12 +57,14 @@ main = do
     results <- mapWithProgress backend (static Dict) $
       map (\u -> static processUrl `cap` cpure (static Dict) u) allUrls
 
+    -- Combine results from diffent executors
     let result = MM.getMonoidalMap . foldMap MM.MonoidalMap $ results
 
     -- Take the biggest 50 and print.
     result
-      & reverse . sortOn snd . M.toList
-      & mapM_ print . take 50
+      & take 50 . reverse . sortOn snd . M.toList
+      & mapM_ (\(name, Sum count) ->
+          putStrLn $ printf "%20s - %d" name count)
 
 -- We actually don't need this much memory, since CPU increases linearly with
 -- requested memory in AWS Lambda, more memory gives much better results, it even
@@ -70,7 +75,7 @@ opts = lambdaBackendOptions "serverless-batch"
 
 --------------------------------------------------------------------------------
 
--- Here, we make the actual HTTP results, extract, parse, and gather the results
+-- Here, we make the actual HTTP request; extract, parse and gather the results
 -- in a streaming fashion.
 processUrl :: String -> IO (M.Map T.Text (Sum Int))
 processUrl str = do

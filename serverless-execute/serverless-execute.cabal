@@ -36,6 +36,7 @@ library
                      , exceptions
                      , stm
                      , text
+                     , terminal-size
                      , transformers
                      , typed-process
 
