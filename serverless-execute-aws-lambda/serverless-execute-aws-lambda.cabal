@@ -22,6 +22,7 @@ library
                      , Network.Serverless.Execute.Lambda.Internal.Archive
                      , Network.Serverless.Execute.Lambda.Internal.Invoke
                      , Network.AWS.Lambda.Invoke.Fixed
+                     , Control.Concurrent.Throttled
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , serverless-execute

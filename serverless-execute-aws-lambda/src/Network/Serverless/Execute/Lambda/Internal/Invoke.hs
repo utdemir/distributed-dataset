@@ -11,8 +11,10 @@ module Network.Serverless.Execute.Lambda.Internal.Invoke
 import           Control.Concurrent.Async
 import           Control.Concurrent.MVar
 import           Control.Exception.Safe
+import           Control.Lens
 import           Control.Monad
-import          qualified Data.Aeson as A
+import qualified Data.Aeson                                       as A
+import           Data.Aeson.Lens
 import qualified Data.ByteString                                  as BS
 import           Data.ByteString.Base64                           as B64
 import qualified Data.HashMap.Strict                              as HM
@@ -21,13 +23,12 @@ import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text                                        as T
 import qualified Data.Text.Encoding                               as T
-import           Control.Lens
-import Data.Aeson.Lens
 import           Network.AWS
 import           Network.AWS.Lambda
 import           Network.AWS.SQS
 import           Text.Read
 --------------------------------------------------------------------------------
+import           Control.Concurrent.Throttled
 import           Network.AWS.Lambda.Invoke.Fixed
 import           Network.Serverless.Execute.Backend
 import           Network.Serverless.Execute.Lambda.Internal.Stack (StackInfo (..))
@@ -61,11 +62,11 @@ newLambdaEnv env st  =
 {-
 When invoking a function, we insert a new id to the state and then call Lambda.
 -}
-execute :: LambdaEnv -> BS.ByteString -> IO BS.ByteString
-execute LambdaEnv{..} input = do
+execute :: LambdaEnv -> Throttle -> BS.ByteString -> BackendM BS.ByteString
+execute LambdaEnv{..} throttle input = do
   -- Modify environment
-  mvar <- newEmptyMVar @(IO BS.ByteString)
-  id' <- modifyMVar leState $ \LambdaState{..} -> return
+  mvar <- liftIO $ newEmptyMVar @(IO BS.ByteString)
+  id' <- liftIO $ modifyMVar leState $ \LambdaState{..} -> return
     ( LambdaState { lsNextId = lsNextId + 1
                   , lsInvocations =
                       M.insert lsNextId (void . tryPutMVar mvar) lsInvocations
@@ -74,7 +75,7 @@ execute LambdaEnv{..} input = do
     )
 
   -- invoke the lambda function
-  irs <- runResourceT . runAWS leEnv $ do
+  irs <- liftIO $ throttled throttle . runResourceT . runAWS leEnv $ do
     send . FixedInvoke $ invoke
       (siFunc leStack)
       (HM.fromList [ ("d", A.toJSON . T.decodeUtf8 $ B64.encode input)
@@ -82,12 +83,14 @@ execute LambdaEnv{..} input = do
                    ]
       )
       & iInvocationType ?~ Event
+  submitted
+
   unless (_firsStatusCode irs `div` 100 == 2) $
     throwIO . InvokeException $
       "Invoke failed. Status code: " <> T.pack (show $ _firsStatusCode irs)
 
   -- wait fo the answer
-  join $ readMVar mvar
+  liftIO . join $ readMVar mvar
 
 
 {-
@@ -179,10 +182,11 @@ sqsReceiveSome queue = do
 withInvoke :: Env -> StackInfo -> ((BS.ByteString -> BackendM BS.ByteString) -> IO a) -> IO a
 withInvoke env stack f = do
   le <- newLambdaEnv env stack
+  throttle <- newThrottle 512
   let answerT = async $ catchAny (answerThread le) $ \ex -> print ex
       deadLetterT = async $ catchAny (deadLetterThread le) $ \ex -> print ex
   void . sequence $ replicate 4 answerT ++ replicate 2 deadLetterT
-  f $ liftIO . execute le
+  f $ execute le throttle
 
 --------------------------------------------------------------------------------
 

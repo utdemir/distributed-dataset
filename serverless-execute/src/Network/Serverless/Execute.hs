@@ -28,10 +28,17 @@ module Network.Serverless.Execute
   , initServerless
   , Backend
 
+  -- * Status
+  , executeAsync
+  , ExecutorStatus (..)
+  , ExecutorPendingStatus (..)
+  , ExecutorFinalStatus (..)
+
   -- * Exceptions
   , ExecutorFailedException (..)
 
   -- * Re-exports
+  , Serializable
   , Closure
   , cap
   , cpure
@@ -74,7 +81,7 @@ execute :: Backend
            -- ^ Function to execute.
         -> IO a
 execute b d c = do
-  t <- runBackend d c b
+  t <- executeAsync b d c
   r <-
     liftIO . atomically $
     readTVar t >>= \case
@@ -83,6 +90,15 @@ execute b d c = do
   case r of
     ExecutorFailed err  -> throwM $ ExecutorFailedException err
     ExecutorSucceeded a -> return a
+
+-- |
+-- Same as 'execute', but immediately returns with a TVar containing the state
+-- of the executor.
+executeAsync :: Backend
+             -> Closure (Dict (Serializable a))
+             -> Closure (IO a)
+             -> IO (TVar (ExecutorStatus a))
+executeAsync b d c = runBackend d c b
 
 --------------------------------------------------------------------------------
 
