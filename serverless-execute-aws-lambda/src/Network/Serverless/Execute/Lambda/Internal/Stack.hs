@@ -293,7 +293,7 @@ seCreateStack options@(StackOptions { soName = StackName stackName
       st ^. sOutputs
 
 seDeleteStack :: StackInfo -> AWS ()
-seDeleteStack = const $ return () -- void . send . deleteStack . siId
+seDeleteStack = void . send . deleteStack . siId
 
 --------------------------------------------------------------------------------
 
