@@ -28,7 +28,7 @@ module Network.Serverless.Execute
   , initServerless
   , Backend
 
-  -- * Status
+  -- * Asynchronous Execution
   , executeAsync
   , ExecutorStatus (..)
   , ExecutorPendingStatus (..)
