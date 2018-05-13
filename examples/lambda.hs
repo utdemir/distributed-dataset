@@ -18,10 +18,10 @@ main :: IO ()
 main = do
   initServerless
   withLambdaBackend opts $ \backend ->
-    forConcurrently_ ([1 .. 100] :: [Int]) $ \i -> do
-      putStrLn $ "invoking lambda " ++ show i
+    forConcurrently_ ([1 .. 10] :: [Int]) $ \i -> do
+      putStrLn $ "Invoking function " ++ show i
       ip <- execute backend (static Dict) (static whatismyip)
-      putStrLn $ "lambda " ++ show i ++ ": " ++ T.unpack ip
+      putStrLn $ "Returned " ++ show i ++ ": " ++ T.unpack ip
 
 whatismyip :: IO T.Text
 whatismyip = T.decodeUtf8 . getResponseBody <$> httpBS "http://api.ipify.org"
