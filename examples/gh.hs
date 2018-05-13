@@ -53,10 +53,11 @@ main :: IO ()
 main = do
   initServerless
   withLambdaBackend opts $ \backend -> do
-    -- AWS Lambda starts with 2000 parallel tasks and slowly scales up with
+    -- AWS Lambda starts with 3000 parallel tasks and slowly scales up with
     -- the rate of 500 per minute. So, for small tasks like this, we get the
     -- maximum throughput if we have less than 3000 executors since we don't
     -- have to wait for Lambda upscaling.
+    -- See: https://docs.aws.amazon.com/lambda/latest/dg/scaling.html
     let chunkSize =
           min 8 . ceiling $ fromIntegral (length allUrls) / (3000 :: Double)
         chunks = chunksOf chunkSize allUrls
