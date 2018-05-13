@@ -10,6 +10,7 @@ module Main where
 --------------------------------------------------------------------------------
 import           Control.Lens                       ((&), (.~), (^?))
 import           Control.Monad                      (guard)
+import Data.List.Split (chunksOf)
 import           Data.Aeson                         (Value)
 import           Data.Aeson.Lens                    (key, _Array, _String)
 import           Data.Conduit                       (runConduitRes, (.|))
@@ -52,13 +53,24 @@ main :: IO ()
 main = do
   initServerless
   withLambdaBackend opts $ \backend -> do
-    -- For every url, create a separate thread which spawns a separate Lambda
-    -- function.
-    results <- mapWithProgress backend (static Dict) $
-      map (\u -> static processUrl `cap` cpure (static Dict) u) allUrls
+    -- AWS Lambda starts with 2000 parallel tasks and slowly scales up with
+    -- the rate of 500 per minute. So, for small tasks like this, we get the
+    -- maximum throughput if we have less than 3000 executors since we don't
+    -- have to wait for Lambda upscaling.
+    let chunkSize =
+          min 8 . ceiling $ fromIntegral (length allUrls) / (3000 :: Double)
+        chunks = chunksOf chunkSize allUrls
 
-    -- Combine results from diffent executors
-    let result = MM.getMonoidalMap . foldMap MM.MonoidalMap $ results
+    -- Map every chunk to remote executors.
+    results <- mapWithProgress backend (static Dict) $
+      map
+        (\xs -> static (mapM processUrl) `cap` cpure (static Dict) xs)
+        chunks
+
+    -- Combine results from diffent executors.
+    let result = results
+                   & concat
+                   & MM.getMonoidalMap . foldMap MM.MonoidalMap
 
     -- Take the biggest 50 and print.
     result
