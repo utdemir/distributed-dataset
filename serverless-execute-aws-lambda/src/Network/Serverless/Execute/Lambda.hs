@@ -108,9 +108,10 @@ withLambdaBackend LambdaBackendOptions {..} f = do
     "Checking if deployment archive exists."
   runResourceT . runAWS env $
     awsObjectExists s3loc >>=
-      bool (liftIO (putStrLn $ "Uploading the deployment archive. (" +| fixedF 2 size |+ " MB)")
-             >> awsUploadObject  s3loc (archiveToByteString archive))
-           (liftIO $ putStrLn "Found archive, skipping upload.")
+      bool
+        (liftIO (putStrLn $ "Uploading the deployment archive. (" +| fixedF 2 size |+ " MB)")
+          >> awsUploadObject  s3loc (archiveToByteString archive))
+        (liftIO $ putStrLn "Found archive, skipping upload.")
 
 
   time <-
