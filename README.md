@@ -1,5 +1,7 @@
 # serverless-*
 
+[![Build Status](https://travis-ci.org/utdemir/serverless-batch.svg?branch=master)](https://travis-ci.org/utdemir/serverless-batch)
+
 An experiment to implement an Apache Spark like big data processing framework on top of Haskell. Goals:
 
 * Should run on various FaaS offerings (e.g. AWS Lambda, Google Cloud Functions etc.).
