@@ -12,7 +12,7 @@ This library is an approach to leverage serverless computing platforms in a simp
 
 Simply, this library is a function vaguely similar to `execute :: IO a -> IO a`, which takes an IO action, runs the action remotely on a serverless offering and gives back the result.
 
-This library consist of a core API called 'serverless-execute' and various libraries implementing different `Backend`'s. Currenlty, we only support AWS Lambda via 'serverless-execute-aws-lambda'.
+This library consist of a core API called 'serverless-execute' and various libraries implementing different `Backend`'s. Currently only supports AWS Lambda via 'serverless-execute-aws-lambda'.
 
 Examples:
 
