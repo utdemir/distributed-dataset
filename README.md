@@ -1,6 +1,6 @@
 # serverless-execute
 
-[![Build Status](https://travis-ci.org/utdemir/serverless-batch.svg?branch=master)](https://travis-ci.org/utdemir/serverless-batch)
+[![Build Status](https://travis-ci.org/utdemir/serverless-batch.svg?branch=master)](https://travis-ci.org/utdemir/serverless-batch) ![Hackage](https://img.shields.io/hackage/v/serverless-execute.svg)
 
 Run arbitrary IO actions on Serverless offerings (currently only AWS Lambda).
 
@@ -14,6 +14,7 @@ Simply, this library is a function vaguely similar to `execute :: IO a -> IO a`,
 
 This library consist of a core API called 'serverless-execute' and various libraries implementing different `Backend`'s. Currenlty, we only support AWS Lambda via 'serverless-execute-aws-lambda'.
 
-See:
-* [lambda.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/lambda.hs) for a small example
+Examples:
+
+* [lambda.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/lambda.hs) for a small example.
 * [gh.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/gh.hs) for a more contrived application.
