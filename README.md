@@ -21,9 +21,13 @@ It consist of a core API called 'serverless-execute' and various libraries imple
 
 ### Running Examples
 
-* Make sure that you have AWS credentials (either on `~/aws.credentials` or `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables). The easiest way is to installing AWS command line tools and running `aws configure`.
+* Make sure that you have AWS credentials set up. The easiest way is to installing AWS command line tools and running `aws configure`.
 
-* Create a bucket on AWS to put the deployment artifact in.
+* Create a bucket on AWS to put the deployment artifact in. You can use the console or the command line tools:
+
+```
+aws s3api create-bucket --bucket my-s3-bucket
+```
 
 * Clone the repository
 
