@@ -14,10 +14,36 @@ Simply, this library is a function vaguely similar to `execute :: IO a -> IO a`,
 
 It consist of a core API called 'serverless-execute' and various libraries implementing different `Backend`'s. Currently only supports AWS Lambda via 'serverless-execute-aws-lambda'.
 
-Examples:
+## Examples
 
 * [lambda.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/lambda.hs): Tiny example for spawning a Lambda executor.
 * [gh.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/gh.hs): A more contrived example application that queries large amounts of data in parallel.
+
+### Running Examples
+
+* Make sure that you have AWS credentials (either on `~/aws.credentials` or `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables). The easiest way is to installing AWS command line tools and running `aws configure`.
+
+* Create a bucket on AWS to put the deployment artifact in.
+
+* Clone the repository
+
+```
+$ git clone https://github.com/utdemir/serverless-batch
+$ cd serverless-batch
+```
+
+* Replace `my-s3-bucket` with the name of the bucket you just created:
+
+```
+vi examples/lambda.hs
+```
+
+* Build & run the example
+
+```
+$ stack build examples
+$ stack exec lambda
+```
 
 ## Contributing
 

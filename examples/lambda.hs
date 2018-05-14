@@ -12,7 +12,7 @@ import           Network.Serverless.Execute.Lambda
 --------------------------------------------------------------------------------
 
 opts :: LambdaBackendOptions
-opts = lambdaBackendOptions "serverless-batch"
+opts = lambdaBackendOptions "my-s3-bucket"
 
 main :: IO ()
 main = do

@@ -35,6 +35,9 @@ import           Network.Serverless.Execute.Lambda
 import           Network.Serverless.Execute.Utils
 --------------------------------------------------------------------------------
 
+artifactBucket :: T.Text
+artifactBucket = "my-s3-bucket"
+
 -- In gharchive, data is stored as gzipped JSON files for every hour since 2012.
 --
 -- Here we're iterating through every hour in 2017 and creating the urls to
@@ -83,7 +86,7 @@ main = do
 -- requested memory in AWS Lambda, more memory gives much better results, it
 -- is even cheaper because functions finish more quickly.
 opts :: LambdaBackendOptions
-opts = lambdaBackendOptions "serverless-batch"
+opts = lambdaBackendOptions artifactBucket
          & lboMemory .~ 1024
 
 --------------------------------------------------------------------------------
