@@ -15,6 +15,5 @@ Simply, this library is a function vaguely similar to `execute :: IO a -> IO a`,
 This library consist of a core API called 'serverless-execute' and various libraries implementing different `Backend`'s. Currenlty, we only support AWS Lambda via 'serverless-execute-aws-lambda'.
 
 See:
-* [https://github.com/utdemir/serverless-batch/blob/master/examples/lambda.hs](lambda.hs) for a small example
-* [https://github.com/utdemir/serverless-batch/blob/master/examples/gh.hs](gh.hs) for a more contrived application.
-
+* [lambda.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/lambda.hs) for a small example
+* [gh.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/gh.hs) for a more contrived application.
