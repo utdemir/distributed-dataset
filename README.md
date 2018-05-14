@@ -21,7 +21,7 @@ It consist of a core API called 'serverless-execute' and various libraries imple
 
 ### Running Examples
 
-* Make sure that you have AWS credentials set up. The easiest way is to installing [AWS command line interface](https://aws.amazon.com/cli/) and running:
+* Make sure that you have AWS credentials set up. The easiest way is to instal [AWS command line interface](https://aws.amazon.com/cli/) and to run:
 
 ```
 aws configure
