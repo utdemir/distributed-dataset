@@ -4,7 +4,9 @@
 -- This module provides a common interface for executing IO actions on FaaS (Function
 -- as a Service) providers like <https://aws.amazon.com/lambda AWS Lambda>.
 --
--- It uses @StaticPointers@ language extension and 'distributed-closure' library
+-- It uses
+-- <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#static-pointers StaticPointers language extension> and
+-- <https://hackage.haskell.org/package/distributed-closure distributed-closure> library
 -- for serializing closures to run remotely.
 -- <https://ocharles.org.uk/blog/guest-posts/2014-12-23-static-pointers.html This blog post>
 -- is a good introduction for those.
@@ -15,7 +17,7 @@
 --   depend on anything on the scope), use @static@ keyword coming from
 --   @StaticPointers@ extension.
 --
---     * If @a@ is a runtime value, use 'cpure' to lift it to 'Closure a'. It will ask
+--     * If @a@ is a runtime value, use 'cpure' to lift it to @Closure a@. It will ask
 --   for a @('Closure' ('Dict' ('Serializable' a)))@. If there is @('Binary' a)@ and
 --   @('Typeable' a)@ instances, you can just use @(static 'Dict')@ for that.
 --

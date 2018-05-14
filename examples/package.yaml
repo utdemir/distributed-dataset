@@ -1,6 +1,6 @@
 name: examples
 
-ghc-options: -Wall -static -optl-static -optl-pthread -fPIC -split-sections
+ghc-options: -Wall -static -optl-static -optl-pthread -fPIC
 
 executables:
   lambda:

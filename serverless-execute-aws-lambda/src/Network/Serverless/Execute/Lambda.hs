@@ -18,6 +18,10 @@
 --
 -- Some warts:
 --
+--     * The same binary should run on AWS Lambda. In practice, this means:
+--         * You have to build and use this library on a Linux machine.
+--         * You have to statically link everything. You can use GHC
+--         '@-static -optl-static -optl-pthread -fPIC@' parameters for that.
 --     * On AWS Lambda, more memory you assign to a function, more CPU you
 --     get. So it might make your function run faster if you overallocate
 --     memory.
