@@ -16,5 +16,5 @@ This library consist of a core API called 'serverless-execute' and various libra
 
 Examples:
 
-* [lambda.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/lambda.hs) for a small example.
-* [gh.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/gh.hs) for a more contrived application.
+* [lambda.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/lambda.hs): Tiny example for spawning a Lambda executor.
+* [gh.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/gh.hs): A more contrived example application for querying large amounts of data.
