@@ -21,4 +21,4 @@ Examples:
 
 ## Contributing
 
-* The library is pretty new, so I am open to every idea, improvement or new backends.
+* The library is pretty new, so I am open to ideas, improvements or new backends.
