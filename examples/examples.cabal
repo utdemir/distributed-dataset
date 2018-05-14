@@ -1,0 +1,49 @@
+-- This file has been generated from package.yaml by hpack version 0.21.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 9fb57098eef56e0e6c3ca438b75e8a6dcd03fd4358c57c384c63c88e43b479e3
+
+name:           examples
+version:        0.0.0
+build-type:     Simple
+cabal-version:  >= 1.10
+
+executable gh
+  main-is: gh.hs
+  other-modules:
+      Paths_examples
+  ghc-options: -Wall -static -optl-static -optl-pthread -fPIC -split-sections
+  build-depends:
+      aeson
+    , base
+    , conduit
+    , conduit-combinators
+    , conduit-extra
+    , containers
+    , http-conduit
+    , lens
+    , lens-aeson
+    , monoidal-containers
+    , ndjson-conduit
+    , serverless-execute
+    , serverless-execute-aws-lambda
+    , split
+    , text
+    , time
+    , vector
+  default-language: Haskell2010
+
+executable lambda
+  main-is: lambda.hs
+  other-modules:
+      Paths_examples
+  ghc-options: -Wall -static -optl-static -optl-pthread -fPIC -split-sections
+  build-depends:
+      async
+    , base
+    , http-conduit
+    , serverless-execute
+    , serverless-execute-aws-lambda
+    , text
+  default-language: Haskell2010
