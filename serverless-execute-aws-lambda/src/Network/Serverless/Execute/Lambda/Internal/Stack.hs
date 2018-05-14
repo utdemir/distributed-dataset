@@ -191,13 +191,13 @@ awsUploadObject (S3Loc (BucketName bucket) path) contents = do
 
 awsObjectExists :: S3Loc -> AWS Bool
 awsObjectExists (S3Loc (BucketName bucket) path) = do
-  lrs <- send $
-    S3.listObjectsV (S3.BucketName bucket)
-      & S3.lPrefix ?~ path
-  unless (lrs ^. S3.lrsResponseStatus == 200) $
+  lors <- send $
+    S3.listObjects (S3.BucketName bucket)
+      & S3.loPrefix ?~ path
+  unless (lors ^. S3.lorsResponseStatus == 200) $
     throwM . StackException $
-      "List objects failed. Status code: " <> T.pack (show lrs)
-  let files = map (view S3.oKey) (lrs ^. S3.lrsContents)
+      "List objects failed. Status code: " <> T.pack (show lors)
+  let files = map (view S3.oKey) (lors ^. S3.lorsContents)
   return $ any (\(S3.ObjectKey k) -> k == path) files
 
 --------------------------------------------------------------------------------

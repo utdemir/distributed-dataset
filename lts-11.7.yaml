@@ -6,6 +6,7 @@ packages:
   - examples
 
 extra-deps:
+  - stratosphere-0.14.0
   - git: https://github.com/brendanhay/amazonka.git
     commit: 9aa47c267631339a32a1a4ea373b1319145662e2
     subdirs:
