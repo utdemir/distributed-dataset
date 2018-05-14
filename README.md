@@ -18,3 +18,7 @@ Examples:
 
 * [lambda.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/lambda.hs): Tiny example for spawning a Lambda executor.
 * [gh.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/gh.hs): A more contrived example application that queries large amounts of data in parallel.
+
+# Contributing
+
+* The library is pretty new, so I am open to every idea, improvement or new backends.
