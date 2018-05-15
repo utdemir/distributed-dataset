@@ -17,7 +17,7 @@ description:
     .
     It currently only supports AWS Lambda using <http://hackage.haskell.org/package/serverless-execute-aws-lambda serverless-execute-aws-lambda> library.
     .
-    See <https://github.com/utdemir/serverless-batch README> for the rationale behing the library and "Network.Serverless.Execute" module for the usage.
+    See <https://github.com/utdemir/serverless-batch README> for the rationale behind the library and "Network.Serverless.Execute" module for the usage.
 
 library
   hs-source-dirs:      src
