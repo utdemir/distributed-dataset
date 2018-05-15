@@ -25,7 +25,7 @@
 --         * You have to statically link everything. You can use GHC's
 --         '@-static -optl-static -optl-pthread -fPIC@' parameters for that.
 --         See <https://github.com/utdemir/serverless-batch/blob/master/examples/examples.cabal examples/examples.cabal#L16>
---         for details.
+--         for an example.
 --
 --     * On AWS Lambda, more memory you assign to a function, more CPU you
 --     get. So it might make your function run faster if you overallocate
