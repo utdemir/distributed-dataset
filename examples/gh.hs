@@ -36,7 +36,7 @@ import           Network.Serverless.Execute.Utils
 --------------------------------------------------------------------------------
 
 artifactBucket :: T.Text
-artifactBucket = "my-s3-bucket"
+artifactBucket = "serverless-batch"
 
 -- In gharchive, data is stored as gzipped JSON files for every hour since 2012.
 --
@@ -45,7 +45,7 @@ artifactBucket = "my-s3-bucket"
 allUrls :: [String]
 allUrls = do
   let (start, end) = ( fromGregorian 2018 1 1
-                     , fromGregorian 2018 5 10
+                     , fromGregorian 2018 3 31
                      )
   date <- showGregorian <$> [start..end]
   time <- show <$> [(0::Int)..23]
