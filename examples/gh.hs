@@ -64,7 +64,8 @@ main = do
           min 8 . ceiling $ fromIntegral (length allUrls) / (3000 :: Double)
         chunks = chunksOf chunkSize allUrls
 
-    -- Map every chunk to remote executors.
+    -- Here is where the magic happens. Map every chunk to remote executors,
+    -- run them and fetch the results.
     results <- mapWithProgress backend (static Dict) $
       map
         (\xs -> static (mapM processUrl) `cap` cpure (static Dict) xs)
