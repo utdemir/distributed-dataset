@@ -1,5 +1,6 @@
 name:                serverless-execute
 version:             0.0.1.0
+synopsis:            Run arbitrary IO actions on Serverless environments.
 homepage:            https://github.com/utdemir/serverless-batch
 license:             BSD3
 license-file:        LICENSE
