@@ -10,7 +10,6 @@ module Main where
 --------------------------------------------------------------------------------
 import           Control.Lens                       ((&), (.~), (^?))
 import           Control.Monad                      (guard)
-import Data.List.Split (chunksOf)
 import           Data.Aeson                         (Value)
 import           Data.Aeson.Lens                    (key, _Array, _String)
 import           Data.Conduit                       (runConduitRes, (.|))
@@ -18,6 +17,7 @@ import qualified Data.Conduit.Combinators           as C
 import qualified Data.Conduit.JSON.NewlineDelimited as NDJ
 import           Data.Conduit.Zlib                  (ungzip)
 import           Data.List                          (sortOn)
+import           Data.List.Split                    (chunksOf)
 import qualified Data.Map                           as M
 import qualified Data.Map.Monoidal                  as MM
 import           Data.Maybe                         (catMaybes, fromMaybe)
