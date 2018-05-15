@@ -81,9 +81,9 @@ main = do
       & mapM_ (\(name, Sum count) ->
           putStrLn $ printf "%20s - %d" name count)
 
--- We actually don't need this much memory, since CPU increases linearly with
--- requested memory in AWS Lambda, more memory gives much better results, it
--- is even cheaper because functions finish more quickly.
+-- We actually don't need this much memory. But since CPU allocation increases
+-- linearly with requested memory in AWS Lambda, more memory gives much better
+-- results, it is even cheaper because functions finish more quickly.
 opts :: LambdaBackendOptions
 opts = lambdaBackendOptions artifactBucket
          & lboMemory .~ 1024
