@@ -2,9 +2,9 @@
 {-# LANGUAGE StaticPointers    #-}
 
 -- |
--- This module downloads every public GitHub event for the last year from
--- gharchive.com, and finds the people who used the word "cabal" in their commit
--- messages the most.
+-- This module downloads every public GitHub event for the first quarter of 2018
+-- from gharchive.com, and finds the people who used the word "cabal" in their
+-- commit messages the most.
 module Main where
 
 --------------------------------------------------------------------------------
