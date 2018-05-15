@@ -36,7 +36,7 @@ import           Network.Serverless.Execute.Utils
 --------------------------------------------------------------------------------
 
 artifactBucket :: T.Text
-artifactBucket = "serverless-batch"
+artifactBucket = "my-s3-bucket"
 
 -- In gharchive, data is stored as gzipped JSON files for every hour since 2012.
 --
