@@ -8,11 +8,11 @@ Wikipedia [says](https://en.wikipedia.org/wiki/Serverless_computing):
 
 > Serverless computing is a cloud-computing execution model in which the cloud provider dynamically manages the allocation of machine resources. Pricing is based on the actual amount of resources consumed by an application, rather than on pre-purchased units of capacity.
 
-This library is an approach to leverage serverless computing platforms in a simple way in Haskell. The fundamental difference from the alternatives is that this library provides you the means of offloading some computation to AWS Lambda, rather than letting you deploy an application.
+This library is an approach to leverage serverless computing platforms in a simple way in Haskell. The fundamental difference from the alternatives is that this library provides you the means of offloading some computation to AWS Lambda, rather than letting you deploy an application completely.
 
-Simply, this library is a function vaguely similar to `execute :: IO a -> IO a`, which takes an IO action, runs the action remotely on a serverless offering and gives back the result.
+To put it simply, this library provides a function vaguely similar to `execute :: IO a -> IO a`, which takes an IO action, runs the action remotely on a serverless offering and gives back the result.
 
-It consist of a core API called 'serverless-execute' and various libraries implementing different `Backend`'s. Currently only supports AWS Lambda via 'serverless-execute-aws-lambda'.
+It consist of a core API called 'serverless-execute' and various libraries implementing different `Backend`'s. Currently only supported `Backend` is AWS Lambda via 'serverless-execute-aws-lambda'.
 
 ## Examples
 
