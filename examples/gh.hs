@@ -51,7 +51,6 @@ allUrls = do
   time <- show <$> [(0::Int)..23]
   return $ "http://data.gharchive.org/" ++ date ++ "-" ++ time ++ ".json.gz"
 
--- Entrance point.
 main :: IO ()
 main = do
   initServerless
