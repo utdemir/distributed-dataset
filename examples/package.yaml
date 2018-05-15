@@ -28,7 +28,6 @@ executables:
       - lens-aeson
       - monoidal-containers
       - ndjson-conduit
-      - split
       - text
       - time
       - vector

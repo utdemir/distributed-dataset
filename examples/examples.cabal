@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 995590c6ad0a042cfdb3ab7427b0c20eab6abcf44c2d0204848c34aab16beb78
+-- hash: f84e450f1bdf8580631f5b3b1a58a1f79390a0bfbb2b98b31c6721a38c1d73ae
 
 name:           examples
 version:        0.0.0
@@ -28,7 +28,6 @@ executable gh
     , ndjson-conduit
     , serverless-execute
     , serverless-execute-aws-lambda
-    , split
     , text
     , time
     , vector

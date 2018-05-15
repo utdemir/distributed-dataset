@@ -17,7 +17,6 @@ import qualified Data.Conduit.Combinators           as C
 import qualified Data.Conduit.JSON.NewlineDelimited as NDJ
 import           Data.Conduit.Zlib                  (ungzip)
 import           Data.List                          (sortOn)
-import           Data.List.Split                    (chunksOf)
 import qualified Data.Map                           as M
 import qualified Data.Map.Monoidal                  as MM
 import           Data.Maybe                         (catMaybes, fromMaybe)
@@ -55,26 +54,15 @@ main :: IO ()
 main = do
   initServerless
   withLambdaBackend opts $ \backend -> do
-    -- AWS Lambda starts with 3000 parallel tasks and slowly scales up with
-    -- the rate of 500 per minute. So, for small tasks like this, we get the
-    -- maximum throughput if we have less than 3000 executors since we don't
-    -- have to wait for Lambda upscaling.
-    -- See: https://docs.aws.amazon.com/lambda/latest/dg/scaling.html
-    let chunkSize =
-          min 8 . ceiling $ fromIntegral (length allUrls) / (3000 :: Double)
-        chunks = chunksOf chunkSize allUrls
-
-    -- Here is where the magic happens. Map every chunk to remote executors,
-    -- run them and fetch the results.
+    -- Here is where the magic happens. Map urls to remote executors, run them
+    -- and fetch the results.
     results <- mapWithProgress backend (static Dict) $
       map
-        (\xs -> static (mapM processUrl) `cap` cpure (static Dict) xs)
-        chunks
+        (\xs -> static processUrl `cap` cpure (static Dict) xs)
+        allUrls
 
     -- Combine results from diffent executors.
-    let result = results
-                   & concat
-                   & MM.getMonoidalMap . foldMap MM.MonoidalMap
+    let result = MM.getMonoidalMap $ foldMap MM.MonoidalMap results
 
     -- Take the biggest 50 and print.
     result
