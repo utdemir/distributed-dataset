@@ -16,6 +16,7 @@ import           Control.Monad
 import qualified Data.Aeson                                       as A
 import           Data.Aeson.Lens
 import qualified Data.ByteString                                  as BS
+import qualified Data.ByteString.Lazy                                  as BL
 import           Data.ByteString.Base64                           as B64
 import qualified Data.HashMap.Strict                              as HM
 import qualified Data.Map.Strict                                  as M
@@ -29,7 +30,6 @@ import           Network.AWS.SQS
 import           Text.Read
 --------------------------------------------------------------------------------
 import           Control.Concurrent.Throttled
-import           Network.AWS.Lambda.Invoke.Fixed
 import           Network.Serverless.Execute.Backend
 import           Network.Serverless.Execute.Lambda.Internal.Stack (StackInfo (..))
 --------------------------------------------------------------------------------
@@ -75,19 +75,19 @@ execute LambdaEnv{..} throttle input = do
     )
 
   -- invoke the lambda function
-  irs <- liftIO $ throttled throttle . runResourceT . runAWS leEnv $ do
-    send . FixedInvoke $ invoke
+  irs <- liftIO $ throttled throttle . runResourceT . runAWS leEnv $
+    send $ invoke
       (siFunc leStack)
-      (HM.fromList [ ("d", A.toJSON . T.decodeUtf8 $ B64.encode input)
-                   , ("i", A.toJSON id')
-                   ]
-      )
+      (BL.toStrict . A.encode $ A.object
+        [ (T.pack "d", A.toJSON . T.decodeUtf8 $ B64.encode input)
+        , (T.pack "i", A.toJSON id')
+        ])
       & iInvocationType ?~ Event
   submitted
 
-  unless (_firsStatusCode irs `div` 100 == 2) $
+  unless (irs ^. irsStatusCode `div` 100 == 2) $
     throwIO . InvokeException $
-      "Invoke failed. Status code: " <> T.pack (show $ _firsStatusCode irs)
+      "Invoke failed. Status code: " <> T.pack (show $ irs ^. irsStatusCode)
 
   -- wait fo the answer
   liftIO . join $ readMVar mvar
@@ -174,7 +174,7 @@ sqsReceiveSome queue = do
         ]
     unless (dmbrs ^. dmbrsResponseStatus == 200) $
       liftIO . throwIO . InvokeException $
-        "Error receiving messages: " <> T.pack (show $ rmrs ^. rmrsResponseStatus)
+        "Error deleting received messages: " <> T.pack (show $ rmrs ^. rmrsResponseStatus)
   return msgs
 
 --------------------------------------------------------------------------------

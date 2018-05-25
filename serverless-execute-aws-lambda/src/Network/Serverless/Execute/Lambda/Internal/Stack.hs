@@ -95,12 +95,12 @@ seTemplate StackOptions{..} =
          S.SQSQueueProperties $
          S.sqsQueue
        ]) &
-  S.parameters ?~
+  S.templateParameters ?~
   S.Parameters
     [ S.parameter templateParameterS3Bucket "String"
     , S.parameter templateParameterS3Key "String"
     ] &
-  S.outputs ?~
+  S.templateOutputs ?~
   S.Outputs
     [ S.output templateOutputFunc (S.Ref "func")
     , S.output templateOutputAnswerQueue (S.Ref "answerQueue")

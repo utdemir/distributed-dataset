@@ -6,16 +6,12 @@ packages:
   - examples
 
 extra-deps:
-  - stratosphere-0.14.0
-  - git: https://github.com/brendanhay/amazonka.git
-    commit: 9aa47c267631339a32a1a4ea373b1319145662e2
-    subdirs:
-      - core
-      - amazonka
-      - amazonka-cloudformation
-      - amazonka-lambda
-      - amazonka-s3
-      - amazonka-sqs
+  - amazonka-1.6.0
+  - amazonka-core-1.6.0
+  - amazonka-cloudformation-1.6.0
+  - amazonka-lambda-1.6.0
+  - amazonka-s3-1.6.0
+  - amazonka-sqs-1.6.0
 
 nix:
   packages:

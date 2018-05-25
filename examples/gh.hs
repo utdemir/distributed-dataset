@@ -98,6 +98,6 @@ processObject v = fromMaybe mempty $ do
   name <- v ^? key "actor" . key "login" . _String
   commits <- V.toList <$> v ^? key "payload" . key "commits" . _Array
   let msgs = catMaybes $ map (^? key "message" . _String) commits
-      count = length $ filter (T.isInfixOf "cabal" . T.toLower) msgs
+      count = length $ filter (T.isInfixOf "cabal") msgs
   guard $ count > 0
   return $ MM.singleton name (Sum count)

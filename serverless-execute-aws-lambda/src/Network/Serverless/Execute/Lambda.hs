@@ -52,8 +52,6 @@ import qualified Data.Text                                          as T
 import           Data.Time.Clock                                    (getCurrentTime)
 import           Data.Time.Format                                   (defaultTimeLocale,
                                                                      formatTime)
-import           Fmt                                                (fixedF,
-                                                                     (+|), (|+))
 import           Control.Lens                                       ((^.), Lens', lens)
 import           Network.AWS                                        (Credentials (Discover),
                                                                      envRegion,
@@ -98,7 +96,7 @@ import           Network.Serverless.Execute.Lambda.Internal.Types
 withLambdaBackend :: LambdaBackendOptions -> (Backend -> IO a) -> IO a
 withLambdaBackend LambdaBackendOptions {..} f = do
   env <- newEnv Discover
-  putStrLn $ "Detected region: " +| show (env ^. envRegion) |+ "."
+  putStrLn $ "Detected region: " <> show (env ^. envRegion) <> "."
 
   archive <- mkArchive
   let cksum = archiveChecksum archive
@@ -111,7 +109,7 @@ withLambdaBackend LambdaBackendOptions {..} f = do
   runResourceT . runAWS env $
     awsObjectExists s3loc >>=
       bool
-        (liftIO (putStrLn $ "Uploading the deployment archive. (" +| fixedF 2 size |+ " MB)")
+        (liftIO (putStrLn $ "Uploading the deployment archive. (" <> show size <> " MB)")
           >> awsUploadObject  s3loc (archiveToByteString archive))
         (liftIO $ putStrLn "Found archive, skipping upload.")
 
@@ -127,10 +125,11 @@ withLambdaBackend LambdaBackendOptions {..} f = do
   putStrLn "Creating stack."
   withStack stackOptions env $ \si -> do
     putStrLn "Stack created."
-    putStrLn $ "Stack Id: " +| siId si |+ ""
-    putStrLn $ "Func: " +| siFunc si |+ ""
-    putStrLn $ "Answer Queue: " +| siAnswerQueue si |+ ""
-    putStrLn $ "Dead Letter Queue: " +| siDeadLetterQueue si |+ ""
+    putStrLn $ "Stack Id: " <> T.unpack (siId si)
+    putStrLn $ "Artifact: " <> show s3loc
+    putStrLn $ "Func: " <> T.unpack (siFunc si)
+    putStrLn $ "Answer Queue: " <> T.unpack (siAnswerQueue si)
+    putStrLn $ "Dead Letter Queue: " <> T.unpack (siDeadLetterQueue si)
     withInvoke env si $ \invoke ->
       f $ Backend invoke
 

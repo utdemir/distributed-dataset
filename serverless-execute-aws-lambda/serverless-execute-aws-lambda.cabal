@@ -23,7 +23,6 @@ library
                      , Network.Serverless.Execute.Lambda.Internal.Stack
                      , Network.Serverless.Execute.Lambda.Internal.Archive
                      , Network.Serverless.Execute.Lambda.Internal.Invoke
-                     , Network.AWS.Lambda.Invoke.Fixed
                      , Control.Concurrent.Throttled
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
@@ -34,19 +33,18 @@ library
                      , amazonka
                      , amazonka-cloudformation
                      , amazonka-core
-                     , amazonka-lambda
+                     , amazonka-lambda >= 1.6.0
                      , amazonka-s3
                      , amazonka-sqs
                      , async
                      , base64-bytestring
                      , bytestring
                      , containers
-                     , fmt
                      , interpolate
                      , lens
                      , lens-aeson
                      , safe-exceptions
-                     , stratosphere < 0.15.0
+                     , stratosphere >= 0.15.0
                      , text
                      , time
                      , typed-process

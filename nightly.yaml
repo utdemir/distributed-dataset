@@ -1,4 +1,4 @@
-resolver: lts-10.10
+resolver: nightly-2018-05-25
 
 packages:
   - serverless-execute
