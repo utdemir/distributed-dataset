@@ -1,4 +1,4 @@
-resolver: lts-11.7
+resolver: lts-10.10
 
 packages:
   - serverless-execute
@@ -6,6 +6,7 @@ packages:
   - examples
 
 extra-deps:
+  - stratosphere-0.22.3
   - amazonka-1.6.0
   - amazonka-core-1.6.0
   - amazonka-cloudformation-1.6.0
