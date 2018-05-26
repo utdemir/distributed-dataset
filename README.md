@@ -22,7 +22,7 @@ Using 'distributed-fork-aws-lambda', you can use AWS's serverless computing offe
 
 ### Running Examples
 
-* Make sure that you have AWS credentials set up. The easiest way is to instal [AWS command line interface](https://aws.amazon.com/cli/) and to run:
+* Make sure that you have AWS credentials set up. The easiest way is to install [AWS command line interface](https://aws.amazon.com/cli/) and to run:
 
 ```
 aws configure
