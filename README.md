@@ -56,4 +56,4 @@ $ stack exec lambda
 
 ## Contributing
 
-* This is pretty new, so I am open to ideas, improvements or new backends.
+I am open to contributions; any issue, PR or opinion is more than welcome.
