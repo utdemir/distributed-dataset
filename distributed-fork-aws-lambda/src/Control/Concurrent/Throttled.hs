@@ -10,7 +10,7 @@ import Control.Exception
 import Control.Concurrent
 --------------------------------------------------------------------------------
 
-data Throttle
+newtype Throttle
   = Throttle (MVar (MVar ()))
 
 newThrottle :: Int -> IO Throttle

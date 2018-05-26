@@ -57,7 +57,7 @@ mapConcurrentlyWithProgress backend dict xs = do
       ratio = fromIntegral total / fromIntegral (termWidth - 2) :: Double
 
   pbar <- async . fix $ \recurse -> do
-    (waiting, submitted, started, finished) <- atomically $ do
+    (waiting, submitted, started, finished) <- atomically $
       readTVar st >>= \case
         (False, _, _, _, _) -> retry
         (True, a, b, c, d) -> do
@@ -75,7 +75,7 @@ mapConcurrentlyWithProgress backend dict xs = do
       , "]"
       ]
 
-    if (finished < total)
+    if finished < total
       then threadDelay 10000 >> recurse
       else putStrLn ""
 

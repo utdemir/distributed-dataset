@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TypeApplications  #-}
 
 -- |
 -- Provides a 'Backend' using AWS Lambda functions.
@@ -104,8 +103,7 @@ withLambdaBackend LambdaBackendOptions {..} f = do
       s3loc =
         S3Loc (BucketName _lboBucket) (_lboPrefix <> "-" <> cksum <> ".zip")
 
-  putStrLn $
-    "Checking if deployment archive exists."
+  putStrLn "Checking if deployment archive exists."
   runResourceT . runAWS env $
     awsObjectExists s3loc >>=
       bool

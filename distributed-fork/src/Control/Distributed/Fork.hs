@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 -- |
 -- This module provides a common interface for offloading an IO action to remote executors.
 --

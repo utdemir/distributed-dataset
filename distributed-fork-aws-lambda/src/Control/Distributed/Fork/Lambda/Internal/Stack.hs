@@ -88,12 +88,8 @@ seTemplate StackOptions{..} =
          & S.lfDeadLetterConfig ?~
              S.LambdaFunctionDeadLetterConfig (Just $ S.GetAtt "deadLetterQueue" "Arn")
        , S.resource "role" seRole
-       , S.resource "answerQueue" $
-         S.SQSQueueProperties $
-         S.sqsQueue
-       , S.resource "deadLetterQueue" $
-         S.SQSQueueProperties $
-         S.sqsQueue
+       , S.resource "answerQueue" $ S.SQSQueueProperties S.sqsQueue
+       , S.resource "deadLetterQueue" $ S.SQSQueueProperties S.sqsQueue
        ]) &
   S.templateParameters ?~
   S.Parameters
@@ -218,8 +214,8 @@ data StackInfo = StackInfo
   }
 
 seCreateStack :: StackOptions -> AWS StackInfo
-seCreateStack options@(StackOptions { soName = StackName stackName
-                                    , soLambdaCode = S3Loc (BucketName bucketName) path}) = do
+seCreateStack options@StackOptions { soName = StackName stackName
+                                   , soLambdaCode = S3Loc (BucketName bucketName) path} = do
   csrs <-
     send $
       createStack stackName
@@ -257,8 +253,8 @@ seCreateStack options@(StackOptions { soName = StackName stackName
       "CloudFormation describeStack failed. Status code: "
       <> T.pack (show $ dsrs ^. dsrsResponseStatus)
   stackRs <- case dsrs ^. dsrsStacks of
-    x:[] -> return x
-    _    -> throwM $ StackException "Unexpected answer from DescribeStacks."
+    [x] -> return x
+    _   -> throwM $ StackException "Unexpected answer from DescribeStacks."
 
   func <- case lookupOutput stackRs templateOutputFunc of
     Nothing -> throwM $ StackException "Could not determine function name."
@@ -297,7 +293,7 @@ seDeleteStack = void . send . deleteStack . siId
 
 --------------------------------------------------------------------------------
 
-data StackException
+newtype StackException
   = StackException T.Text
   deriving Show
 
@@ -306,8 +302,7 @@ instance Exception StackException
 --------------------------------------------------------------------------------
 
 withStack :: StackOptions -> Env -> (StackInfo -> IO a) -> IO a
-withStack opts env f = do
-  bracket create destroy f
+withStack opts env = bracket create destroy
   where
     create = runResourceT . runAWS env $ seCreateStack opts
     destroy = runResourceT . runAWS env . seDeleteStack

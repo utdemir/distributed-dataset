@@ -45,7 +45,7 @@ argExecutorMode = "DISTRIBUTED_FORK_EXECUTOR_MODE"
 --   ...
 -- @
 initDistributedFork :: IO ()
-initDistributedFork = do
+initDistributedFork =
   getArgs >>= \case
     [x]
       | x == argExecutorMode -> vacuous runExecutor
@@ -55,10 +55,10 @@ initDistributedFork = do
 -- When on executor mode, we expect a serialised ExecutorClosure from `stdin`,
 -- run it and exit.
 runExecutor :: IO Void
-runExecutor = do
+runExecutor =
   BL.hGetContents stdin
     >>= unclosure . decode @ExecutorClosure
-    >> exitWith ExitSuccess
+    >> exitSuccess
 
 -- |
 -- An ExecutorClosure is a serialisable IO action.
@@ -72,7 +72,7 @@ type ExecutorClosure = Closure (IO ())
 --   * 'Control.Distributed.Fork.LocalProcessBackend.localProcessBackend'
 --
 --   * <http://hackage.haskell.org/package/distributed-fork-aws-lambda distributed-fork-aws-lambda>
-data Backend = Backend
+newtype Backend = Backend
   { bExecute :: BS.ByteString -> BackendM BS.ByteString
   -- ^ Should run the current binary in the target environment, put the given
   -- string as standard input and return the executables answer on the standard

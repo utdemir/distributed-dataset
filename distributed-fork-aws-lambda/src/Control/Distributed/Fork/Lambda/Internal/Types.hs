@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Control.Distributed.Fork.Lambda.Internal.Types where
 
 --------------------------------------------------------------------------------

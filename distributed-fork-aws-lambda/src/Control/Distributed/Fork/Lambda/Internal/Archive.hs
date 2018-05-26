@@ -1,5 +1,4 @@
 {-# LANGUAGE BinaryLiterals    #-}
-{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 
@@ -99,7 +98,7 @@ mkHsMain = do
         else throwIO (FileException ex)
       return ()
 
-data FileException
+newtype FileException
   = FileException T.Text
   deriving Show
 

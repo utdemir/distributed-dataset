@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeApplications  #-}
@@ -119,7 +118,7 @@ answerThread LambdaEnv {..} = runResourceT . runAWS leEnv . forever $ do
           Just (Just x) -> return x
 
     decodeResponse :: Message -> IO BS.ByteString
-    decodeResponse msg = do
+    decodeResponse msg =
       case B64.decode . T.encodeUtf8 <$> msg ^. mBody of
         Nothing -> throwIO . InvokeException $
           "Error decoding answer: no body."
@@ -164,7 +163,7 @@ sqsReceiveSome queue = do
     liftIO . throwIO . InvokeException $
       "Error receiving messages: " <> T.pack (show $ rmrs ^. rmrsResponseStatus)
   let msgs = rmrs ^. rmrsMessages
-  when (not $ null msgs) $ do
+  unless (null msgs) $ do
     dmbrs <- send $ deleteMessageBatch queue
       & dmbEntries  .~
         [ deleteMessageBatchRequestEntry
@@ -190,7 +189,7 @@ withInvoke env stack f = do
 
 --------------------------------------------------------------------------------
 
-data InvokeException
+newtype InvokeException
   = InvokeException T.Text
   deriving Show
 
