@@ -1,0 +1,3 @@
+packages: distributed-fork/
+          distributed-fork-aws-lambda/
+          examples/
