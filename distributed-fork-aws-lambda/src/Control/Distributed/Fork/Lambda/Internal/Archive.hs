@@ -7,7 +7,7 @@
 This module contains the executables for the Lambda function.
 -}
 
-module Network.Serverless.Execute.Lambda.Internal.Archive
+module Control.Distributed.Fork.Lambda.Internal.Archive
   ( Archive (..)
   , mkArchive
   , archiveSize
@@ -28,8 +28,8 @@ import qualified Data.Text                                            as T
 import qualified Data.Text.Encoding                                   as T
 import           System.Process.Typed
 --------------------------------------------------------------------------------
-import           Network.Serverless.Execute.Backend
-import           Network.Serverless.Execute.Lambda.Internal.Constants
+import           Control.Distributed.Fork.Backend
+import           Control.Distributed.Fork.Lambda.Internal.Constants
 --------------------------------------------------------------------------------
 
 {-
@@ -50,7 +50,7 @@ client = boto3.client('sqs')
 
 def handle(event, context):
     popen = subprocess.Popen(
-       ["./#{hsMainName}", "#{const_SERVERLESS_EXECUTOR_MODE}"],
+       ["./#{hsMainName}", "#{argExecutorMode}"],
        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     (out, _) = popen.communicate(b64decode(event["d"]))
     client.send_message(

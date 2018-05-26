@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f84e450f1bdf8580631f5b3b1a58a1f79390a0bfbb2b98b31c6721a38c1d73ae
+-- hash: a2561f67e4eef45a13c0fdcedcd3d7121cbef386ed0cc516d03f9eeba0d38891
 
 name:           examples
 version:        0.0.0
@@ -21,13 +21,13 @@ executable gh
     , conduit-combinators
     , conduit-extra
     , containers
+    , distributed-fork
+    , distributed-fork-aws-lambda
     , http-conduit
     , lens
     , lens-aeson
     , monoidal-containers
     , ndjson-conduit
-    , serverless-execute
-    , serverless-execute-aws-lambda
     , text
     , time
     , vector
@@ -41,8 +41,8 @@ executable lambda
   build-depends:
       async
     , base
+    , distributed-fork
+    , distributed-fork-aws-lambda
     , http-conduit
-    , serverless-execute
-    , serverless-execute-aws-lambda
     , text
   default-language: Haskell2010

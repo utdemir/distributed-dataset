@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Serverless.Execute.Lambda.Internal.Types where
+module Control.Distributed.Fork.Lambda.Internal.Types where
 
 --------------------------------------------------------------------------------
 import           Data.Text (Text)

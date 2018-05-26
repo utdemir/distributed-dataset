@@ -1,18 +1,19 @@
-# serverless-execute
+# distributed-fork
 
-[![Build Status](https://travis-ci.org/utdemir/serverless-batch.svg?branch=master)](https://travis-ci.org/utdemir/serverless-batch) ![Hackage](https://img.shields.io/hackage/v/serverless-execute.svg)
+[![Build Status](https://travis-ci.org/utdemir/serverless-batch.svg?branch=master)](https://travis-ci.org/utdemir/distributed-fork) ![Hackage](https://img.shields.io/hackage/v/distributed-fork.svg)
 
-Run arbitrary IO actions on Serverless offerings (currently only AWS Lambda).
+Run arbitrary IO actions on remote machines.
 
-Wikipedia [says](https://en.wikipedia.org/wiki/Serverless_computing):
+This library leverages [StaticPointers language extension](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#static-pointers) and [distributed-closure library](https://hackage.haskell.org/package/distributed-closure) to run IO actions remotely.
 
-> Serverless computing is a cloud-computing execution model in which the cloud provider dynamically manages the allocation of machine resources. Pricing is based on the actual amount of resources consumed by an application, rather than on pre-purchased units of capacity.
+It consist of a core API called 'disributed-fork' and various libraries implementing different `Backend`'s. Currently only supported `Backend` is 'distributed-fork-aws-lambda'.
 
-This library is an approach to leverage serverless computing platforms in a simple way in Haskell. The fundamental difference from the alternatives is that this library provides you the means of offloading some computation to AWS Lambda, rather than letting you deploy an application completely.
+Using 'distributed-fork-aws-lambda', you can use AWS's serverless computing offering called Lambda. This gives you the ability to run your functions in a scalable fashion without provisioning any server or infrastructure. This is especially useful if your function is [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel):
 
-To put it simply, this library provides a function vaguely similar to `execute :: IO a -> IO a`, which takes an IO action, runs the action remotely on a serverless offering and gives back the result.
-
-It consist of a core API called 'serverless-execute' and various libraries implementing different `Backend`'s. Currently only supported `Backend` is AWS Lambda via 'serverless-execute-aws-lambda'.
+  * Download lots of files and process them in parallel (See "Examples" section).
+  * Load test an application by sending thousands of HTTP requests.
+  * Run different iterations of a simulation in parallel.
+  * Generate thumbnails for a set of images.
 
 ## Examples
 

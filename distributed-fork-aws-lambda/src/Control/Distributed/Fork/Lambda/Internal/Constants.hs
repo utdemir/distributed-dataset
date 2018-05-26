@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Serverless.Execute.Lambda.Internal.Constants where
+module Control.Distributed.Fork.Lambda.Internal.Constants where
 
 --------------------------------------------------------------------------------
 import           Data.Text (Text)

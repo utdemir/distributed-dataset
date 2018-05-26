@@ -29,9 +29,9 @@ import           Network.HTTP.Simple                (getResponseBody,
                                                      httpSource, parseRequest)
 import           Text.Printf                        (printf)
 --------------------------------------------------------------------------------
-import           Network.Serverless.Execute
-import           Network.Serverless.Execute.Lambda
-import           Network.Serverless.Execute.Utils
+import           Control.Distributed.Fork
+import           Control.Distributed.Fork.Lambda
+import           Control.Distributed.Fork.Utils
 --------------------------------------------------------------------------------
 
 artifactBucket :: T.Text
@@ -52,11 +52,11 @@ allUrls = do
 
 main :: IO ()
 main = do
-  initServerless
+  initDistributedFork
   withLambdaBackend opts $ \backend -> do
     -- Here is where the magic happens. Map urls to remote executors, run them
     -- and fetch the results.
-    results <- mapWithProgress backend (static Dict) $
+    results <- mapConcurrentlyWithProgress backend (static Dict) $
       map
         (\xs -> static processUrl `cap` cpure (static Dict) xs)
         allUrls

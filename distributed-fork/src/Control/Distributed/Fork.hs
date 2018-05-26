@@ -1,8 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 
 -- |
--- This module provides a common interface for executing IO actions on FaaS (Function
--- as a Service) providers like <https://aws.amazon.com/lambda AWS Lambda>.
+-- This module provides a common interface for offloading an IO action to remote executors.
 --
 -- It uses
 -- <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#static-pointers StaticPointers language extension> and
@@ -25,13 +24,13 @@
 -- environment is capable of executing the exact same binary. On most cases, this
 -- requires your host environment to be Linux. In future I plan to provide a set
 -- of scripts using Docker to overcome this limitation.
-module Network.Serverless.Execute
-  ( execute
-  , initServerless
+module Control.Distributed.Fork
+  ( fork
+  , await
+  , initDistributedFork
   , Backend
+  , Handle
 
-  -- * Asynchronous Execution
-  , executeAsync
   , ExecutorStatus (..)
   , ExecutorPendingStatus (..)
   , ExecutorFinalStatus (..)
@@ -48,59 +47,41 @@ module Network.Serverless.Execute
   ) where
 
 --------------------------------------------------------------------------------
-import           Control.Concurrent.STM
 import           Control.Distributed.Closure
+import           Control.Monad
 import           Control.Monad.Catch
-import           Control.Monad.IO.Class
-import           Data.Text                           (Text)
+import           Data.Text                         (Text)
 --------------------------------------------------------------------------------
-import           Network.Serverless.Execute.Internal
+import           Control.Distributed.Fork.Internal
 --------------------------------------------------------------------------------
 
 -- |
--- Executes the given function using the 'Backend'.
---
--- Can throw 'ExecutorFailedException'.
+-- Asynchronously executes the given function using the 'Backend' and returns
+-- an 'Handle'.
 --
 -- @
 -- {-\# LANGUAGE StaticPointers #-}
 --
--- import Network.Serverless.Execute
--- import Network.Serverless.Execute.LocalProcessBackend
+-- import Control.Distributed.Fork
+-- import Control.Distributed.Fork.LocalProcessBackend
 --
 -- main :: IO ()
 -- main = do
---   'initServerless'
---   ret <- 'execute' 'localProcessBackend' (static 'Dict') (static (return "Hello World!"))
---   putStrLn ret
--- @
-execute :: Backend
-           -- ^ Backend to execute the function.
-        -> Closure (Dict (Serializable a))
-           -- ^ A static evidence for @Serializable a@.
-           --   On most cases, just @(static Dict)@ is enough.
-        -> Closure (IO a)
-           -- ^ Function to execute.
-        -> IO a
-execute b d c = do
-  t <- executeAsync b d c
-  r <-
-    liftIO . atomically $
-    readTVar t >>= \case
-      ExecutorPending _ -> retry
-      ExecutorFinished a -> return a
-  case r of
-    ExecutorFailed err  -> throwM $ ExecutorFailedException err
-    ExecutorSucceeded a -> return a
+--   'initDistributedFork'
+--   handle <- 'fork' 'localProcessBackend' (static 'Dict') (static (return "Hello World!"))
+--   putStrLn =<< await handle
+fork :: Backend
+     -> Closure (Dict (Serializable a))
+     -> Closure (IO a)
+     -> IO (Handle a)
+fork b d c = runBackend d c b
 
 -- |
--- Same as 'execute', but immediately returns with a TVar containing the state
--- of the executor.
-executeAsync :: Backend
-             -> Closure (Dict (Serializable a))
-             -> Closure (IO a)
-             -> IO (TVar (ExecutorStatus a))
-executeAsync b d c = runBackend d c b
+-- Blocks until the 'Handle' completes.
+--
+-- Can throw 'ExecutorFailedException'.
+await :: Handle a -> IO a
+await = tryAwait >=> either (throwM . ExecutorFailedException) return
 
 --------------------------------------------------------------------------------
 

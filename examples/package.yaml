@@ -7,8 +7,8 @@ executables:
     main: lambda.hs
     dependencies:
       - base
-      - serverless-execute
-      - serverless-execute-aws-lambda
+      - distributed-fork
+      - distributed-fork-aws-lambda
       - async
       - text
       - http-conduit
@@ -16,8 +16,8 @@ executables:
     main: gh.hs
     dependencies:
       - base
-      - serverless-execute
-      - serverless-execute-aws-lambda
+      - distributed-fork
+      - distributed-fork-aws-lambda
       - aeson
       - conduit
       - conduit-combinators

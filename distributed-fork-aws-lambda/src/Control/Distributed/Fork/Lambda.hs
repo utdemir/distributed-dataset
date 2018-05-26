@@ -35,7 +35,7 @@
 --     something fails, it will take at least a few minutes to until you
 --     get an exception.
 
-module Network.Serverless.Execute.Lambda
+module Control.Distributed.Fork.Lambda
   (
   -- * Usage
     withLambdaBackend
@@ -59,11 +59,11 @@ import           Network.AWS                                        (Credentials
                                                                      runAWS,
                                                                      runResourceT)
 --------------------------------------------------------------------------------
-import           Network.Serverless.Execute.Backend
-import           Network.Serverless.Execute.Lambda.Internal.Archive
-import           Network.Serverless.Execute.Lambda.Internal.Invoke
-import           Network.Serverless.Execute.Lambda.Internal.Stack
-import           Network.Serverless.Execute.Lambda.Internal.Types
+import           Control.Distributed.Fork.Backend
+import           Control.Distributed.Fork.Lambda.Internal.Archive
+import           Control.Distributed.Fork.Lambda.Internal.Invoke
+import           Control.Distributed.Fork.Lambda.Internal.Stack
+import           Control.Distributed.Fork.Lambda.Internal.Types
 --------------------------------------------------------------------------------
 
 -- |
@@ -78,8 +78,8 @@ import           Network.Serverless.Execute.Lambda.Internal.Types
 -- {-\# LANGUAGE StaticPointers #-}
 --
 -- import Control.Lens
--- import Network.Serverless.Execute
--- import Network.Serverless.Execute.Lambda
+-- import Control.Distributed.Fork
+-- import Control.Distributed.Fork.Lambda
 --
 -- opts :: LambdaBackendOptions
 -- opts = lambdaBackendOptions "my-s3-bucket"
@@ -150,7 +150,7 @@ lambdaBackendOptions :: T.Text -- ^ Name of the S3 bucket to store the deploymen
                      -> LambdaBackendOptions
 lambdaBackendOptions bucket =
   LambdaBackendOptions { _lboBucket = bucket
-                       , _lboPrefix = "serverless-execute"
+                       , _lboPrefix = "distributed-fork"
                        , _lboMemory = 128
                        }
 
@@ -166,7 +166,7 @@ lboMemory = lens _lboMemory (\s t -> s { _lboMemory = t })
 -- |
 -- Prefix to the deployment archive and the CloudFormation stack.
 --
--- Default: "serverless-execute"
+-- Default: "distributed-fork"
 lboPrefix :: Lens' LambdaBackendOptions T.Text
 lboPrefix = lens _lboPrefix (\s t -> s { _lboPrefix = t })
 

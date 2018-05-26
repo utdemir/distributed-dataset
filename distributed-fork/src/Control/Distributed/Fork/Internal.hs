@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
@@ -6,16 +6,7 @@
 {-# LANGUAGE StaticPointers             #-}
 {-# LANGUAGE TypeApplications           #-}
 
-module Network.Serverless.Execute.Internal
-  ( const_SERVERLESS_EXECUTOR_MODE
-  , initServerless
-  , Backend (..)
-  , BackendM (..)
-  , ExecutorStatus (..)
-  , ExecutorPendingStatus (..)
-  , ExecutorFinalStatus (..)
-  , runBackend
-  ) where
+module Control.Distributed.Fork.Internal where
 
 --------------------------------------------------------------------------------
 import           Control.Concurrent
@@ -31,33 +22,33 @@ import           Data.Monoid                 ((<>))
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
 import           Data.Void
+import           GHC.Generics
 import           System.Environment
 import           System.Exit
-import           System.IO
-import GHC.Generics
+import           System.IO                   (stdin)
 --------------------------------------------------------------------------------
 
 -- |
--- We switch to executor mode only when  @argv[1] == const_SERVERLESS_EXECUTOR_MODE@.
-const_SERVERLESS_EXECUTOR_MODE :: String
-const_SERVERLESS_EXECUTOR_MODE = "SERVERLESS_EXECUTOR_MODE"
+-- We switch to executor mode only when  @argv[1] == argExecutorMode@.
+argExecutorMode :: String
+argExecutorMode = "DISTRIBUTED_FORK_EXECUTOR_MODE"
 
 -- |
--- On serverless-execute, we run the same binary both in your machine (called
+-- On distributed-fork, we run the same binary both in your machine (called
 -- "driver") and in the remote environment (called "executor"). In order for the
 -- program to act according to where it is, you should call this function as the
 -- first thing in your @main@:
 --
 -- @
 -- main = do
---   initServerless
+--   initDistributedFork
 --   ...
 -- @
-initServerless :: IO ()
-initServerless = do
+initDistributedFork :: IO ()
+initDistributedFork = do
   getArgs >>= \case
     [x]
-      | x == const_SERVERLESS_EXECUTOR_MODE -> vacuous runExecutor
+      | x == argExecutorMode -> vacuous runExecutor
     _ -> return ()
 
 -- |
@@ -78,9 +69,9 @@ type ExecutorClosure = Closure (IO ())
 --
 -- See:
 --
---   * 'Network.Serverless.Execute.LocalProcessBackend.localProcessBackend'
+--   * 'Control.Distributed.Fork.LocalProcessBackend.localProcessBackend'
 --
---   * <http://hackage.haskell.org/package/serverless-execute-aws-lambda serverless-execute-aws-lambda>
+--   * <http://hackage.haskell.org/package/distributed-fork-aws-lambda distributed-fork-aws-lambda>
 data Backend = Backend
   { bExecute :: BS.ByteString -> BackendM BS.ByteString
   -- ^ Should run the current binary in the target environment, put the given
@@ -95,20 +86,6 @@ newtype BackendM a =
   BackendM (ReaderT (ExecutorPendingStatus -> IO ()) IO a)
   deriving (Functor, Applicative, Monad, MonadIO, MonadCatch, MonadThrow)
 
-data ExecutorStatus a
-  = ExecutorPending ExecutorPendingStatus
-  | ExecutorFinished (ExecutorFinalStatus a)
-
-data ExecutorPendingStatus
-  = ExecutorWaiting (Maybe Text)
-  | ExecutorSubmitted (Maybe Text)
-  | ExecutorStarted (Maybe Text)
-
-data ExecutorFinalStatus a
-  = ExecutorFailed Text
-  | ExecutorSucceeded a
-  deriving (Generic)
-
 instance Binary a => Binary (ExecutorFinalStatus a)
 
 -- |
@@ -119,7 +96,7 @@ runBackend ::
      Closure (Dict (Serializable i))
   -> Closure (IO i)
   -> Backend
-  -> IO (TVar (ExecutorStatus i))
+  -> IO (Handle i)
 runBackend dict cls (Backend backend) =
   case unclosure dict of
     Dict -> do
@@ -137,7 +114,7 @@ runBackend dict cls (Backend backend) =
             try (runReaderT m (atomically . writeTVar t . ExecutorPending))
           atomically $ writeTVar t (ExecutorFinished r)
           return ()
-      return t
+      return $ Handle t
 
 toExecutorClosure :: Closure (Dict (Serializable a)) -> Closure (IO a) -> Closure (IO ())
 toExecutorClosure dict cls =
@@ -156,3 +133,31 @@ parseAnswer bs =
   case decodeOrFail (BL.fromStrict bs) of
     Left (_, _, err) -> ExecutorFailed $ "Error decoding answer: " <> T.pack err
     Right (_, _, a) -> a
+
+data ExecutorStatus a
+  = ExecutorPending ExecutorPendingStatus
+  | ExecutorFinished (ExecutorFinalStatus a)
+
+data ExecutorPendingStatus
+  = ExecutorWaiting (Maybe Text)
+  | ExecutorSubmitted (Maybe Text)
+  | ExecutorStarted (Maybe Text)
+
+data ExecutorFinalStatus a
+  = ExecutorFailed Text
+  | ExecutorSucceeded a
+  deriving (Generic)
+
+-- |
+-- Result of a 'fork' is an Handle where you can 'await' a result.
+newtype Handle a = Handle (TVar (ExecutorStatus a))
+
+tryAwait :: Handle a -> IO (Either Text a)
+tryAwait (Handle t) = do
+  r <- liftIO . atomically $
+    readTVar t >>= \case
+      ExecutorPending _ -> retry
+      ExecutorFinished a -> return a
+  return $ case r of
+    ExecutorFailed err  -> Left err
+    ExecutorSucceeded a -> Right a

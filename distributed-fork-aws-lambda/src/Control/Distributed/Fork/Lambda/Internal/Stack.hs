@@ -9,7 +9,7 @@
 This module creates an environment for the Lambda function.
 -}
 
-module Network.Serverless.Execute.Lambda.Internal.Stack
+module Control.Distributed.Fork.Lambda.Internal.Stack
   ( withStack
   , StackInfo (..)
   , awsUploadObject
@@ -37,8 +37,8 @@ import qualified Stratosphere             as S
 import           Data.Aeson.QQ
 import           Network.AWS.CloudFormation
 --------------------------------------------------------------------------------
-import           Network.Serverless.Execute.Lambda.Internal.Constants
-import           Network.Serverless.Execute.Lambda.Internal.Types
+import           Control.Distributed.Fork.Lambda.Internal.Constants
+import           Control.Distributed.Fork.Lambda.Internal.Types
 --------------------------------------------------------------------------------
 
 {-

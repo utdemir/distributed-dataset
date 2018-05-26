@@ -1,10 +1,10 @@
-module Network.Serverless.Execute.LocalProcessBackend where
+module Control.Distributed.Fork.LocalProcessBackend where
 
 --------------------------------------------------------------------------------
 import qualified Data.ByteString.Lazy               as BL
 import           System.Process.Typed
 --------------------------------------------------------------------------------
-import           Network.Serverless.Execute.Backend
+import           Control.Distributed.Fork.Backend
 --------------------------------------------------------------------------------
 
 -- |
@@ -14,5 +14,5 @@ localProcessBackend = Backend $ \stdin' -> do
   executable <- liftIO getExecutablePath
   let conf =
         setStdin (byteStringInput $ BL.fromStrict stdin') $
-        proc executable [const_SERVERLESS_EXECUTOR_MODE]
+        proc executable [argExecutorMode]
   liftIO . fmap BL.toStrict $ readProcessStdout_ conf

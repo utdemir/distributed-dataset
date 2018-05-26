@@ -1,15 +1,15 @@
 {-|
-You only need this module if you want to create a new backend for serverless-execute.
+You only need this module if you want to create a new backend for distributed-fork.
 
-See 'Network.Serverless.Execute.LocalProcessBackend' for a minimal example.
+See 'Control.Distributed.Fork.LocalProcessBackend' for a minimal example.
 -}
 
-module Network.Serverless.Execute.Backend
+module Control.Distributed.Fork.Backend
   (
     -- * Writing a 'Backend'.
     Backend (..)
   , BackendM
-  , const_SERVERLESS_EXECUTOR_MODE
+  , argExecutorMode
 
     -- * Reporting status
   , ExecutorFinalStatus (..)
@@ -31,7 +31,7 @@ import           Control.Monad.Trans.Reader
 import           Data.Text                           (Text)
 import           System.Environment
 --------------------------------------------------------------------------------
-import           Network.Serverless.Execute.Internal
+import           Control.Distributed.Fork.Internal
 --------------------------------------------------------------------------------
 
 pendingStatus :: ExecutorPendingStatus -> BackendM ()

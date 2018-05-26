@@ -3,7 +3,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeApplications  #-}
 
-module Network.Serverless.Execute.Lambda.Internal.Invoke
+module Control.Distributed.Fork.Lambda.Internal.Invoke
   ( withInvoke
   ) where
 
@@ -30,8 +30,8 @@ import           Network.AWS.SQS
 import           Text.Read
 --------------------------------------------------------------------------------
 import           Control.Concurrent.Throttled
-import           Network.Serverless.Execute.Backend
-import           Network.Serverless.Execute.Lambda.Internal.Stack (StackInfo (..))
+import           Control.Distributed.Fork.Backend
+import           Control.Distributed.Fork.Lambda.Internal.Stack (StackInfo (..))
 --------------------------------------------------------------------------------
 
 {-

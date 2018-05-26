@@ -1,8 +1,8 @@
 resolver: lts-10.10
 
 packages:
-  - serverless-execute
-  - serverless-execute-aws-lambda
+  - distributed-fork
+  - distributed-fork-aws-lambda
   - examples
 
 extra-deps:

@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Network.Serverless.Execute.Utils where
+module Control.Distributed.Fork.Utils where
 
 --------------------------------------------------------------------------------
 import Control.Monad (forM, unless)
@@ -13,21 +13,22 @@ import Data.Function (fix)
 import Control.Concurrent (threadDelay)
 import qualified System.Console.Terminal.Size as TS
 --------------------------------------------------------------------------------
-import Network.Serverless.Execute
+import Control.Distributed.Fork.Internal (Handle (..))
+import Control.Distributed.Fork
 --------------------------------------------------------------------------------
 
 -- |
 -- Runs given closures concurrently using the 'Backend' with a progress bar.
 --
 -- Throws 'ExecutorFailedException' if something fails.
-mapWithProgress :: Backend
-                -> Closure (Dict (Serializable a))
-                -> [Closure (IO a)]
-                -> IO [a]
-mapWithProgress backend dict xs = do
+mapConcurrentlyWithProgress :: Backend
+                            -> Closure (Dict (Serializable a))
+                            -> [Closure (IO a)]
+                            -> IO [a]
+mapConcurrentlyWithProgress backend dict xs = do
   st <- atomically $ newTVar (True, 0::Int, 0::Int, 0::Int, 0::Int)
-  tvars <- mapM (executeAsync backend dict) xs
-  asyncs <- forM tvars $ \tv ->
+  handles <- mapM (fork backend dict) xs
+  asyncs <- forM handles $ \(Handle tv) ->
     async . flip evalStateT (0, 0, 0, 0) . fix $ \recurse -> do
       oldState <- get
       (newState, result) <- liftIO $ atomically $ do
