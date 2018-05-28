@@ -1,6 +1,6 @@
 # distributed-fork
 
-[![Build Status](https://travis-ci.org/utdemir/serverless-batch.svg?branch=master)](https://travis-ci.org/utdemir/distributed-fork) ![Hackage](https://img.shields.io/hackage/v/distributed-fork.svg)
+[![Build Status](https://travis-ci.org/utdemir/distributed-fork.svg?branch=master)](https://travis-ci.org/utdemir/distributed-fork) ![Hackage](https://img.shields.io/hackage/v/distributed-fork.svg)
 
 Run arbitrary IO actions on remote machines.
 
