@@ -181,7 +181,7 @@ sqsReceiveSome queue = do
 withInvoke :: Env -> StackInfo -> ((BS.ByteString -> BackendM BS.ByteString) -> IO a) -> IO a
 withInvoke env stack f = do
   le <- newLambdaEnv env stack
-  throttle <- newThrottle 512
+  throttle <- newThrottle 128
   let answerT = async $ catchAny (answerThread le) $ \ex -> print ex
       deadLetterT = async $ catchAny (deadLetterThread le) $ \ex -> print ex
   void . sequence $ replicate 4 answerT ++ replicate 2 deadLetterT
