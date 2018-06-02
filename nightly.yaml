@@ -1,4 +1,4 @@
-resolver: nightly-2018-05-25
+resolver: nightly-2018-06-01
 
 packages:
   - distributed-fork
