@@ -2,9 +2,9 @@
 {-# LANGUAGE StaticPointers    #-}
 
 -- |
--- This module downloads every public GitHub event for the first quarter of 2018
--- from gharchive.com, and finds the people who used the word "cabal" in their
--- commit messages the most.
+-- This module downloads every public GitHub event for the first half of 2018
+-- from gharchive.com, and finds the people who used the word "cabal" the most
+-- in their commit messages.
 module Main where
 
 --------------------------------------------------------------------------------
@@ -19,7 +19,7 @@ import           Data.Conduit.Zlib                  (ungzip)
 import           Data.List                          (sortOn)
 import qualified Data.Map                           as M
 import qualified Data.Map.Monoidal                  as MM
-import           Data.Maybe                         (catMaybes, fromMaybe)
+import           Data.Maybe                         (mapMaybe, fromMaybe)
 import           Data.Monoid                        (Sum (Sum))
 import qualified Data.Text                          as T
 import           Data.Time.Calendar                 (fromGregorian,
@@ -37,14 +37,14 @@ import           Control.Distributed.Fork.Utils
 artifactBucket :: T.Text
 artifactBucket = "my-s3-bucket"
 
--- In gharchive, data is stored as gzipped JSON files for every hour since 2012.
+-- In gharchive, data is stored as gzipped JSON hourly.
 --
--- Here we're iterating through every hour in 2017 and creating the urls to
--- process.
+-- Here we're iterating through every hour in first half of 2018 and creating
+-- urls to process. This results in a 76.4 GB download.
 allUrls :: [String]
 allUrls = do
   let (start, end) = ( fromGregorian 2018 1 1
-                     , fromGregorian 2018 3 31
+                     , fromGregorian 2018 6 1
                      )
   date <- showGregorian <$> [start..end]
   time <- show <$> [(0::Int)..23]
@@ -71,8 +71,8 @@ main = do
           putStrLn $ printf "%20s - %d" name count)
 
 -- We actually don't need this much memory. But since CPU allocation increases
--- linearly with requested memory in AWS Lambda, more memory gives much better
--- results, it is even cheaper because functions finish more quickly.
+-- linearly with requested memory in AWS Lambda, more memory gives much faster
+-- results; it is even cheaper because functions finish more quickly.
 opts :: LambdaBackendOptions
 opts = lambdaBackendOptions artifactBucket
          & lboMemory .~ 1024
@@ -82,8 +82,8 @@ opts = lambdaBackendOptions artifactBucket
 -- Here, we make the actual HTTP request; extract, parse and gather the results
 -- in a streaming fashion.
 processUrl :: String -> IO (M.Map T.Text (Sum Int))
-processUrl str = do
-  req <- parseRequest str
+processUrl url = do
+  req <- parseRequest url
   res <- runConduitRes $
     httpSource req getResponseBody
       .| ungzip
@@ -97,7 +97,7 @@ processObject :: Value -> MM.MonoidalMap T.Text (Sum Int)
 processObject v = fromMaybe mempty $ do
   name <- v ^? key "actor" . key "login" . _String
   commits <- V.toList <$> v ^? key "payload" . key "commits" . _Array
-  let msgs = catMaybes $ map (^? key "message" . _String) commits
+  let msgs = mapMaybe (^? key "message" . _String) commits
       count = length $ filter (T.isInfixOf "cabal") msgs
   guard $ count > 0
   return $ MM.singleton name (Sum count)
