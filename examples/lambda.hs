@@ -12,13 +12,13 @@ import           Control.Distributed.Fork.Lambda
 --------------------------------------------------------------------------------
 
 opts :: LambdaBackendOptions
-opts = lambdaBackendOptions "my-s3-bucket"
+opts = lambdaBackendOptions "serverless-batch"
 
 main :: IO ()
 main = do
   initDistributedFork
   withLambdaBackend opts $ \backend ->
-    forConcurrently_ [1 .. 16] $ \i -> do
+    forConcurrently_ [1 .. 32] $ \i -> do
       putStrLn $ "Invoking function " ++ show (i :: Int)
       ip <- await =<< fork backend (static Dict) (static whatismyip)
       putStrLn $ "Returned " ++ show i ++ ": " ++ T.unpack ip

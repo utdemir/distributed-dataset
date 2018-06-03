@@ -10,6 +10,7 @@ module Main where
 --------------------------------------------------------------------------------
 import           Control.Lens                       ((&), (.~), (^?))
 import           Control.Monad                      (guard)
+import           Control.Retry                      (limitRetries, recoverAll)
 import           Data.Aeson                         (Value)
 import           Data.Aeson.Lens                    (key, _Array, _String)
 import           Data.Conduit                       (runConduitRes, (.|))
@@ -19,7 +20,7 @@ import           Data.Conduit.Zlib                  (ungzip)
 import           Data.List                          (sortOn)
 import qualified Data.Map                           as M
 import qualified Data.Map.Monoidal                  as MM
-import           Data.Maybe                         (mapMaybe, fromMaybe)
+import           Data.Maybe                         (fromMaybe, mapMaybe)
 import           Data.Monoid                        (Sum (Sum))
 import qualified Data.Text                          as T
 import           Data.Time.Calendar                 (fromGregorian,
@@ -58,7 +59,7 @@ main = do
     -- and fetch the results.
     results <- mapConcurrentlyWithProgress backend (static Dict) $
       map
-        (\xs -> static processUrl `cap` cpure (static Dict) xs)
+        (\url -> static processRetrying `cap` cpure (static Dict) url)
         allUrls
 
     -- Combine results from diffent executors.
@@ -78,6 +79,10 @@ opts = lambdaBackendOptions artifactBucket
          & lboMemory .~ 1024
 
 --------------------------------------------------------------------------------
+
+-- Same as processUrl, but retry 2 more times before failing.
+processRetrying :: String -> IO (M.Map T.Text (Sum Int))
+processRetrying = recoverAll (limitRetries 2) . const . processUrl
 
 -- Here, we make the actual HTTP request; extract, parse and gather the results
 -- in a streaming fashion.

@@ -123,11 +123,8 @@ withLambdaBackend LambdaBackendOptions {..} f = do
   putStrLn "Creating stack."
   withStack stackOptions env $ \si -> do
     putStrLn "Stack created."
-    putStrLn $ "Stack Id: " <> T.unpack (siId si)
     putStrLn $ "Artifact: " <> show s3loc
-    putStrLn $ "Func: " <> T.unpack (siFunc si)
-    putStrLn $ "Answer Queue: " <> T.unpack (siAnswerQueue si)
-    putStrLn $ "Dead Letter Queue: " <> T.unpack (siDeadLetterQueue si)
+    putStrLn $ "Stack Id: " <> T.unpack (siId si)
     withInvoke env si $ \invoke ->
       f $ Backend invoke
 

@@ -1,8 +1,8 @@
--- This file has been generated from package.yaml by hpack version 0.21.2.
+-- This file has been generated from package.yaml by hpack version 0.28.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a2561f67e4eef45a13c0fdcedcd3d7121cbef386ed0cc516d03f9eeba0d38891
+-- hash: f35e79330a5d509af3cc5507c6a84cac165ea263d86cd31819cea3c0bf4e2805
 
 name:           examples
 version:        0.0.0
@@ -28,6 +28,7 @@ executable gh
     , lens-aeson
     , monoidal-containers
     , ndjson-conduit
+    , retry
     , text
     , time
     , vector
