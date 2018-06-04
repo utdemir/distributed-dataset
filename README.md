@@ -1,8 +1,8 @@
 # distributed-fork
 
 [![Build Status](https://travis-ci.org/utdemir/distributed-fork.svg?branch=master)](https://travis-ci.org/utdemir/distributed-fork)
-[![Hackage distributed-fork](https://img.shields.io/badge/Hackage-distributed--fork-brightgreen.svg)](https://hackage.haskell.org/package/distributed-fork)
-[![Hackage distributed-fork-aws-lambda](https://img.shields.io/badge/Hackage-distributed--fork--aws--lambda-brightgreen.svg)](https://hackage.haskell.org/package/distributed-fork-aws-lambda)
+[![Hackage distributed-fork](https://img.shields.io/badge/Hackage-distributed--fork-blue.svg)](https://hackage.haskell.org/package/distributed-fork)
+[![Hackage distributed-fork-aws-lambda](https://img.shields.io/badge/Hackage-distributed--fork--aws--lambda-blue.svg)](https://hackage.haskell.org/package/distributed-fork-aws-lambda)
 
 Run arbitrary IO actions on remote machines.
 
