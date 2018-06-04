@@ -24,14 +24,12 @@
 -- of scripts using Docker to overcome this limitation.
 module Control.Distributed.Fork
   ( fork
-  , await
   , initDistributedFork
   , Backend
-  , Handle
 
-  , ExecutorStatus (..)
-  , ExecutorPendingStatus (..)
-  , ExecutorFinalStatus (..)
+  -- * Handle
+  , Handle
+  , await
 
   -- * Exceptions
   , ExecutorFailedException (..)
@@ -66,7 +64,7 @@ import           Control.Distributed.Fork.Internal
 -- main :: IO ()
 -- main = do
 --   'initDistributedFork'
---   handle <- 'fork' 'localProcessBackend' (static 'Dict') (static (return "Hello World!"))
+--   handle <- 'fork' 'Control.Distributed.Fork.LocalProcessBackend.localProcessBackend' (static 'Dict') (static (return "Hello World!"))
 --   await handle >>= putStrLn
 -- @
 fork :: Backend

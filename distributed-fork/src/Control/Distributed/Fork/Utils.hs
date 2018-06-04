@@ -13,7 +13,7 @@ import Data.Function (fix)
 import Control.Concurrent (threadDelay)
 import qualified System.Console.Terminal.Size as TS
 --------------------------------------------------------------------------------
-import Control.Distributed.Fork.Internal (Handle (..))
+import Control.Distributed.Fork.Internal
 import Control.Distributed.Fork
 --------------------------------------------------------------------------------
 
