@@ -5,7 +5,7 @@ homepage:            https://github.com/utdemir/distributed-fork
 license:             BSD3
 license-file:        LICENSE
 author:              Utku Demir
-maintainer:          me@utdemir.com
+maintainer:          Utku Demir <me@utdemir.com>
 copyright:           Utku Demir
 category:            Control
 build-type:          Simple
