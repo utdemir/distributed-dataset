@@ -7,7 +7,7 @@ license-file:        LICENSE
 author:              Utku Demir
 maintainer:          me@utdemir.com
 copyright:           Utku Demir
-category:            Web
+category:            Control
 build-type:          Simple
 cabal-version:       >=1.10
 
