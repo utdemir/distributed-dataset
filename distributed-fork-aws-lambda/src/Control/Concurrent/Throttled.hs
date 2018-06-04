@@ -1,3 +1,7 @@
+{-# LANGUAGE DeriveGeneric #-}
+
+-- |
+-- A utility module which lets you put a concurrency limit to an IO action.
 module Control.Concurrent.Throttled
   ( Throttle
   , newThrottle
@@ -5,26 +9,23 @@ module Control.Concurrent.Throttled
   )  where
 
 --------------------------------------------------------------------------------
-import Control.Monad
-import Control.Exception
-import Control.Concurrent
+import Control.Monad (when)
+import Control.Exception (finally)
+import Control.Concurrent.STM
 --------------------------------------------------------------------------------
 
 newtype Throttle
-  = Throttle (MVar (MVar ()))
+  = Throttle (TVar Int)
 
 newThrottle :: Int -> IO Throttle
-newThrottle maxConcurrent = do
-  mv <- newEmptyMVar
-  forM_ [1..maxConcurrent] $ \_ -> forkIO . forever $ do
-    m <- takeMVar mv
-    putMVar m ()
-    putMVar m ()
-  return $ Throttle mv
+newThrottle lim =
+  Throttle <$> newTVarIO (max lim 1)
 
 throttled :: Throttle -> IO a -> IO a
-throttled (Throttle mv) act = do
-  m <- newEmptyMVar
-  putMVar mv m
-  readMVar m
-  act `finally` takeMVar m
+throttled (Throttle tv) act = do
+  atomically $ do
+    r <- readTVar tv
+    when (r == 0) retry
+    writeTVar tv (r - 1)
+  finally act $
+    atomically $ modifyTVar tv (+ 1)
