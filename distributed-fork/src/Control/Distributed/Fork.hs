@@ -67,7 +67,7 @@ import           Control.Distributed.Fork.Internal
 -- main = do
 --   'initDistributedFork'
 --   handle <- 'fork' 'localProcessBackend' (static 'Dict') (static (return "Hello World!"))
---   putStrLn =<< await handle
+--   await handle >>= putStrLn
 -- @
 fork :: Backend
      -> Closure (Dict (Serializable a))
