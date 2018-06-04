@@ -27,7 +27,7 @@ library
                      , Control.Distributed.Fork.Backend
   other-modules:       Control.Distributed.Fork.Internal
   ghc-options:         -Wall
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.10 && < 5
                      , async
                      , binary
                      , bytestring
