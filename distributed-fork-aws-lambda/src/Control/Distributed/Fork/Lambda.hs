@@ -86,7 +86,7 @@ import           Control.Distributed.Fork.Lambda.Internal.Types
 --
 -- main :: IO ()
 -- main = do
---   'initServerless'
+--   'initDistributedFork'
 --   'withLambdaBackend' opts $ \backend -> do
 --     ret <- 'execute' 'backend' (static 'Dict') (static (return "Hello from Lambda!"))
 --     putStrLn ret
