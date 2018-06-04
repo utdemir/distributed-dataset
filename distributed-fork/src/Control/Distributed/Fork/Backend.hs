@@ -1,7 +1,7 @@
 {-|
 You only need this module if you want to create a new backend for distributed-fork.
 
-See 'Control.Distributed.Fork.LocalProcessBackend' for a minimal example.
+See 'Control.Distributed.Fork.LocalProcessBackend.localProcessBackend' for a minimal example.
 -}
 
 module Control.Distributed.Fork.Backend
