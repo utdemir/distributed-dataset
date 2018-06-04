@@ -17,8 +17,8 @@ Using 'distributed-fork-aws-lambda', you can use AWS's serverless computing offe
 
 ## Examples
 
-* [lambda.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/lambda.hs): Tiny example for spawning a Lambda executor.
-* [gh.hs](https://github.com/utdemir/serverless-batch/blob/master/examples/gh.hs): A more contrived example application that queries large amounts of data in parallel.
+* [lambda.hs](https://github.com/utdemir/distributed-fork/blob/master/examples/lambda.hs): Tiny example for spawning a Lambda executor.
+* [gh.hs](https://github.com/utdemir/distributed-fork/blob/master/examples/gh.hs): A more contrived example application that queries large amounts of data in parallel.
 
 ### Running Examples
 
@@ -37,8 +37,8 @@ aws s3api create-bucket --bucket my-s3-bucket
 * Clone the repository
 
 ```
-$ git clone https://github.com/utdemir/serverless-batch
-$ cd serverless-batch
+$ git clone https://github.com/utdemir/distributed-fork
+$ cd distributed-fork
 ```
 
 * Replace `my-s3-bucket` with the name of the bucket you just created:
