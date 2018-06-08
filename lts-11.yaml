@@ -1,17 +1,9 @@
-resolver: lts-11.11
+resolver: lts-11.12
 
 packages:
   - distributed-fork
   - distributed-fork-aws-lambda
   - examples
-
-extra-deps:
-  - amazonka-1.6.0
-  - amazonka-core-1.6.0
-  - amazonka-cloudformation-1.6.0
-  - amazonka-lambda-1.6.0
-  - amazonka-s3-1.6.0
-  - amazonka-sqs-1.6.0
 
 nix:
   packages:
