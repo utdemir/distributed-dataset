@@ -69,9 +69,7 @@ def handle(event, context):
 And we read the current executable.
 
 Since it'll run on AWS Lambda, it needs to be a statically linked Linux
-executable, so we do a preliminary check here. We're calling the "file"
-command here instead of using libmagic, because trying to statically compile
-it caused problems on my system.
+executable, so we do a preliminary check here.
 -}
 mkHsMain :: IO BS.ByteString
 mkHsMain = do
@@ -82,7 +80,7 @@ mkHsMain = do
     `catch` (\(_ :: SomeException) -> throwIO FileExceptionNotElf)
   unless (elfClass elf == ELFCLASS64) $
     throwIO FileExceptionNot64Bit
-  when (PT_DYNAMIC `elem` map elfSegmentType (elfSegments elf)) $
+  when (any (\s -> elfSegmentType s == PT_DYNAMIC) (elfSegments elf)) $
     throwIO FileExceptionNotStatic
 
   return contents
