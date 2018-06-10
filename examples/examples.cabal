@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f35e79330a5d509af3cc5507c6a84cac165ea263d86cd31819cea3c0bf4e2805
+-- hash: 0bda24acac3edf6fb84610ed8719adbaf75d922d67841ac2517dbaf9f0e8b09a
 
 name:           examples
 version:        0.0.0
@@ -13,7 +13,6 @@ executable gh
   main-is: gh.hs
   other-modules:
       Paths_examples
-  ghc-options: -Wall -static -optl-static -optl-pthread -fPIC
   build-depends:
       aeson
     , base
@@ -38,7 +37,6 @@ executable lambda
   main-is: lambda.hs
   other-modules:
       Paths_examples
-  ghc-options: -Wall -static -optl-static -optl-pthread -fPIC
   build-depends:
       async
     , base

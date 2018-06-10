@@ -40,6 +40,7 @@ library
                      , base64-bytestring
                      , bytestring
                      , containers
+                     , elf
                      , interpolate
                      , lens
                      , lens-aeson
@@ -48,7 +49,6 @@ library
                      , stratosphere >= 0.15.0
                      , text
                      , time
-                     , typed-process
                      , unordered-containers
                      , zip-archive
 

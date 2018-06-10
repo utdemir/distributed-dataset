@@ -1,6 +1,6 @@
-{-# LANGUAGE BinaryLiterals    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE BinaryLiterals      #-}
+{-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-
 This module contains the executables for the Lambda function.
@@ -14,18 +14,18 @@ module Control.Distributed.Fork.Lambda.Internal.Archive
   ) where
 
 --------------------------------------------------------------------------------
-import           Codec.Archive.Zip                                    hiding
-                                                                       (Archive)
+import           Codec.Archive.Zip                                  hiding
+                                                                     (Archive)
 import           Control.Exception
 import           Control.Monad
-import qualified Data.ByteString                                      as BS
-import qualified Data.ByteString.Lazy                                 as BL
+import qualified Data.ByteString                                    as BS
+import qualified Data.ByteString.Lazy                               as BL
 import           Data.Digest.Pure.SHA
+import           Data.Elf
 import           Data.Function
 import           Data.String.Interpolate
-import qualified Data.Text                                            as T
-import qualified Data.Text.Encoding                                   as T
-import           System.Process.Typed
+import qualified Data.Text                                          as T
+import qualified Data.Text.Encoding                                 as T
 --------------------------------------------------------------------------------
 import           Control.Distributed.Fork.Backend
 import           Control.Distributed.Fork.Lambda.Internal.Constants
@@ -76,33 +76,45 @@ it caused problems on my system.
 mkHsMain :: IO BS.ByteString
 mkHsMain = do
   path <- getExecutablePath
-  checkFile path
-  BS.readFile path
-  where
-    checkFile path = do
-      ret <-
-        liftIO $
-        T.splitOn ", " . T.decodeUtf8 . BL.toStrict <$>
-        readProcessStdout_ (proc "file" ["--brief", path])
-      let preds :: [(T.Text, T.Text)]
-          preds =
-            [ ( "ELF 64-bit LSB executable"
-              , "file is not an 64 bit ELF executable")
-            , ( "statically linked"
-              , "file is not statically linked"
-              )
-            ]
-      forM_ preds $ \(str, ex) ->
-        if str `elem` ret
-        then return ()
-        else throwIO (FileException ex)
-      return ()
+  contents <- BS.readFile path
 
-newtype FileException
-  = FileException T.Text
-  deriving Show
+  elf <- return (parseElf contents)
+    `catch` (\(_ :: SomeException) -> throwIO FileExceptionNotElf)
+  unless (elfClass elf == ELFCLASS64) $
+    throwIO FileExceptionNot64Bit
+  when (PT_DYNAMIC `elem` map elfSegmentType (elfSegments elf)) $
+    throwIO FileExceptionNotStatic
+
+  return contents
+
+data FileException
+  = FileExceptionNotElf
+  | FileExceptionNot64Bit
+  | FileExceptionNotStatic
 
 instance Exception FileException
+
+instance Show FileException where
+  show FileExceptionNotElf = [i|
+    Error: I am not an ELF binary.
+
+    The executable will run on AWS environment, because of that
+    this library currently only supports Linux.
+    |]
+  show FileExceptionNot64Bit = [i|
+    Error: I am not a 64bit executable.
+
+    AWS Lambda currently only runs 64 bit executables.
+    |]
+  show FileExceptionNotStatic = [i|
+    Error: I am not a dynamic executable.
+
+    Since the executable will run on AWS environment, it needs
+    to be statically linked.
+
+    You can give GHC "-optl-static -optl-pthread -fPIC" flags
+    to statically compile executables.
+    |]
 
 {-
 And we're going to put all of them in a zip archive.

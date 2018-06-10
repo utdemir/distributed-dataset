@@ -5,9 +5,11 @@ packages:
   - distributed-fork-aws-lambda
   - examples
 
+extra-deps:
+  - elf-0.28
+
 nix:
   packages:
-    - file
     - zlib
     - zlibStatic.static
     - bzip2

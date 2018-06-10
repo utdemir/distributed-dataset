@@ -13,10 +13,10 @@ extra-deps:
   - amazonka-lambda-1.6.0
   - amazonka-s3-1.6.0
   - amazonka-sqs-1.6.0
+  - elf-0.28
 
 nix:
   packages:
-    - file
     - zlib
     - zlibStatic.static
     - bzip2
