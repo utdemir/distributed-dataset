@@ -96,7 +96,7 @@ instance Exception FileException
 
 instance Show FileException where
   show FileExceptionNotElf = [i|
-    Error: I am not an ELF binary.
+    Error: I am not an ELF (Linux) binary.
 
     The executable will run on AWS environment, because of that
     this library currently only supports Linux.
