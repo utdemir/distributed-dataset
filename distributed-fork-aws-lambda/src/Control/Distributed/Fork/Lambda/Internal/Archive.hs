@@ -75,15 +75,17 @@ mkHsMain :: IO BS.ByteString
 mkHsMain = do
   path <- getExecutablePath
   contents <- BS.readFile path
+  assertBinary contents
+  return contents
 
-  elf <- return (parseElf contents)
+assertBinary :: BS.ByteString -> IO ()
+assertBinary contents = do
+  elf <- (return $! parseElf contents)
     `catch` (\(_ :: SomeException) -> throwIO FileExceptionNotElf)
   unless (elfClass elf == ELFCLASS64) $
     throwIO FileExceptionNot64Bit
   when (any (\s -> elfSegmentType s == PT_DYNAMIC) (elfSegments elf)) $
     throwIO FileExceptionNotStatic
-
-  return contents
 
 data FileException
   = FileExceptionNotElf
