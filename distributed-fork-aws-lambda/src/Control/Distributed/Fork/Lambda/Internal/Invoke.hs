@@ -182,10 +182,10 @@ withInvoke :: Env -> StackInfo -> ((BS.ByteString -> BackendM BS.ByteString) -> 
 withInvoke env stack f = do
   le <- newLambdaEnv env stack
   throttle <- newThrottle 128
-  let answerT = async $ catchAny (answerThread le) $ \ex -> print ex
-      deadLetterT = async $ catchAny (deadLetterThread le) $ \ex -> print ex
-  void . sequence $ replicate 4 answerT ++ replicate 2 deadLetterT
-  f $ execute le throttle
+  let answerT = async . forever $ catchAny (answerThread le) $ \ex -> print ex
+      deadLetterT = async . forever $ catchAny (deadLetterThread le) $ \ex -> print ex
+  threads <- (++) <$> replicateM 4 answerT <*> replicateM 2 deadLetterT
+  f (execute le throttle) `finally` mapM_ cancel threads
 
 --------------------------------------------------------------------------------
 
