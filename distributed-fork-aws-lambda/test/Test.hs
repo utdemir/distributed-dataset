@@ -10,7 +10,6 @@ import           Control.Concurrent
 import           Control.Exception                 (try)
 import           Data.Monoid                       ((<>))
 import qualified Data.Text                         as T
-import           System.Environment
 import           Test.Tasty
 import           Test.Tasty.HUnit
 --------------------------------------------------------------------------------
@@ -21,12 +20,7 @@ import           Control.Distributed.Fork.Lambda
 main :: IO ()
 main = do
   initDistributedFork
-  tests_ <- lookupEnv "ENABLE_AWS_TESTS" >>= \case
-    Nothing -> do
-      putStrLn "ENV[ENABLE_AWS_TESTS] is not set, skipping."
-      return $ testGroup "No tests" []
-    Just _ -> return tests
-  defaultMain tests_
+  defaultMain tests
 
 opts :: LambdaBackendOptions
 opts = lambdaBackendOptions "serverless-batch"
