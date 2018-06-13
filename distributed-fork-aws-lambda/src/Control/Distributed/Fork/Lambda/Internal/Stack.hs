@@ -1,7 +1,6 @@
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 
@@ -18,24 +17,24 @@ module Control.Distributed.Fork.Lambda.Internal.Stack
 
 --------------------------------------------------------------------------------
 import           Control.Exception.Safe
+import           Control.Lens
 import           Control.Monad
-import           Data.Aeson                                           (Value (Object))
-import qualified Data.ByteString                                      as BS
-import qualified Data.ByteString.Lazy                                 as BL
-import qualified Data.HashMap.Strict                                  as HM
+import           Data.Aeson                                         (Value (Object))
+import           Data.Aeson.QQ
+import qualified Data.ByteString                                    as BS
+import qualified Data.ByteString.Lazy                               as BL
+import qualified Data.HashMap.Strict                                as HM
 import           Data.List
 import           Data.Maybe
 import           Data.Monoid
-import qualified Data.Text                                            as T
-import qualified Data.Text.Encoding                                   as T
-import           Control.Lens
-import           Network.AWS                                          hiding (environment)
-import           Network.AWS.Lambda
-import qualified Network.AWS.S3                                       as S3
-import           Network.AWS.Waiter
-import qualified Stratosphere             as S
-import           Data.Aeson.QQ
+import qualified Data.Text                                          as T
+import qualified Data.Text.Encoding                                 as T
+import           Network.AWS                                        hiding (environment)
 import           Network.AWS.CloudFormation
+import           Network.AWS.Lambda
+import qualified Network.AWS.S3                                     as S3
+import           Network.AWS.Waiter
+import qualified Stratosphere                                       as S
 --------------------------------------------------------------------------------
 import           Control.Distributed.Fork.Lambda.Internal.Constants
 import           Control.Distributed.Fork.Lambda.Internal.Types
@@ -71,15 +70,15 @@ The components are:
     (deadLetterQueue) for collecting the failures.
 -}
 seTemplate :: StackOptions -> S.Template
-seTemplate StackOptions{..} =
+seTemplate StackOptions{ soLambdaCode = S3Loc (BucketName bucketName) path, soLambdaMemory } =
   S.template
     (S.Resources
        [ S.resource "func" $
          S.LambdaFunctionProperties $
          S.lambdaFunction
            (S.lambdaFunctionCode
-              & S.lfcS3Bucket ?~ S.Ref templateParameterS3Bucket
-              & S.lfcS3Key ?~ S.Ref templateParameterS3Key)
+              & S.lfcS3Bucket ?~ S.Literal bucketName
+              & S.lfcS3Key ?~ S.Literal path)
            "handler.handle"
            (S.GetAtt "role" "Arn")
            (S.Literal S.Python27)
@@ -91,17 +90,12 @@ seTemplate StackOptions{..} =
        , S.resource "answerQueue" $ S.SQSQueueProperties S.sqsQueue
        , S.resource "deadLetterQueue" $ S.SQSQueueProperties S.sqsQueue
        ]) &
-  S.templateParameters ?~
-  S.Parameters
-    [ S.parameter templateParameterS3Bucket "String"
-    , S.parameter templateParameterS3Key "String"
-    ] &
   S.templateOutputs ?~
-  S.Outputs
-    [ S.output templateOutputFunc (S.Ref "func")
-    , S.output templateOutputAnswerQueue (S.Ref "answerQueue")
-    , S.output templateOutputDeadLetterQueue (S.Ref "deadLetterQueue")
-    ]
+    S.Outputs
+      [ S.output templateOutputFunc (S.Ref "func")
+      , S.output templateOutputAnswerQueue (S.Ref "answerQueue")
+      , S.output templateOutputDeadLetterQueue (S.Ref "deadLetterQueue")
+      ]
 
 seRole :: S.ResourceProperties
 seRole =
@@ -154,12 +148,6 @@ seRole =
       Object hm -> hm
       _ -> error "invariant violation"
 
-
-templateParameterS3Bucket :: T.Text
-templateParameterS3Bucket = "s3bucket"
-
-templateParameterS3Key :: T.Text
-templateParameterS3Key = "s3key"
 
 templateOutputFunc :: T.Text
 templateOutputFunc = "output"
@@ -214,22 +202,13 @@ data StackInfo = StackInfo
   }
 
 seCreateStack :: StackOptions -> AWS StackInfo
-seCreateStack options@StackOptions { soName = StackName stackName
-                                   , soLambdaCode = S3Loc (BucketName bucketName) path} = do
+seCreateStack options@StackOptions { soName = StackName stackName } = do
   csrs <-
     send $
       createStack stackName
         & csTemplateBody ?~
             (T.decodeUtf8 . BL.toStrict . S.encodeTemplate $ seTemplate options)
         & csCapabilities .~ [CapabilityIAM]
-        & csParameters .~
-            [ parameter
-                & pParameterKey ?~ templateParameterS3Bucket
-                & pParameterValue ?~ bucketName
-            , parameter
-                & pParameterKey ?~ templateParameterS3Key
-                & pParameterValue ?~ path
-            ]
   unless (csrs ^. csrsResponseStatus == 200) $
     throwM $
      StackException
