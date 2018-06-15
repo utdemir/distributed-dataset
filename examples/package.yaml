@@ -4,7 +4,7 @@ ghc-options: -Wall -static -optl-static -optl-pthread -fPIC
 
 executables:
   lambda:
-    main: lambda.hs
+    main: trivial.hs
     dependencies:
       - base
       - distributed-fork
@@ -13,7 +13,7 @@ executables:
       - text
       - http-conduit
   gh:
-    main: gh.hs
+    main: complex.hs
     dependencies:
       - base
       - distributed-fork

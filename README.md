@@ -19,11 +19,13 @@ Using 'distributed-fork-aws-lambda', you can use AWS's serverless computing offe
 
 ## Examples
 
-* [lambda.hs](https://github.com/utdemir/distributed-fork/blob/master/examples/lambda.hs): Tiny example for spawning a Lambda executor.
-* [gh.hs](https://github.com/utdemir/distributed-fork/blob/master/examples/gh.hs): A more contrived example application that queries large amounts of data in parallel.
+* [trivial.hs](https://github.com/utdemir/distributed-fork/blob/master/examples/trivial.hs): Tiny example for spawning a Lambda executor.
+* [complex.hs](https://github.com/utdemir/distributed-fork/blob/master/examples/complex.hs): A more contrived example application that queries large amounts of data in parallel.
 
 ### Running Examples
 
+* Currently the examples run on Linux.
+* Make sure that [Stack](https://www.haskellstack.org/) tool is installed.
 * Make sure that you have AWS credentials set up. The easiest way is to install [AWS command line interface](https://aws.amazon.com/cli/) and to run:
 
 ```
@@ -46,14 +48,14 @@ $ cd distributed-fork
 * Replace `my-s3-bucket` with the name of the bucket you just created:
 
 ```
-vi examples/lambda.hs
+vi examples/trivial.hs
 ```
 
 * Build & run the example
 
 ```
 $ stack build examples
-$ stack exec lambda
+$ stack exec trivial
 ```
 
 ## Contributing
