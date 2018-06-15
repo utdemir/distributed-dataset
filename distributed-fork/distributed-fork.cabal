@@ -1,5 +1,5 @@
 name:                distributed-fork
-version:             0.0.1.2
+version:             0.0.1.3
 synopsis:            Like 'forkIO', but uses remote machines instead of local threads.
 homepage:            https://github.com/utdemir/distributed-fork
 license:             BSD3
