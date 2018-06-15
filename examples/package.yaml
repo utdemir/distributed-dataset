@@ -3,7 +3,7 @@ name: examples
 ghc-options: -Wall -static -optl-static -optl-pthread -fPIC
 
 executables:
-  lambda:
+  trivial:
     main: trivial.hs
     dependencies:
       - base
@@ -12,7 +12,7 @@ executables:
       - async
       - text
       - http-conduit
-  gh:
+  complex:
     main: complex.hs
     dependencies:
       - base

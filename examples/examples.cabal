@@ -2,14 +2,14 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 338472eb208497317d289ea27b85b16515b88161c5baacd578bb0c8a7d261e40
+-- hash: 618edba1d28c4a7a3c19b90bc7c51d3e99d6b75ef03c2354b29d409c2e96b99a
 
 name:           examples
 version:        0.0.0
 build-type:     Simple
 cabal-version:  >= 1.10
 
-executable gh
+executable complex
   main-is: complex.hs
   other-modules:
       Paths_examples
@@ -34,7 +34,7 @@ executable gh
     , vector
   default-language: Haskell2010
 
-executable lambda
+executable trivial
   main-is: trivial.hs
   other-modules:
       Paths_examples
