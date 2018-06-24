@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE NamedFieldPuns    #-}
@@ -73,7 +74,7 @@ seTemplate :: StackOptions -> S.Template
 seTemplate StackOptions{ soLambdaCode = S3Loc (BucketName bucketName) path, soLambdaMemory } =
   S.template
     (S.Resources
-       [ S.resource "func" $
+       [ S.resource templateOutputFunc $
          S.LambdaFunctionProperties $
          S.lambdaFunction
            (S.lambdaFunctionCode
@@ -87,14 +88,16 @@ seTemplate StackOptions{ soLambdaCode = S3Loc (BucketName bucketName) path, soLa
          & S.lfDeadLetterConfig ?~
              S.LambdaFunctionDeadLetterConfig (Just $ S.GetAtt "deadLetterQueue" "Arn")
        , S.resource "role" seRole
-       , S.resource "answerQueue" $ S.SQSQueueProperties S.sqsQueue
-       , S.resource "deadLetterQueue" $ S.SQSQueueProperties S.sqsQueue
+       , S.resource templateOutputAnswerQueue $ S.SQSQueueProperties S.sqsQueue
+       , S.resource templateOutputDeadLetterQueue $ S.SQSQueueProperties S.sqsQueue
+       , S.resource templateOutputAnswerBucket $ S.S3BucketProperties S.s3Bucket
        ]) &
   S.templateOutputs ?~
     S.Outputs
-      [ S.output templateOutputFunc (S.Ref "func")
-      , S.output templateOutputAnswerQueue (S.Ref "answerQueue")
-      , S.output templateOutputDeadLetterQueue (S.Ref "deadLetterQueue")
+      [ S.output templateOutputFunc (S.Ref templateOutputFunc)
+      , S.output templateOutputAnswerQueue (S.Ref templateOutputAnswerQueue)
+      , S.output templateOutputDeadLetterQueue (S.Ref templateOutputDeadLetterQueue)
+      , S.output templateOutputAnswerBucket (S.Ref templateOutputAnswerBucket)
       ]
 
 seRole :: S.ResourceProperties
@@ -127,6 +130,12 @@ seRole =
               "sqs:SendMessage"
           ],
           "Resource": "arn:aws:sqs:*"
+        }, {
+          "Effect": "Allow",
+          "Action": [
+              "s3:PutObject"
+          ],
+          "Resource": "arn:aws:s3:::*"
         }]
       }
     |]
@@ -157,6 +166,9 @@ templateOutputAnswerQueue = "answerQueue"
 
 templateOutputDeadLetterQueue :: T.Text
 templateOutputDeadLetterQueue = "deadLetterQueue"
+
+templateOutputAnswerBucket :: T.Text
+templateOutputAnswerBucket = "answerBucket"
 
 --------------------------------------------------------------------------------
 
@@ -199,6 +211,7 @@ data StackInfo = StackInfo
   , siFunc            :: T.Text
   , siAnswerQueue     :: T.Text
   , siDeadLetterQueue :: T.Text
+  , siAnswerBucket    :: T.Text
   }
 
 seCreateStack :: StackOptions -> AWS StackInfo
@@ -247,17 +260,24 @@ seCreateStack options@StackOptions { soName = StackName stackName } = do
     Nothing -> throwM $ StackException "Could not determine deadLetterQueue URL."
     Just t -> return t
 
+  answerBucket <- case lookupOutput stackRs templateOutputAnswerBucket of
+    Nothing -> throwM $ StackException "Could not determine answerBucket URL."
+    Just t  -> return t
+
   _ <- send $
     updateFunctionConfiguration func
       & ufcEnvironment ?~ (
          environment
-           & eVariables ?~ HM.fromList [ (envAnswerQueueUrl, answerQueue) ]
+           & eVariables ?~ HM.fromList [ (envAnswerQueueUrl, answerQueue)
+                                       , (envAnswerBucketUrl, answerBucket)
+                                       ]
         )
 
   return $ StackInfo { siId = stackId
                      , siFunc = func
                      , siAnswerQueue = answerQueue
                      , siDeadLetterQueue = deadLetterQueue
+                     , siAnswerBucket = answerBucket
                      }
 
   where

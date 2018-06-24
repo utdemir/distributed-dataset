@@ -39,6 +39,7 @@ library
                      , async
                      , base64-bytestring
                      , bytestring
+                     , conduit
                      , containers
                      , elf
                      , interpolate
@@ -49,6 +50,8 @@ library
                      , stratosphere >= 0.15.0
                      , text
                      , time
+                     , transformers
+                     , unliftio-core
                      , unordered-containers
                      , zip-archive
 

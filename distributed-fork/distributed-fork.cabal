@@ -39,6 +39,7 @@ library
                      , terminal-size
                      , transformers
                      , typed-process
+                     , unliftio-core
 
 test-suite tests
   type:             exitcode-stdio-1.0

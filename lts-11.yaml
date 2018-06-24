@@ -6,6 +6,10 @@ packages:
   - examples
 
 extra-deps:
+  - git: https://github.com/brendanhay/amazonka.git
+    commit: 248f7b2a7248222cc21cef6194cd1872ba99ac5d
+    subdirs:
+      - amazonka
   - elf-0.28
 
 nix:

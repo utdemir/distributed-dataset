@@ -14,3 +14,6 @@ handlerPyName = "handler.py"
 
 envAnswerQueueUrl :: Text
 envAnswerQueueUrl = "ANSWER_QUEUE_URL"
+
+envAnswerBucketUrl :: Text
+envAnswerBucketUrl = "ANSWER_BUCKET_URL"

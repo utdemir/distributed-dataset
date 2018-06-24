@@ -14,6 +14,7 @@ import           Control.Concurrent.STM
 import           Control.Distributed.Closure
 import           Control.Monad.Catch
 import           Control.Monad.IO.Class
+import           Control.Monad.IO.Unlift
 import           Control.Monad.Trans.Reader
 import           Data.Binary
 import qualified Data.ByteString             as BS
@@ -84,7 +85,7 @@ newtype Backend = Backend
 -- executor.
 newtype BackendM a =
   BackendM (ReaderT (ExecutorPendingStatus -> IO ()) IO a)
-  deriving (Functor, Applicative, Monad, MonadIO, MonadCatch, MonadThrow)
+  deriving (Functor, Applicative, Monad, MonadIO, MonadCatch, MonadThrow, MonadUnliftIO)
 
 instance Binary a => Binary (ExecutorFinalStatus a)
 

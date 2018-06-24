@@ -12,24 +12,26 @@ import           Control.Concurrent.MVar
 import           Control.Exception.Safe
 import           Control.Lens
 import           Control.Monad
+import           Conduit
 import qualified Data.Aeson                                       as A
 import           Data.Aeson.Lens
 import qualified Data.ByteString                                  as BS
 import qualified Data.ByteString.Lazy                                  as BL
 import           Data.ByteString.Base64                           as B64
-import qualified Data.HashMap.Strict                              as HM
 import qualified Data.Map.Strict                                  as M
 import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text                                        as T
 import qualified Data.Text.Encoding                               as T
+import           Control.Monad.Trans.AWS (sinkBody)
 import           Network.AWS
 import           Network.AWS.Lambda
 import           Network.AWS.SQS
-import           Text.Read
+import           Network.AWS.S3 as S3
 --------------------------------------------------------------------------------
 import           Control.Concurrent.Throttled
 import           Control.Distributed.Fork.Backend
+import           Control.Distributed.Fork.Lambda.Internal.Types
 import           Control.Distributed.Fork.Lambda.Internal.Stack (StackInfo (..))
 --------------------------------------------------------------------------------
 
@@ -41,7 +43,7 @@ Every individual invocation have an incrementing id, so we can distinguish
 the responses.
 -}
 data LambdaState = LambdaState
-  { lsInvocations :: M.Map Int (IO BS.ByteString -> IO ())
+  { lsInvocations :: M.Map Int (IO ResponsePayload -> IO ())
   , lsNextId      :: Int
   }
 
@@ -61,10 +63,13 @@ newLambdaEnv env st  =
 {-
 When invoking a function, we insert a new id to the state and then call Lambda.
 -}
-execute :: LambdaEnv -> Throttle -> BS.ByteString -> BackendM BS.ByteString
-execute LambdaEnv{..} throttle input = do
+execute :: LambdaEnv
+        -> (Throttle, Throttle, Throttle)
+        -> BS.ByteString
+        -> BackendM BS.ByteString
+execute LambdaEnv{..} (invocationThrottle, executionThrottle, downloadThrottle) input = do
   -- Modify environment
-  mvar <- liftIO $ newEmptyMVar @(IO BS.ByteString)
+  mvar <- liftIO $ newEmptyMVar @(IO ResponsePayload)
   id' <- liftIO $ modifyMVar leState $ \LambdaState{..} -> return
     ( LambdaState { lsNextId = lsNextId + 1
                   , lsInvocations =
@@ -73,24 +78,45 @@ execute LambdaEnv{..} throttle input = do
     , lsNextId
     )
 
-  -- invoke the lambda function
-  irs <- liftIO $ throttled throttle . runResourceT . runAWS leEnv $
-    send $ invoke
-      (siFunc leStack)
-      (BL.toStrict . A.encode $ A.object
-        [ (T.pack "d", A.toJSON . T.decodeUtf8 $ B64.encode input)
-        , (T.pack "i", A.toJSON id')
-        ])
-      & iInvocationType ?~ Event
-  submitted
+  answer <- throttled executionThrottle $ do
+    -- invoke the lambda function
+    irs <- throttled invocationThrottle $ runResourceT . runAWS leEnv $
+      send $ invoke
+        (siFunc leStack)
+        (BL.toStrict . A.encode $ A.object
+          [ (T.pack "d", A.toJSON . T.decodeUtf8 $ B64.encode input)
+          , (T.pack "i", A.toJSON id')
+          ])
+        & iInvocationType ?~ Event
+    submitted
 
-  unless (irs ^. irsStatusCode `div` 100 == 2) $
-    throwIO . InvokeException $
-      "Invoke failed. Status code: " <> T.pack (show $ irs ^. irsStatusCode)
+    unless (irs ^. irsStatusCode `div` 100 == 2) $
+      throwIO . InvokeException $
+        "Invoke failed. Status code: " <> T.pack (show $ irs ^. irsStatusCode)
 
-  -- wait fo the answer
-  liftIO . join $ readMVar mvar
+    -- wait fo the answer
+    liftIO . join $ readMVar mvar
 
+  case answer of
+    ResponsePayloadInline p ->
+      case B64.decode . T.encodeUtf8 $ p of
+        Left err -> throwIO . InvokeException $
+          "Error decoding answer: " <> T.pack err
+        Right x -> return x
+    ResponsePayloadS3 p ->
+      throttled downloadThrottle $
+        runResourceT . runAWS leEnv $ do
+          let bucketName = S3.BucketName $ siAnswerBucket leStack
+          gors <- send $ getObject bucketName (ObjectKey p)
+          unless (gors ^. gorsResponseStatus `div` 100 == 2) $
+            throwIO . InvokeException $
+            "Downloading result failed. Status code: " <> T.pack (show $ gors ^. gorsResponseStatus)
+          bs <- mconcat <$> sinkBody (gors ^. gorsBody) sinkList
+          dors <- send $ deleteObject bucketName (ObjectKey p)
+          unless (dors ^. dorsResponseStatus `div` 100 == 2) $
+            throwIO . InvokeException $
+            "Deleting result failed. Status code: " <> T.pack (show $ dors ^. dorsResponseStatus)
+          return bs
 
 {-
 And then we listen from answerQueue for the responses
@@ -99,32 +125,17 @@ answerThread :: LambdaEnv -> IO ()
 answerThread LambdaEnv {..} = runResourceT . runAWS leEnv . forever $ do
   msgs <- sqsReceiveSome $ siAnswerQueue leStack
   forM_ msgs $ \msg -> do
-    id' <- liftIO $ decodeId msg
+    Response id' payload <- case A.decodeStrict . T.encodeUtf8 <$> msg ^. mBody of
+      Nothing -> throwIO . InvokeException $
+          "Error decoding answer: no body."
+      Just Nothing -> throwIO . InvokeException $
+          "Error decoding answer: invalid json: " <> T.pack (show msg)
+      Just (Just r) -> return r
+
     liftIO . modifyMVar_ leState $ \s ->
       case M.updateLookupWithKey (\_ _ -> Nothing) id' (lsInvocations s) of
         (Nothing, _) -> return s
-        (Just x, s') -> s { lsInvocations = s' } <$ x (decodeResponse msg)
-  where
-    decodeId :: Message -> IO Int
-    decodeId msg =
-      case HM.lookup "Id" (msg ^. mMessageAttributes) of
-        Nothing -> throwIO . InvokeException $
-          "Error decoding answer: can not find Id: " <> T.pack (show msg)
-        Just av -> case readMaybe . T.unpack <$> av ^. mavStringValue of
-          Nothing -> throwIO . InvokeException $
-            "Error decoding answer: empty Id."
-          Just Nothing -> throwIO . InvokeException $
-            "Error decoding answer: can not decode Id."
-          Just (Just x) -> return x
-
-    decodeResponse :: Message -> IO BS.ByteString
-    decodeResponse msg =
-      case B64.decode . T.encodeUtf8 <$> msg ^. mBody of
-        Nothing -> throwIO . InvokeException $
-          "Error decoding answer: no body."
-        Just (Left err) -> throwIO . InvokeException $
-          "Error decoding answer: " <> T.pack err
-        Just (Right x) -> return x
+        (Just x, s') -> s { lsInvocations = s' } <$ x (return payload)
 
 {-
 And then we listen from answerQueue for the responses
@@ -178,14 +189,17 @@ sqsReceiveSome queue = do
 
 --------------------------------------------------------------------------------
 
-withInvoke :: Env -> StackInfo -> ((BS.ByteString -> BackendM BS.ByteString) -> IO a) -> IO a
-withInvoke env stack f = do
+withInvoke :: Env
+           -> (Throttle, Throttle, Throttle)
+           -> StackInfo
+           -> ((BS.ByteString -> BackendM BS.ByteString) -> IO a)
+           -> IO a
+withInvoke env throttles stack f = do
   le <- newLambdaEnv env stack
-  throttle <- newThrottle 128
   let answerT = async . forever $ catchAny (answerThread le) $ \ex -> print ex
       deadLetterT = async . forever $ catchAny (deadLetterThread le) $ \ex -> print ex
   threads <- (++) <$> replicateM 4 answerT <*> replicateM 2 deadLetterT
-  f (execute le throttle) `finally` mapM_ cancel threads
+  f (execute le throttles) `finally` mapM_ cancel threads
 
 --------------------------------------------------------------------------------
 

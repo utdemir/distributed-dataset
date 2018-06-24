@@ -7,7 +7,10 @@ packages:
 
 extra-deps:
   - stratosphere-0.22.3
-  - amazonka-1.6.0
+  - git: https://github.com/brendanhay/amazonka.git
+    commit: 248f7b2a7248222cc21cef6194cd1872ba99ac5d
+    subdirs:
+      - amazonka
   - amazonka-core-1.6.0
   - amazonka-cloudformation-1.6.0
   - amazonka-lambda-1.6.0

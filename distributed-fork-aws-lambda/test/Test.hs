@@ -39,6 +39,12 @@ tests =
             fork backend (static Dict) (static (return $ Just @Integer 42))
               >>= await
         r @?= Just 42
+    , testCase "handles large return value" $ do
+        r <-
+          withLambdaBackend opts $ \backend ->
+            fork backend (static Dict) (static (return $ T.replicate (2^22) "h"))
+              >>= await
+        T.length r @?= (2 ^ 22)
     , testCase "handles oom" $ do
         r <-
           try $ withLambdaBackend opts $ \backend ->

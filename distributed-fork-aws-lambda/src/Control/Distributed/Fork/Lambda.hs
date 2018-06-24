@@ -43,6 +43,9 @@ module Control.Distributed.Fork.Lambda
   , lambdaBackendOptions
   , lboPrefix
   , lboMemory
+  , lboMaxConcurrentInvocations
+  , lboMaxConcurrentExecutions
+  , lboMaxConcurrentDownloads
   ) where
 
 import           Data.Bool                                          (bool)
@@ -58,6 +61,7 @@ import           Network.AWS                                        (Credentials
                                                                      runAWS,
                                                                      runResourceT)
 --------------------------------------------------------------------------------
+import           Control.Concurrent.Throttled
 import           Control.Distributed.Fork.Backend
 import           Control.Distributed.Fork.Lambda.Internal.Archive
 import           Control.Distributed.Fork.Lambda.Internal.Invoke
@@ -122,10 +126,13 @@ withLambdaBackend LambdaBackendOptions {..} f = do
 
   putStrLn "Creating stack."
   withStack stackOptions env $ \si -> do
-    putStrLn "Stack created."
-    putStrLn $ "Artifact: " <> show s3loc
-    putStrLn $ "Stack Id: " <> T.unpack (siId si)
-    withInvoke env si $ \invoke ->
+    putStrLn $ "Stack created: " <> T.unpack (siId si)
+
+    throttles <- (,,) <$> newThrottle _lboMaxConcurrentInvocations
+                      <*> newThrottle _lboMaxConcurrentExecutions
+                      <*> newThrottle _lboMaxConcurrentDownloads
+
+    withInvoke env throttles si $ \invoke ->
       f $ Backend invoke
 
 --------------------------------------------------------------------------------
@@ -136,9 +143,12 @@ withLambdaBackend LambdaBackendOptions {..} f = do
 -- Use 'lambdaBackendOptions' smart constructor to create and lenses below for
 -- setting optional fields.
 data LambdaBackendOptions = LambdaBackendOptions
-  { _lboBucket      :: T.Text
-  , _lboPrefix      :: T.Text
-  , _lboMemory      :: Int
+  { _lboBucket                   :: T.Text
+  , _lboPrefix                   :: T.Text
+  , _lboMemory                   :: Int
+  , _lboMaxConcurrentInvocations :: Int
+  , _lboMaxConcurrentExecutions  :: Int
+  , _lboMaxConcurrentDownloads   :: Int
   }
 
 lambdaBackendOptions :: T.Text -- ^ Name of the S3 bucket to store the deployment archive in.
@@ -147,6 +157,9 @@ lambdaBackendOptions bucket =
   LambdaBackendOptions { _lboBucket = bucket
                        , _lboPrefix = "distributed-fork"
                        , _lboMemory = 128
+                       , _lboMaxConcurrentInvocations = 64
+                       , _lboMaxConcurrentExecutions  = 0
+                       , _lboMaxConcurrentDownloads   = 16
                        }
 
 -- |
@@ -165,3 +178,34 @@ lboMemory = lens _lboMemory (\s t -> s { _lboMemory = t })
 lboPrefix :: Lens' LambdaBackendOptions T.Text
 lboPrefix = lens _lboPrefix (\s t -> s { _lboPrefix = t })
 
+-- |
+-- Maximum number of concurrent "invoke" calls to AWS API to trigger to executions.
+--
+-- Non-positive values disable the throttling.
+--
+-- Default: 64
+lboMaxConcurrentInvocations :: Lens' LambdaBackendOptions Int
+lboMaxConcurrentInvocations =
+  lens _lboMaxConcurrentInvocations (\s t -> s { _lboMaxConcurrentInvocations = t })
+
+-- |
+-- Maximum number of concurrently executing Lambda functions.
+--
+-- Non-positive values disable the throttling.
+--
+-- Default: 0
+lboMaxConcurrentExecutions :: Lens' LambdaBackendOptions Int
+lboMaxConcurrentExecutions =
+  lens _lboMaxConcurrentExecutions (\s t -> s { _lboMaxConcurrentExecutions = t })
+
+-- |
+-- If the size of the return value from your function is larger than 200 kilobytes,
+-- we fetch the results via S3. This parameter sets the maximum number of concurrent
+-- downloads from S3.
+--
+-- Non-positive values disable the throttling.
+--
+-- Default: 16
+lboMaxConcurrentDownloads :: Lens' LambdaBackendOptions Int
+lboMaxConcurrentDownloads =
+  lens _lboMaxConcurrentDownloads (\s t -> s { _lboMaxConcurrentDownloads = t })

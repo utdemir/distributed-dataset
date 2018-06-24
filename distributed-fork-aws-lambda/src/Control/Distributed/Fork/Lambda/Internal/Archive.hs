@@ -41,28 +41,54 @@ handlerPy :: BS.ByteString
 handlerPy = T.encodeUtf8 $ T.pack [i|
 import os
 import subprocess
-from base64 import *
+from uuid import uuid4
+from json import dumps
+from base64 import b64encode, b64decode
+
 import boto3
 
 queue_url = os.environ["#{envAnswerQueueUrl}"]
-client = boto3.client('sqs')
+bucket_url = os.environ["#{envAnswerBucketUrl}"]
+
+sqs = boto3.client('sqs')
+s3 = boto3.client('s3')
+
+def send_message(body):
+    sqs.send_message(
+      QueueUrl=queue_url,
+      MessageBody=dumps(body),
+    )
 
 def handle(event, context):
+    id = event["i"]
+
     popen = subprocess.Popen(
        ["./#{hsMainName}", "#{argExecutorMode}"],
        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     (out, _) = popen.communicate(b64decode(event["d"]))
-    client.send_message(
-      QueueUrl=queue_url,
-      MessageBody=b64encode(out),
-      MessageAttributes={
-        "Id": {
-            "DataType": "Number",
-            "StringValue": str(event["i"])
-        }
-      }
-    )
 
+    if popen.returncode:
+      print "Subprocess failed, code: ", popen.returncode
+      exit(1)
+
+    if len(out) < 260000:
+      send_message({
+        "id": id,
+        "type": "response-inline",
+        "payload": b64encode(out)
+      })
+    else:
+      fname = str(uuid4())
+      s3.put_object(
+        Bucket = bucket_url,
+        Key = fname,
+        Body = out
+      )
+      send_message({
+        "id": id,
+        "type": "response-s3",
+        "path": fname
+      })
 |]
 
 {-
