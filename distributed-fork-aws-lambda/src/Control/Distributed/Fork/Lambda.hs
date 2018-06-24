@@ -179,7 +179,7 @@ lboPrefix :: Lens' LambdaBackendOptions T.Text
 lboPrefix = lens _lboPrefix (\s t -> s { _lboPrefix = t })
 
 -- |
--- Maximum number of concurrent "invoke" calls to AWS API to trigger to executions.
+-- Maximum number of concurrent "invoke" calls to AWS API to trigger executions.
 --
 -- Non-positive values disable the throttling.
 --
