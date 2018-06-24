@@ -8,11 +8,16 @@
 --
 --     * It creates a deployment archive containing the program binary and
 --     a tiny wrapper written in Python and uploads it to the given S3 bucket.
---     * Creates a CloudFormation stack containing the Lambda function and
---     an SQS queue to gather the answers.
+--     * Creates a CloudFormation stack containing the Lambda function; and both
+--     an SQS queue and an S3 Bucket and to gather the answers.
 --     * It starts polling the SQS queue for any answers.
 --     * When executing, it invokes the Lambda function using asynchronous
---     invocation mode and blocks until a message appears in the queue.
+--     invocation mode. After the function finishes, it either puts the result
+--     directly into the SQS queue if the result is small enough (< 200kb) or
+--     uploads it into the S3 bucket and sends a pointer to the file via the
+--     queue.
+--     * A separate thread on the driver continously polls the queue for answers
+--     and parses and returns it to the caller.
 --     * On exit, it deletes the CloudFormation stack.
 --
 -- Some warts:
