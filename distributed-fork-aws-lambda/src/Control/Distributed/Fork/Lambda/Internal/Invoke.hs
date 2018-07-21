@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeApplications  #-}
@@ -20,7 +21,6 @@ import qualified Data.ByteString.Lazy                                  as BL
 import           Data.ByteString.Base64                           as B64
 import qualified Data.Map.Strict                                  as M
 import           Data.Maybe
-import           Data.Monoid
 import qualified Data.Text                                        as T
 import qualified Data.Text.Encoding                               as T
 import           Control.Monad.Trans.AWS (sinkBody)
@@ -138,7 +138,7 @@ answerThread LambdaEnv {..} = runResourceT . runAWS leEnv . forever $ do
         (Just x, s') -> s { lsInvocations = s' } <$ x (return payload)
 
 {-
-And then we listen from answerQueue for the responses
+https://docs.aws.amazon.com/lambda/latest/dg/dlq.html
 -}
 deadLetterThread :: LambdaEnv -> IO ()
 deadLetterThread LambdaEnv {..} = runResourceT . runAWS leEnv . forever $ do
@@ -148,11 +148,17 @@ deadLetterThread LambdaEnv {..} = runResourceT . runAWS leEnv . forever $ do
     liftIO . modifyMVar_ leState $ \s ->
       case M.updateLookupWithKey (\_ _ -> Nothing) id' (lsInvocations s) of
         (Nothing, _) -> return s
-        (Just x, s') -> s { lsInvocations = s' } <$ x failure
+        (Just x, s') -> do
+          let errMsg =
+                msg
+                  ^. mMessageAttributes
+                  . at "ErrorMessage"
+                  . _Just
+                  . mavStringValue
+          x . throwIO . InvokeException $
+            "Lambda function failed." <> fromMaybe "" errMsg
+          return $ s { lsInvocations = s' }
   where
-    failure :: IO a
-    failure = throwIO . InvokeException $ "Lambda function failed."
-
     decodeId :: Message -> IO Int
     decodeId msg = case msg ^? mBody . _Just . key "i" . _Number of
       Nothing -> throwIO . InvokeException $
@@ -169,7 +175,7 @@ sqsReceiveSome queue = do
       & rmVisibilityTimeout ?~ 10
       & rmWaitTimeSeconds ?~ 10
       & rmMaxNumberOfMessages ?~ 10
-      & rmMessageAttributeNames .~ ["Id"]
+      & rmMessageAttributeNames .~ ["All"]
   unless (rmrs ^. rmrsResponseStatus == 200) $
     liftIO . throwIO . InvokeException $
       "Error receiving messages: " <> T.pack (show $ rmrs ^. rmrsResponseStatus)

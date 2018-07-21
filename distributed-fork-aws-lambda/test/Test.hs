@@ -50,7 +50,12 @@ tests =
           try $ withLambdaBackend opts $ \backend ->
             fork backend (static Dict) (static (return $ T.replicate (2^32) "h"))
               >>= await
-        r @?= Left (ExecutorFailedException $
-                      "Backend threw an exception: InvokeException " <>
-                      "\"Lambda function failed.\"")
+        case r of
+          Left (ExecutorFailedException t)
+            | "Backend threw an exception: InvokeException \"Lambda function failed."
+              `T.isPrefixOf` t -> return ()
+          Left other ->
+            assertFailure $ "invalid exception: " ++ show other
+          Right _ ->
+            assertFailure "should have failed."
     ]
