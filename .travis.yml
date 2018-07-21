@@ -23,4 +23,5 @@ script:
 env:
   - STACK_YAML=lts-10.yaml
   - STACK_YAML=lts-11.yaml
+  - STACK_YAML=lts-12.yaml
   - STACK_YAML=nightly.yaml
