@@ -303,5 +303,7 @@ instance Exception StackException
 withStack :: StackOptions -> Env -> (StackInfo -> IO a) -> IO a
 withStack opts env = bracket create destroy
   where
-    create = runResourceT . runAWS env $ seCreateStack opts
-    destroy = runResourceT . runAWS env . seDeleteStack
+    create =
+      runResourceT . runAWS env $ seCreateStack opts
+    destroy =
+      unless (soKeep opts) . runResourceT . runAWS env . seDeleteStack

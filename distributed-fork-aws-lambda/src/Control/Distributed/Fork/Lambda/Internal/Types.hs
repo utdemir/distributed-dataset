@@ -23,6 +23,7 @@ data StackOptions =
   StackOptions { soName :: StackName
                , soLambdaMemory :: Int
                , soLambdaCode :: S3Loc
+               , soKeep :: Bool
                }
 
 data Response

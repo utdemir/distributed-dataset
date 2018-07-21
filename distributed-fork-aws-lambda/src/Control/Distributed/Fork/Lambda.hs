@@ -51,6 +51,7 @@ module Control.Distributed.Fork.Lambda
   , lboMaxConcurrentInvocations
   , lboMaxConcurrentExecutions
   , lboMaxConcurrentDownloads
+  , lboKeepStack
   ) where
 
 import           Data.Bool                                          (bool)
@@ -127,6 +128,7 @@ withLambdaBackend LambdaBackendOptions {..} f = do
         StackOptions { soName = StackName (_lboPrefix <> "-" <> time <> "-" <> cksum)
                      , soLambdaMemory = _lboMemory
                      , soLambdaCode = s3loc
+                     , soKeep = _lboKeepStack
                      }
 
   putStrLn "Creating stack."
@@ -154,6 +156,7 @@ data LambdaBackendOptions = LambdaBackendOptions
   , _lboMaxConcurrentInvocations :: Int
   , _lboMaxConcurrentExecutions  :: Int
   , _lboMaxConcurrentDownloads   :: Int
+  , _lboKeepStack                :: Bool
   }
 
 lambdaBackendOptions :: T.Text -- ^ Name of the S3 bucket to store the deployment archive in.
@@ -165,6 +168,7 @@ lambdaBackendOptions bucket =
                        , _lboMaxConcurrentInvocations = 64
                        , _lboMaxConcurrentExecutions  = 0
                        , _lboMaxConcurrentDownloads   = 16
+                       , _lboKeepStack = False
                        }
 
 -- |
@@ -214,3 +218,11 @@ lboMaxConcurrentExecutions =
 lboMaxConcurrentDownloads :: Lens' LambdaBackendOptions Int
 lboMaxConcurrentDownloads =
   lens _lboMaxConcurrentDownloads (\s t -> s { _lboMaxConcurrentDownloads = t })
+
+-- |
+-- Whether to keep the CloudFormation stack after the 'withLambdaBackend' call.
+-- Useful for debugging.
+--
+-- Default: Fales
+lboKeepStack :: Lens' LambdaBackendOptions Bool
+lboKeepStack = lens _lboKeepStack (\s t -> s { _lboKeepStack = t })
