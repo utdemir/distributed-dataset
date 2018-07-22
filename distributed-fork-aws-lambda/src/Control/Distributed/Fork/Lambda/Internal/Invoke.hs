@@ -156,7 +156,7 @@ deadLetterThread LambdaEnv {..} = runResourceT . runAWS leEnv . forever $ do
                   . _Just
                   . mavStringValue
           x . throwIO . InvokeException $
-            "Lambda function failed." <> fromMaybe "" errMsg
+            "Lambda function failed: " <> fromMaybe "error message not found." errMsg
           return $ s { lsInvocations = s' }
   where
     decodeId :: Message -> IO Int
