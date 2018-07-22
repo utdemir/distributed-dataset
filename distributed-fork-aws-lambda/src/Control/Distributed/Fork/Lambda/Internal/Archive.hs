@@ -71,7 +71,7 @@ def handle(event, context):
       print "Subprocess failed, code: ", popen.returncode
       exit(1)
 
-    if len(out) < 260000:
+    if len(out) < 200000:
       send_message({
         "id": id,
         "type": "response-inline",
