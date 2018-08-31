@@ -18,10 +18,5 @@ before_install:
 
 script:
   - travis_wait 45 sleep 40m &
+  - timeout 40m stack -j 1 build
   - timeout 40m stack -j 1 --no-terminal test --haddock --no-haddock-deps distributed-fork
-
-env:
-  - STACK_YAML=lts-10.yaml
-  - STACK_YAML=lts-11.yaml
-  - STACK_YAML=lts-12.yaml
-  - STACK_YAML=nightly.yaml
