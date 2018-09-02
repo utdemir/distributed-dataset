@@ -1,13 +1,14 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: >= 1.10
+
+-- This file has been generated from package.yaml by hpack version 0.29.7.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 618edba1d28c4a7a3c19b90bc7c51d3e99d6b75ef03c2354b29d409c2e96b99a
+-- hash: ada68af1fa84bd05f93a93c9312650fa9fbcd259f9950ef5c4cb5aadcb13bf07
 
 name:           examples
 version:        0.0.0
 build-type:     Simple
-cabal-version:  >= 1.10
 
 executable complex
   main-is: complex.hs

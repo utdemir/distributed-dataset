@@ -1,4 +1,4 @@
-resolver: lts-12.1
+resolver: lts-12.8
 
 packages:
   - distributed-fork
