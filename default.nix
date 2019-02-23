@@ -1,40 +1,53 @@
-{ compiler ? "ghc843"
+{ compiler ? "ghc863"
 , pkgs ? import ./pkgs.nix
 }:
 
 let
-# ghc8.4 support: https://github.com/brendanhay/amazonka/issues/466
-amazonkaSrc = pkgs.fetchFromGitHub {
-   owner = "brendanhay"; repo = "amazonka";
-   rev = "248f7b2a7248222cc21cef6194cd1872ba99ac5d";
-   sha256 = "1pvx3v8n4q9jqx2bfvzy20fkwj54w8pwl5hdx8ylnkrzqmn6jnd3";
-};
+gitignore = pkgs.nix-gitignore.gitignoreSourcePure [ ./.gitignore ];
 
 overlays = se: su: {
-  "distributed-fork" =
-    se.callCabal2nix "distributed-fork" ./distributed-fork {};
-  "distributed-fork-aws-lambda" =
+  "distributed-dataset" =
+    pkgs.haskell.lib.doHaddock (
+      se.callCabal2nix 
+        "distributed-dataset-foo" 
+        (gitignore ./distributed-dataset) 
+        {}
+    );
+  "distributed-dataset-aws" =
     let orig = se.callCabal2nix
-                 "distributed-fork-aws-lambda"
-                 ./distributed-fork-aws-lambda {};
+                 "distributed-dataset-aws"
+                 (gitignore ./distributed-dataset-aws)
+                 {};
     in  pkgs.haskell.lib.overrideCabal orig (_: {
           extraLibraries = with pkgs; [
-            glibc glibc.static
+            glibc glibc.static zlib.static
+            (libffi.override { stdenv = makeStaticLibraries stdenv; })
             (gmp.override { withStatic = true; })
-            zlibStatic.static
           ];
-          doCheck = false;
+        doCheck = false;
+    });
+  "distributed-dataset-opendatasets" =
+    se.callCabal2nix 
+      "distributed-dataset-opendatasets" 
+      (gitignore ./distributed-dataset-opendatasets)
+      {};
+
+  "example-gh" =
+    let orig = se.callCabal2nix
+                 "example-gh"
+                 (gitignore ./examples/gh)
+                 {};
+    in  pkgs.haskell.lib.overrideCabal orig (_: {
+          extraLibraries = with pkgs; [
+            glibc glibc.static zlib.static 
+            (libffi.override { stdenv = makeStaticLibraries stdenv; })
+            (gmp.override { withStatic = true; })
+          ];
     });
 
-  amazonka =
-    pkgs.haskell.lib.overrideCabal su.amazonka (_: {
-      src = amazonkaSrc;
-      patchPhase = ''
-        TMPDIR=$(mktemp -d)
-        mv * $TMPDIR/; mv $TMPDIR/amazonka/* . #*/
-      '';
-      jailbreak = true;
-    });
+  # tests fail on ghc8.6
+  distributed-closure =
+    pkgs.haskell.lib.dontCheck su.distributed-closure ;
 };
 
 haskellPackages = pkgs.haskell.packages.${compiler}.override {
@@ -44,7 +57,7 @@ haskellPackages = pkgs.haskell.packages.${compiler}.override {
 prepareDev = se: drv:
   pkgs.haskell.lib.addBuildDepends se.${drv} (
     pkgs.lib.optionals pkgs.lib.inNixShell [
-      se.cabal-install
+      se.cabal-install se.ghcid se.stylish-haskell
     ]
   );
 
@@ -54,9 +67,9 @@ addCompilerName = drv:
 output = n: addCompilerName (prepareDev haskellPackages n);
 
 in
-
 { 
-  "distributed-fork" = output "distributed-fork";
-  "distributed-fork-aws-lambda" = output "distributed-fork-aws-lambda";
-  haskellOverlays = overlays;
+  "distributed-dataset" = output "distributed-dataset";
+  "distributed-dataset-aws" = output "distributed-dataset-aws";
+  "distributed-dataset-opendatasets" = output "distributed-dataset-opendatasets";
+  "example-gh" = output "example-gh";
 }

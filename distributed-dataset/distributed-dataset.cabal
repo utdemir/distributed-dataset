@@ -1,0 +1,85 @@
+name:                distributed-dataset
+synopsis:            A distributed data processing framework in pure Haskell
+version:             0.0.1.0
+homepage:            https://github.com/utdemir/distributed-dataset
+license:             BSD3
+author:              Utku Demir
+maintainer:          me@utdemir.com
+copyright:           Utku Demir
+category:            Network
+build-type:          Simple
+cabal-version:       >=1.10
+
+library distributed-dataset-internal
+  hs-source-dirs:      src-internal
+  default-language:    Haskell2010
+  exposed-modules:     Data.Conduit.Serialise
+  ghc-options:         -Wall
+  build-depends:       base >= 4.11 && < 5
+                     , bytestring
+                     , conduit
+                     , serialise
+
+library
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  exposed-modules:     Control.Distributed.Fork
+                     , Control.Distributed.Fork.Utils
+                     , Control.Distributed.Fork.LocalProcessBackend
+                     , Control.Distributed.Fork.Backend
+                     , Control.Distributed.Dataset
+                     , Control.Distributed.Dataset.ShuffleStore
+                     , Control.Distributed.Dataset.LocalTmpShuffleStore
+                     , Data.Monoid.Commutative
+  other-modules:       Control.Distributed.Fork.Internal
+                     , Control.Distributed.Dataset.Internal.Dataset
+                     , Control.Distributed.Dataset.Internal.Class
+                     , Control.Distributed.Dataset.Internal.Aggr
+  ghc-options:         -Wall
+  build-depends:       base >= 4.11 && < 5
+                     , distributed-dataset-internal
+                     , async
+                     , binary
+                     , bytestring
+                     , conduit
+                     , constraints
+                     , containers
+                     , directory
+                     , distributed-closure
+                     , exceptions
+                     , filepath
+                     , hashable
+                     , lens
+                     , monad-logger
+                     , mtl
+                     , random
+                     , serialise
+                     , split
+                     , stm
+                     , terminal-size
+                     , text
+                     , transformers
+                     , typed-process
+                     , unix
+                     , unliftio-core
+                     , unordered-containers
+
+test-suite distributed-dataset-tests
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Tests.hs
+  default-language: Haskell2010
+  other-modules:    BatchTests
+                  , SerialiseTests
+  ghc-options:      -Wall -threaded
+  build-depends:    base >=4.11 && < 5
+                  , distributed-dataset
+                  , distributed-dataset-internal
+                  , binary
+                  , bytestring
+                  , conduit
+                  , distributed-closure
+                  , hashable
+                  , serialise
+                  , tasty
+                  , tasty-hunit

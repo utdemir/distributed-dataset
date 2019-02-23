@@ -1,31 +1,54 @@
-# distributed-fork
+# distributed-dataset
 
-[![Build Status](https://travis-ci.org/utdemir/distributed-fork.svg?branch=master)](https://travis-ci.org/utdemir/distributed-fork)
-[![Hackage distributed-fork](https://img.shields.io/badge/Hackage-distributed--fork-blue.svg)](https://hackage.haskell.org/package/distributed-fork)
-[![Hackage distributed-fork-aws-lambda](https://img.shields.io/badge/Hackage-distributed--fork--aws--lambda-blue.svg)](https://hackage.haskell.org/package/distributed-fork-aws-lambda)
+[![Build Status](https://travis-ci.org/utdemir/distributed-dataset.svg?branch=master)](https://travis-ci.org/utdemir/distributed-dataset)
+[![Hackage distributed-dataset](https://img.shields.io/badge/Hackage-distributed--dataset-blue.svg)](https://hackage.haskell.org/package/distributed-dataset)
+[![Hackage distributed-dataset-aws](https://img.shields.io/badge/Hackage-distributed--dataset--aws-blue.svg)](https://hackage.haskell.org/package/distributed-dataset-aws)
+[![Hackage distributed-dataset-opendatasets](https://img.shields.io/badge/Hackage-distributed--dataset--opendatasets-blue.svg)](https://hackage.haskell.org/package/distributed-dataset-opendatasets)
 
-Run arbitrary IO actions on remote machines.
+An experiment to create a distributed data processing framework in pure Haskell. Highly inspired by [Apache Spark](https://spark.apache.org/).
 
-This library leverages [StaticPointers language extension](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#static-pointers) and [distributed-closure library](https://hackage.haskell.org/package/distributed-closure) to run IO actions remotely.
+## Packages
 
-It consist of a core API called 'disributed-fork' and various libraries implementing different `Backend`'s. Currently only supported `Backend` is 'distributed-fork-aws-lambda'.
+### distributed-dataset
 
-Using 'distributed-fork-aws-lambda', you can use AWS's serverless computing offering called Lambda. This gives you the ability to run your functions in a scalable fashion without provisioning any server or infrastructure. This is especially useful if your function is [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel):
+* Control.Distributed.Dataset
 
-  * Download lots of files and process them in parallel (See "Examples" section).
-  * Load test an application by sending thousands of HTTP requests.
-  * Run different iterations of a simulation in parallel.
-  * Generate thumbnails for a set of images.
+  This module provides a `Dataset` type which lets you express transformations on a distributed multiset.
 
-## Examples
+  API is highly inspired from Apache Spark's RDD API. You can see the example below to get a taste of how it looks.
 
-* [trivial.hs](https://github.com/utdemir/distributed-fork/blob/master/examples/trivial.hs): Tiny example for spawning a Lambda executor.
-* [complex.hs](https://github.com/utdemir/distributed-fork/blob/master/examples/complex.hs): A more contrived example application that queries large amounts of data in parallel.
+  It uses pluggable `ShuffleStore`'s for storing intermediate compuation results. See 'distributed-dataset-aws' for an implementation using S3.
 
-### Running Examples
+* Control.Distributed.Fork
 
-* Currently the examples run on Linux.
-* Make sure that [Stack](https://www.haskellstack.org/) tool is installed.
+  This module contains a `fork` function which lets you run arbitrary IO actions on remote machines; leveraging [StaticPointers language extension](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#static-pointers) and [distributed-closure library](https://hackage.haskell.org/package/distributed-closure).
+
+  You can solely use this if your task is [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel):
+
+    * Load test an application by sending thousands of HTTP requests.
+    * Run different iterations of a simulation in parallel.
+    * Generate thumbnails for a set of images.
+
+  It uses pluggable **Backend**s for spawning executors. See 'distributed-dataset-aws' for an implementation using AWS Lambda .
+
+### distributed-dataset-aws
+
+This package provides backends for 'distributed-dataset' to run using AWS services. Currently it supports running functions on AWS Lambda and using an S3 bucket as a shuffle store.
+
+### distributed-dataset-opendatasets
+
+Provides **Dataset**'s reading from public open datasets. Currently it can fetch GitHub event data from [GH Archive](https://www.gharchive.org).
+
+A [Common Crawl](http://commoncrawl.org/) implementation is planned next.
+
+## Example
+
+See [the example](examples/gh).
+
+### Running
+
+* Make sure that you have a working [Nix](https://nixos.org/nix/) installation. 
+
 * Make sure that you have AWS credentials set up. The easiest way is to install [AWS command line interface](https://aws.amazon.com/cli/) and to run:
 
 ```
@@ -38,26 +61,49 @@ aws configure
 aws s3api create-bucket --bucket my-s3-bucket
 ```
 
-* Clone the repository
+* Build an run the example:
 
-```
-$ git clone https://github.com/utdemir/distributed-fork
-$ cd distributed-fork
-```
-
-* Replace `my-s3-bucket` with the name of the bucket you just created:
-
-```
-vi examples/trivial.hs
+```sh
+$(nix-build -A example-gh)/bin/example-gh my-s3-bucket
 ```
 
-* Build & run the example
+## Stability
 
-```
-$ stack build examples
-$ stack exec trivial
-```
+Experimental. Expect lots of missing features, bugs, instability and API changes. On the plus side, I believe the codebase is small and easy to contribute/extend.
+
+### Known Bugs & Missing features & TODO
+
+* Exceptions does not always cause the created resources to terminate.
+* We definitely need a nicer API for writing a 'Backend'.
+* Retrying tasks on failures.
+* Utility functions to read/write to common data stores with common data formats.
+* Monitoring the progress of running tasks.
+* Joins.
+* Ability to applicatively compose aggregations.
+* Sorting datasets, topN queries.
+* Documentation.
+- Consider using: http://hackage.haskell.org/package/aws-lambda-haskell-runtime
 
 ## Contributing
 
 I am open to contributions; any issue, PR or opinion is more than welcome.
+
+## Hacking
+
+* I use Nix to develop. If you use `stack` or any alternative build system, I'd appreciate a PR.
+* Every subproject have a `shell.nix`, which gives you a development shell with `cabal`, `ghcid` and `stylish-haskell`. Example:
+
+```
+$ cd distributed-dataset-opendatasets
+$ nix-shell --pure --run 'ghcid -c "cabal new-repl distributed-dataset-opendatasets"'
+```
+* You can use [my binary cache on cachix](https://utdemir.cachix.org/) to make sure that you don't recompile half of the hackage.
+
+## See Also
+
+* [Sparkle](https://github.com/tweag/sparkle): Run Haskell on top of Apache Spark. This is what you are looking for if you are going to do anything serious.
+
+## Related Work
+
+* [Towards Haskell in Cloud](https://www.microsoft.com/en-us/research/publication/towards-haskell-cloud/) by Jeff Epstein, Andrew P. Black, Simon L. Peyton Jones 
+* [Resilient Distributed Datasets: A Fault-Tolerant Abstraction for In-Memory Cluster Computing](https://cs.stanford.edu/~matei/papers/2012/nsdi_spark.pdf) by Matei Zaharia, et al.

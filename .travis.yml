@@ -1,22 +1,9 @@
-sudo: false
-language: generic
-cache:
-  timeout: 600
-  directories:
-  - $HOME/.stack
-
-addons:
-  apt:
-    packages:
-      - libgmp-dev
-
-before_install:
-  # Download and unpack the stack executable
-  - mkdir -p ~/.local/bin
-  - export PATH=$HOME/.local/bin:$PATH
-  - travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-
+language: nix
+sudo: required
+before_script:
+  - nix-channel --update
+  - nix-env -i nix
 script:
-  - travis_wait 45 sleep 40m &
-  - timeout 40m stack -j 1 build
-  - timeout 40m stack -j 1 --no-terminal test --haddock --no-haddock-deps distributed-fork
+  - nix-env -if https://github.com/cachix/cachix/tarball/master --extra-substituters https://cachix.cachix.org --trusted-public-keys 'cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM='
+  - cachix use utdemir
+  - nix-build -j 4 --keep-going ./ci.nix
