@@ -71,15 +71,14 @@ Experimental. Expect lots of missing features, bugs, instability and API changes
 ### Known Bugs & Missing features & TODO
 
 * Exceptions does not always cause the created resources to terminate.
-* We definitely need a nicer API for writing a 'Backend'.
 * Retrying tasks on failures.
-* Utility functions to read/write to common data stores with common data formats.
 * Monitoring the progress of running tasks.
-* Joins.
-* Ability to applicatively compose aggregations.
 * Sorting datasets, topN queries.
+* Joins.
 * Documentation.
-- Consider using: http://hackage.haskell.org/package/aws-lambda-haskell-runtime
+* Nicer API for writing a 'Backend'.
+* Consider using: http://hackage.haskell.org/package/aws-lambda-haskell-runtime
+* Utility functions to read/write to common data stores with common data formats.
 
 ## Contributing
 
