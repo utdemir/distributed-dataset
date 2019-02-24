@@ -26,7 +26,7 @@ An experiment to create a distributed data processing framework in pure Haskell.
     * Run different iterations of a simulation in parallel.
     * Generate thumbnails for a set of images.
 
-  It uses pluggable **Backend**s for spawning executors. See 'distributed-dataset-aws' for an implementation using AWS Lambda .
+  It uses pluggable `Backend`s for spawning executors. See 'distributed-dataset-aws' for an implementation using AWS Lambda .
 
 ### distributed-dataset-aws
 
@@ -34,7 +34,7 @@ This package provides backends for 'distributed-dataset' to run using AWS servic
 
 ### distributed-dataset-opendatasets
 
-Provides **Dataset**'s reading from public open datasets. Currently it can fetch GitHub event data from [GH Archive](https://www.gharchive.org).
+Provides `Dataset`'s reading from public open datasets. Currently it can fetch GitHub event data from [GH Archive](https://www.gharchive.org).
 
 A [Common Crawl](http://commoncrawl.org/) implementation is planned next.
 
