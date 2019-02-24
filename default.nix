@@ -7,12 +7,14 @@ gitignore = pkgs.nix-gitignore.gitignoreSourcePure [ ./.gitignore ];
 
 overlays = se: su: {
   "distributed-dataset" =
-    pkgs.haskell.lib.doHaddock (
+    pkgs.haskell.lib.overrideCabal (
       se.callCabal2nix 
         "distributed-dataset-foo" 
         (gitignore ./distributed-dataset) 
         {}
-    );
+    ) (_: {
+      doHaddock = compiler > "ghc86";
+    });
   "distributed-dataset-aws" =
     let orig = se.callCabal2nix
                  "distributed-dataset-aws"
