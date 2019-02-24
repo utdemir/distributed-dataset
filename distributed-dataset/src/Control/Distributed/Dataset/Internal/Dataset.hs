@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -32,6 +33,8 @@ import           Data.List.Split
 import           Data.Ord
 import           Data.Typeable
 import           System.Random
+import           Control.Monad.Logger
+import qualified Data.Text as T
 -------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.Internal.Class
 import           Control.Distributed.Dataset.ShuffleStore
@@ -43,29 +46,24 @@ import           Data.Conduit.Serialise
 -- |
 -- Represents some amount of data which to be transformed on a single
 -- executor.
-data Partition a
-  = PSimple (Closure (ConduitT () a (ResourceT IO) ()))
-  | PCombined [Partition a]
+data Partition a where
+  PEmpty :: Partition a
+  PSimple :: Closure (ConduitT () a (ResourceT IO) ()) -> Partition a
+  PCombined :: Partition a -> Partition a -> Partition a
 
 instance Semigroup (Partition a) where
-  PCombined a <> PCombined b = PCombined (a ++ b)
-  PCombined a <> b = PCombined (b:a)
-  a <> PCombined b = PCombined (a:b)
-  a <> b = PCombined [a, b]
+  a <> b = PCombined a b
 
 instance Monoid (Partition a) where
-  mempty = PCombined []
+  mempty = PEmpty
 
 -- |
 -- Streams the elements from a 'Partition'.
 partitionProducer :: Typeable a => Partition a -> Closure (ConduitT () a (ResourceT IO) ())
+partitionProducer PEmpty = static (return ())
 partitionProducer (PSimple p) = p
-partitionProducer (PCombined ps) =
-  let cps = foldr
-              (\cp cl -> static (\p l -> p:l) `cap` cp `cap` cl)
-              (static [])
-              (map partitionProducer ps)
-  in  static sequence_ `cap` cps
+partitionProducer (PCombined p1 p2) =
+  static (>>) `cap` partitionProducer p1 `cap` partitionProducer p2
 
 -- * Dataset
 
@@ -76,7 +74,7 @@ partitionProducer (PCombined ps) =
 --
 -- Operations on 'Dataset's will only be performed when the result is requested.
 data Dataset a where
-  DExternal  :: [Partition a] -> Dataset a
+  DExternal  :: Typeable a => [Partition a] -> Dataset a
   DPipe      :: (StaticSerialise a, StaticSerialise b)
              => Closure (ConduitT a b (ResourceT IO) ())
              -> Dataset a -> Dataset b
@@ -84,17 +82,45 @@ data Dataset a where
              => Int
              -> Closure (a -> k)
              -> Dataset a -> Dataset a
-  DCoalesce  :: Int -> Dataset a -> Dataset a
+  DCoalesce  :: Int
+             -> Dataset a
+             -> Dataset a
 
 -- * Stage
 
 data Stage a where
-  SInit :: [Partition a] -> Stage a
+  SInit :: Typeable a => [Partition a] -> Stage a
   SNarrow :: (StaticSerialise a, StaticSerialise b)
           => Closure (ConduitM a b (ResourceT IO) ()) -> Stage a -> Stage b
   SWide :: (StaticSerialise a, StaticSerialise b)
         => Int -> Closure (ConduitM a (Int, b) (ResourceT IO) ()) -> Stage a -> Stage b
   SCoalesce :: Int -> Stage a -> Stage a
+
+instance Show (Stage a) where
+  show s@(SInit _) =  showTopStage s
+  show s@(SNarrow _ r) = mconcat [show r, " -> " , showTopStage s]
+  show s@(SWide _ _ r) = mconcat [show r, " -> " , showTopStage s]
+  show s@(SCoalesce _ r) = mconcat [show r, " -> " , showTopStage s]
+
+showTopStage :: forall a. Stage a -> String
+showTopStage (SInit p) = mconcat
+  [ "SInit"
+  , " @", show (typeRep $ Proxy @a)
+  , " ", show (length p)
+  ]
+showTopStage (SNarrow _ _) = mconcat
+  [ "* SNarrow"
+  , " @", show (typeRep $ Proxy @a)
+  ]
+showTopStage (SWide i _ _) = mconcat
+  [ "* SWide"
+  , " @", show (typeRep $ Proxy @a)
+  , " ", show i
+  ]
+showTopStage (SCoalesce i _) = mconcat
+  [ "SCoalesce"
+  , " ", show i
+  ]
 
 mkStages :: Dataset a -> Stage a
 mkStages (DExternal a) = SInit a
@@ -130,6 +156,8 @@ mkStages (DCoalesce count rest) =
   case mkStages rest of
     SNarrow cp rest' ->
       SNarrow cp (SCoalesce count rest')
+    SWide _ cp rest' ->
+      SWide count cp rest'
     SCoalesce _ rest' ->
       SCoalesce count rest'
     other ->
@@ -137,11 +165,13 @@ mkStages (DCoalesce count rest) =
 
 
 runStages :: forall a. Stage a -> DD [Partition a]
-runStages (SInit ps) = do
+runStages stage@(SInit ps) = do
+  logInfoN $ "Running: " <> T.pack (showTopStage stage)
   return ps
 
-runStages (SNarrow cpipe rest) = do
+runStages stage@(SNarrow cpipe rest) = do
   inputs <- runStages rest
+  logInfoN $ "Running: " <> T.pack (showTopStage stage)
   shuffleStore <- view ddShuffleStore
   tasks <- forM inputs $ \input -> do
     num <- liftIO randomIO
@@ -162,8 +192,9 @@ runStages (SNarrow cpipe rest) = do
   mapM_ await handles
   return $ map snd tasks
 
-runStages (SWide count cpipe rest) = do
+runStages stage@(SWide count cpipe rest) = do
   inputs <- runStages rest
+  logInfoN $ "Running: " <> T.pack (showTopStage stage)
   shuffleStore <- view ddShuffleStore
   tasks <- forM inputs $ \partition -> do
     num <- liftIO $ randomIO
@@ -209,12 +240,12 @@ runStages (SWide count cpipe rest) = do
     sort :: Monad m => ConduitT (Int, t) (Int, t) m ()
     sort = mapM_ yield . sortBy (comparing fst) =<< C.sinkList
 
-runStages (SCoalesce count rest) = do
+runStages stage@(SCoalesce count rest) = do
   inputs <- runStages rest
+  logInfoN $ "Running: " <> T.pack (showTopStage stage)
   return $ map mconcat $ transpose (chunksOf count inputs)
 
 -- * Dataset API
-
 
 -- |
 -- Streams the complete Dataset.
@@ -222,7 +253,9 @@ dFetch :: StaticSerialise a
        => Dataset a
        -> DD (ConduitT () a (ResourceT IO) ())
 dFetch ds = do
-  out <- runStages $ mkStages ds
+  let stages = mkStages ds
+  logInfoN $ "Stages: " <> T.pack (show stages)
+  out <- runStages stages
   return $ mapM_ (unclosure . partitionProducer) out
 
 -- |

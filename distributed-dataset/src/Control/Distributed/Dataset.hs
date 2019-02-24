@@ -68,6 +68,7 @@ import           Control.Distributed.Fork
 import           Control.Lens
 import qualified Data.HashMap.Strict                          as HM
 import           Data.Monoid.Commutative
+import           Data.Typeable
 -------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.Internal.Aggr
 import           Control.Distributed.Dataset.Internal.Class
@@ -75,7 +76,7 @@ import           Control.Distributed.Dataset.Internal.Dataset
 import           Control.Distributed.Dataset.ShuffleStore
 -------------------------------------------------------------------------------
 
-mkPartition :: Closure (ConduitT () a (ResourceT IO) ()) -> Partition a
+mkPartition :: Typeable a => Closure (ConduitT () a (ResourceT IO) ()) -> Partition a
 mkPartition = PSimple
 
 -- * Dataset
@@ -91,7 +92,7 @@ dPipe = DPipe
 -- Create a dataset from given 'Partition'''s.
 --
 -- This is how every 'Dataset' is created initially.
-dExternal :: [Partition a] -> Dataset a
+dExternal :: Typeable a => [Partition a] -> Dataset a
 dExternal = DExternal
 
 -- |
@@ -103,7 +104,7 @@ dPartition = DPartition
 -- |
 -- Re-partition the dataset using the given function so that the rows with the same 'k' will
 -- end up in the same partition.
-dCoalesce :: Int -> Dataset a -> Dataset a
+dCoalesce :: Typeable a => Int -> Dataset a -> Dataset a
 dCoalesce = DCoalesce
 
 -- * Dataset API
