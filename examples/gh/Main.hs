@@ -20,7 +20,7 @@ app :: DD ()
 app = do
   result <-
     -- Fetch events from GitHub between given dates
-    ghArchive (fromGregorian 2018 1 1, fromGregorian 2019 1 1)
+    ghArchive (fromGregorian 2018 12 1, fromGregorian 2019 1 1)
 
       -- Extract every commit
       & dConcatMap (static (\e ->
