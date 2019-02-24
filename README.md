@@ -1,9 +1,6 @@
 # distributed-dataset
 
 [![Build Status](https://travis-ci.org/utdemir/distributed-dataset.svg?branch=master)](https://travis-ci.org/utdemir/distributed-dataset)
-[![Hackage distributed-dataset](https://img.shields.io/badge/Hackage-distributed--dataset-blue.svg)](https://hackage.haskell.org/package/distributed-dataset)
-[![Hackage distributed-dataset-aws](https://img.shields.io/badge/Hackage-distributed--dataset--aws-blue.svg)](https://hackage.haskell.org/package/distributed-dataset-aws)
-[![Hackage distributed-dataset-opendatasets](https://img.shields.io/badge/Hackage-distributed--dataset--opendatasets-blue.svg)](https://hackage.haskell.org/package/distributed-dataset-opendatasets)
 
 An experiment to create a distributed data processing framework in pure Haskell. Highly inspired by [Apache Spark](https://spark.apache.org/).
 
