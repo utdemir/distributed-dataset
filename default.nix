@@ -63,15 +63,10 @@ prepareDev = se: drv:
     ]
   );
 
-addCompilerName = drv:
-  drv.overrideAttrs (old: { name = "${old.name}-${compiler}"; });
-
-output = n: addCompilerName (prepareDev haskellPackages n);
-
 in
 { 
-  "distributed-dataset" = output "distributed-dataset";
-  "distributed-dataset-aws" = output "distributed-dataset-aws";
-  "distributed-dataset-opendatasets" = output "distributed-dataset-opendatasets";
-  "example-gh" = output "example-gh";
+  "distributed-dataset" = prepareDev haskellPackages "distributed-dataset";
+  "distributed-dataset-aws" = prepareDev haskellPackages "distributed-dataset-aws";
+  "distributed-dataset-opendatasets" = prepareDev haskellPackages "distributed-dataset-opendatasets";
+  "example-gh" = prepareDev haskellPackages "example-gh";
 }
