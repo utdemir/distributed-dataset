@@ -119,7 +119,7 @@ streamUpload mcs cmu = do
                     go empty 0 hashInit (partnum+1) . D.snoc completed $! part
 
         Nothing -> lift $ do
-            prts <- if bufsize > 0
+            prts <- if True -- bufsize > 0
                 then do
                     rs <- partUploader partnum bufsize (hashFinalize ctx) bss
 

@@ -28,6 +28,13 @@ data ExecutorStats =
     , esElapsedMillis :: Integer
     } deriving (Show, Generic, Binary)
 
+instance Semigroup ExecutorStats where
+  ExecutorStats a b c d e <> ExecutorStats a' b' c' d' e'
+    = ExecutorStats (a + a') (b + b') (c + c') (d + d') (e + e')
+
+instance Monoid ExecutorStats where
+  mempty = ExecutorStats 0 0 0 0 0
+
 data ExecutorStatsHooks =
   ExecutorStatsHooks
     { eshDownload :: forall m. MonadIO m => ConduitT BS.ByteString BS.ByteString m ()

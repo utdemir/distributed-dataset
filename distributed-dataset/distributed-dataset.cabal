@@ -35,12 +35,14 @@ library
                      , Control.Distributed.Dataset.Internal.Dataset
                      , Control.Distributed.Dataset.Internal.Class
                      , Control.Distributed.Dataset.Internal.Aggr
+                     , Control.Distributed.Dataset.Internal.Process
   ghc-options:         -Wall
   build-depends:       base >= 4.11 && < 5
                      , distributed-dataset-internal
                      , async
                      , binary
                      , bytestring
+                     , clock
                      , conduit
                      , constraints
                      , containers

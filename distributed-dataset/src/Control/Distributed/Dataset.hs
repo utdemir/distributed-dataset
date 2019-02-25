@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -18,6 +19,7 @@ module Control.Distributed.Dataset
     Dataset
   , DD
   , runDD
+  , runDDWith
   , Backend
   , ShuffleStore
   , dPartition
@@ -134,7 +136,7 @@ dAggr (Aggr (m :: Closure (a -> t)) r e) ds = do
       return $ unclosure e t
  where
    go :: forall a' m. (CommutativeSemigroup a', Monad m) => a' -> ConduitT a' a' m ()
-   go i =
+   go !i =
      C.await >>= \case
        Nothing -> C.yield i
        Just a  -> go (i <> a)

@@ -20,6 +20,17 @@ import           Control.Distributed.Fork.Internal
 --------------------------------------------------------------------------------
 
 -- |
+-- Runs given closures concurrently using the 'Backend'.
+--
+-- Throws 'ExecutorFailedException' if something fails.
+mapConcurrently :: Backend
+                -> Closure (Dict (Serializable a))
+                -> [Closure (IO a)]
+                -> IO [a]
+mapConcurrently backend dict xs =
+  mapM (fork backend dict) xs >>= mapM await
+
+-- |
 -- Runs given closures concurrently using the 'Backend' with a progress bar.
 --
 -- Throws 'ExecutorFailedException' if something fails.

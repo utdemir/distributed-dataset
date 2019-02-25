@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -20,7 +21,6 @@ import           Conduit                                    hiding (Consumer,
                                                              Producer, await)
 import qualified Conduit                                    as C
 import           Control.Distributed.Closure
-import           Control.Distributed.Fork
 import           Control.Lens
 import           Control.Monad
 import           Data.Hashable
@@ -36,8 +36,10 @@ import           System.Random
 import           Control.Monad.Logger
 import qualified Data.Text as T
 -------------------------------------------------------------------------------
+import           Control.Distributed.Dataset.Internal.Process
 import           Control.Distributed.Dataset.Internal.Class
 import           Control.Distributed.Dataset.ShuffleStore
+import           Control.Distributed.Fork.Utils
 import           Data.Conduit.Serialise
 -------------------------------------------------------------------------------
 
@@ -164,6 +166,7 @@ mkStages (DCoalesce count rest) =
       SCoalesce count other
 
 
+-- FIXME: This function should not look this horrible.
 runStages :: forall a. Stage a -> DD [Partition a]
 runStages stage@(SInit ps) = do
   logInfoN $ "Running: " <> T.pack (showTopStage stage)
@@ -178,18 +181,22 @@ runStages stage@(SNarrow cpipe rest) = do
     let coutput = ssPut shuffleStore `cap` cpure (static Dict) num
         cinput = ssGet shuffleStore `cap` cpure (static Dict) num `cap` cpure (static Dict) RangeAll
         crun = static (\Dict producer pipe output ->
-                          C.runConduitRes
-                            $ producer
-                                .| pipe
-                                .| serialiseC @a
-                                .| output
-                 ) `cap` staticSerialise @a `cap` partitionProducer input `cap` cpipe `cap` coutput
+          withExecutorStats $ \ExecutorStatsHooks{..} -> 
+            C.runConduitRes
+              $ producer
+                  .| eshInput
+                  .| pipe
+                  .| eshOutput
+                  .| serialiseC @a
+                  .| eshUpload
+                  .| output
+          ) `cap` staticSerialise @a `cap` partitionProducer input `cap` cpipe `cap` coutput
         newPartition = PSimple @a (static (\Dict input' -> input' .| deserialiseC)
                            `cap` staticSerialise @a `cap` cinput)
     return (crun, newPartition)
   backend <- view ddBackend
-  handles <- mapM (liftIO . fork backend (static Dict) . fst) tasks
-  mapM_ await handles
+  ret <- liftIO $ mapConcurrentlyWithProgress backend (static Dict) (map fst tasks)
+  logDebugN $ "Stats: " <> T.pack (show $ foldMap erStats ret)
   return $ map snd tasks
 
 runStages stage@(SWide count cpipe rest) = do
@@ -199,26 +206,34 @@ runStages stage@(SWide count cpipe rest) = do
   tasks <- forM inputs $ \partition -> do
     num <- liftIO $ randomIO
     let coutput = ssPut shuffleStore `cap` cpure (static Dict) num
-        crun = static (\Dict count' input pipe output -> do
-          ref <- newIORef @[(Int, (Integer, Integer))] []
-          C.runConduitRes $
-            input
-                .| pipe
-                .| mapC (\(k, v) -> (k `mod` count', v))
-                .| sort @(ResourceT IO)
-                .| (serialiseWithLocC @a @Int @(ResourceT IO) >>= liftIO . writeIORef ref)
-                .| output
-          readIORef ref
+        crun = static (\Dict count' input pipe output -> 
+          withExecutorStats $ \ExecutorStatsHooks{..} -> do
+            ref <- newIORef @[(Int, (Integer, Integer))] []
+            C.runConduitRes $
+              input
+                  .| eshInput
+                  .| pipe
+                  .| mapC (\(k, v) -> (k `mod` count', v))
+                  .| eshOutput
+                  .| sort @(ResourceT IO)
+                  .| (serialiseWithLocC @a @Int @(ResourceT IO) >>= liftIO . writeIORef ref)
+                  .| eshUpload
+                  .| output
+            readIORef ref
           ) `cap` staticSerialise @a
             `cap` cpure (static Dict) count
             `cap` partitionProducer partition
             `cap` cpipe
             `cap` coutput
-    backend <- view ddBackend
-    handle <- fork backend (static Dict) crun
-    return (handle, num)
-  partitions <- forM tasks $ \(handle, num) -> do
-    res <- await handle
+    return (crun, num)
+    
+  backend <- view ddBackend
+  ret  <- liftIO $ mapConcurrentlyWithProgress backend (static Dict) (map fst tasks)
+  logDebugN $ "Stats: " <> T.pack (show $ foldMap erStats ret)
+
+  let ret' = zip (map erResponse ret) (map snd tasks)
+
+  partitions <- forM ret' $ \(res, num) -> do
     forM res $ \(partition, (start, end)) ->
       return ( partition
              , PSimple @a (static (\Dict input' -> input' .| deserialiseC)
