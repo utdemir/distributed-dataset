@@ -5,9 +5,14 @@ module BatchTests where
 
 --------------------------------------------------------------------------------
 import           Conduit
+import           Control.Monad.Logger
 import           Data.Function
-import           Data.List                                        (sort)
+import           Data.List                                        (group, sort)
+import           Hedgehog
+import qualified Hedgehog.Gen                                     as Gen
+import qualified Hedgehog.Range                                   as Range
 import           Test.Tasty
+import           Test.Tasty.Hedgehog
 import           Test.Tasty.HUnit
 --------------------------------------------------------------------------------
 import           Control.Distributed.Dataset
@@ -42,20 +47,39 @@ datasetTests = testGroup "BatchTests"
           ]
         & dAggr (dSum (static Dict))
       ret @?= 55
-  , testCase "groupedAggr" $ do
-      ret <- run $
+  , testProperty "prop_aggr" $ property $ do
+      input <- forAll $ Gen.list (Range.linear 0 200) $
+        Gen.list (Range.linear 0 1000) $
+          Gen.integral (Range.constant 0 1000)
+      let expected = sum . concat $ input
+      ret <- liftIO . run $
+        dExternal @Integer
+          [ mkPartition (static (mapM_ yield) `cap` cpure (static Dict) p)
+          | p <- input
+          ]
+        & dAggr (dSum (static Dict))
+      ret === expected
+  , testProperty "prop_groupedAggr" $ property $ do
+      input <- forAll $ Gen.list (Range.linear 0 200) $
+        Gen.list (Range.linear 0 1000) $
+          Gen.enum 'a' 'z'
+      let expected =
+            map (\xs@(x:_) -> (x, fromIntegral $ length xs))
+            . group . sort . concat
+            $ input
+      ret <- liftIO . run $
         dExternal @Char
-          [ mkPartition (static (mapM_ yield ['a', 'b']))
-          , mkPartition (static (mapM_ yield ['b', 'c', 'd']))
-          , mkPartition (static (mapM_ yield ['d']))
+          [ mkPartition (static (mapM_ yield) `cap` cpure (static Dict) p)
+          | p <- input
           ]
         & dGroupedAggr 5 (static id) dCount
         & dToList
         & fmap sort
-      ret @?= [('a', 1), ('b', 2), ('c', 1), ('d', 2)]
+
+      ret === expected
   ]
 
 run :: DD a -> IO a
 run dd =
   withLocalTmpShuffleStore $ \ss ->
-    runDD localProcessBackend ss dd
+    runDDWith LevelWarn localProcessBackend ss dd

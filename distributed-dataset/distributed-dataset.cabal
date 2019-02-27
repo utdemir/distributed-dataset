@@ -82,6 +82,9 @@ test-suite distributed-dataset-tests
                   , conduit
                   , distributed-closure
                   , hashable
+                  , hedgehog
+                  , monad-logger
                   , serialise
                   , tasty
+                  , tasty-hedgehog
                   , tasty-hunit

@@ -1,6 +1,6 @@
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -14,7 +14,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 
 module Control.Distributed.Dataset
-  ( 
+  (
   -- * Dataset
     Dataset
   , DD

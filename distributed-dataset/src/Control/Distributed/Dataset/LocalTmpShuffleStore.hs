@@ -32,7 +32,7 @@ import           Control.Distributed.Fork.LocalProcessBackend
 withLocalTmpShuffleStore :: (ShuffleStore -> IO a) -> IO a
 withLocalTmpShuffleStore act = do
   bracket
-    (mkdtemp "/tmp/dd-" >>= \p -> print p >> return p)
+    (mkdtemp "/tmp/dd-")
     removeDirectoryRecursive
     (act . mk)
   where

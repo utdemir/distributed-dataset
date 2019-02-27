@@ -1,7 +1,5 @@
 {-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -9,6 +7,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StaticPointers             #-}
 {-# LANGUAGE TypeApplications           #-}
@@ -17,27 +17,27 @@
 module Control.Distributed.Dataset.Internal.Dataset where
 
 -------------------------------------------------------------------------------
-import           Conduit                                    hiding (Consumer,
-                                                             Producer, await)
-import qualified Conduit                                    as C
+import           Conduit                                      hiding (Consumer,
+                                                               Producer, await)
+import qualified Conduit                                      as C
 import           Control.Distributed.Closure
 import           Control.Lens
 import           Control.Monad
+import           Control.Monad.Logger
 import           Data.Hashable
-import qualified Data.IntMap                                as M
-import qualified Data.IntMap.Merge.Strict                   as M
+import qualified Data.IntMap                                  as M
+import qualified Data.IntMap.Merge.Strict                     as M
 import           Data.IORef
-import           Data.List                                  (foldl', sortBy,
-                                                             transpose)
+import           Data.List                                    (foldl', sortBy,
+                                                               transpose)
 import           Data.List.Split
 import           Data.Ord
+import qualified Data.Text                                    as T
 import           Data.Typeable
 import           System.Random
-import           Control.Monad.Logger
-import qualified Data.Text as T
 -------------------------------------------------------------------------------
-import           Control.Distributed.Dataset.Internal.Process
 import           Control.Distributed.Dataset.Internal.Class
+import           Control.Distributed.Dataset.Internal.Process
 import           Control.Distributed.Dataset.ShuffleStore
 import           Control.Distributed.Fork.Utils
 import           Data.Conduit.Serialise
@@ -99,9 +99,9 @@ data Stage a where
   SCoalesce :: Int -> Stage a -> Stage a
 
 instance Show (Stage a) where
-  show s@(SInit _) =  showTopStage s
-  show s@(SNarrow _ r) = mconcat [show r, " -> " , showTopStage s]
-  show s@(SWide _ _ r) = mconcat [show r, " -> " , showTopStage s]
+  show s@(SInit _)       =  showTopStage s
+  show s@(SNarrow _ r)   = mconcat [show r, " -> " , showTopStage s]
+  show s@(SWide _ _ r)   = mconcat [show r, " -> " , showTopStage s]
   show s@(SCoalesce _ r) = mconcat [show r, " -> " , showTopStage s]
 
 showTopStage :: forall a. Stage a -> String
@@ -181,7 +181,7 @@ runStages stage@(SNarrow cpipe rest) = do
     let coutput = ssPut shuffleStore `cap` cpure (static Dict) num
         cinput = ssGet shuffleStore `cap` cpure (static Dict) num `cap` cpure (static Dict) RangeAll
         crun = static (\Dict producer pipe output ->
-          withExecutorStats $ \ExecutorStatsHooks{..} -> 
+          withExecutorStats $ \ExecutorStatsHooks{..} ->
             C.runConduitRes
               $ producer
                   .| eshInput
@@ -195,7 +195,9 @@ runStages stage@(SNarrow cpipe rest) = do
                            `cap` staticSerialise @a `cap` cinput)
     return (crun, newPartition)
   backend <- view ddBackend
-  ret <- liftIO $ mapConcurrentlyWithProgress backend (static Dict) (map fst tasks)
+  level <- view ddLogLevel
+  let f = if level <= LevelInfo then mapConcurrentlyWithProgress else mapConcurrently
+  ret <- liftIO $ f backend (static Dict) (map fst tasks)
   logDebugN $ "Stats: " <> T.pack (show $ foldMap erStats ret)
   return $ map snd tasks
 
@@ -206,7 +208,7 @@ runStages stage@(SWide count cpipe rest) = do
   tasks <- forM inputs $ \partition -> do
     num <- liftIO $ randomIO
     let coutput = ssPut shuffleStore `cap` cpure (static Dict) num
-        crun = static (\Dict count' input pipe output -> 
+        crun = static (\Dict count' input pipe output ->
           withExecutorStats $ \ExecutorStatsHooks{..} -> do
             ref <- newIORef @[(Int, (Integer, Integer))] []
             C.runConduitRes $
@@ -226,9 +228,11 @@ runStages stage@(SWide count cpipe rest) = do
             `cap` cpipe
             `cap` coutput
     return (crun, num)
-    
+
   backend <- view ddBackend
-  ret  <- liftIO $ mapConcurrentlyWithProgress backend (static Dict) (map fst tasks)
+  level <- view ddLogLevel
+  let f = if level <= LevelInfo then mapConcurrentlyWithProgress else mapConcurrently
+  ret <- liftIO $ f backend (static Dict) (map fst tasks)
   logDebugN $ "Stats: " <> T.pack (show $ foldMap erStats ret)
 
   let ret' = zip (map erResponse ret) (map snd tasks)

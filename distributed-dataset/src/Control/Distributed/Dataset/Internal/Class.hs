@@ -28,6 +28,7 @@ import           Control.Distributed.Fork                 (Backend)
 data DDEnv = DDEnv
   { _ddBackend      :: Backend
   , _ddShuffleStore :: ShuffleStore
+  , _ddLogLevel     :: LogLevel
   }
 
 makeLenses ''DDEnv
@@ -39,14 +40,12 @@ newtype DD a = DDT (ReaderT DDEnv (LoggingT IO) a)
            )
 
 runDD :: Backend -> ShuffleStore -> DD a -> IO a
-runDD = runDDWith False
+runDD = runDDWith LevelInfo
 
-runDDWith :: Bool -> Backend -> ShuffleStore -> DD a -> IO a
-runDDWith debug backend shuffleStore (DDT act) = do
-  let env = DDEnv backend shuffleStore
-      logFilter = if debug
-                    then id
-                    else filterLogger $ \_ l -> l >= LevelInfo
+runDDWith :: LogLevel -> Backend -> ShuffleStore -> DD a -> IO a
+runDDWith level backend shuffleStore (DDT act) = do
+  let env = DDEnv backend shuffleStore level
+      logFilter = filterLogger $ \_ l -> l >= level
   runStderrLoggingT $ logFilter $ runReaderT act env
 
 -------------------------------------------------------------------------------
