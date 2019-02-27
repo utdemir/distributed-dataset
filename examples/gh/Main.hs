@@ -56,4 +56,4 @@ main = do
     _         -> error "Usage: ./gh <bucket>"
   withLambdaBackend (lambdaBackendOptions bucket) $ \backend -> do
     let shuffleStore = s3ShuffleStore bucket "dd-shuffle-store/"
-    runDDWith True backend shuffleStore app
+    runDD backend shuffleStore app
