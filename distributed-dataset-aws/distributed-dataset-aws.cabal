@@ -70,7 +70,7 @@ flag enable-aws-tests
     Manual: True
     Default: False
 
-test-suite tests
+test-suite distributed-dataset-aws-tests
     if !flag(enable-aws-tests)
       buildable: False
     type:             exitcode-stdio-1.0
@@ -81,6 +81,8 @@ test-suite tests
     build-depends:  base >=4.7 && < 5
                   , distributed-dataset
                   , distributed-dataset-aws
+                  , distributed-closure
+                  , conduit
                   , tasty
                   , tasty-hunit
                   , text
