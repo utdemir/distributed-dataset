@@ -6,18 +6,18 @@
 module Main where
 
 --------------------------------------------------------------------------------
-import           Control.Concurrent (threadDelay)
-import           Control.Exception               (try)
-import           Data.Conduit hiding (await)
-import qualified Data.Conduit.Combinators as C
-import qualified Data.Text                       as T
+import           Control.Concurrent                       (threadDelay)
+import           Control.Distributed.Closure              (unclosure)
+import           Control.Exception                        (try)
+import           Data.Conduit                             hiding (await)
+import qualified Data.Conduit.Combinators                 as C
+import qualified Data.Text                                as T
 import           Test.Tasty
 import           Test.Tasty.HUnit
-import           Control.Distributed.Closure (unclosure)
 --------------------------------------------------------------------------------
-import           Control.Distributed.Fork
 import           Control.Distributed.Dataset.AWS
 import           Control.Distributed.Dataset.ShuffleStore
+import           Control.Distributed.Fork
 --------------------------------------------------------------------------------
 
 main :: IO ()
