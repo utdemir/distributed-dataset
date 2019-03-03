@@ -64,13 +64,21 @@ library
                      , unliftio-core
                      , unordered-containers
                      , zip-archive
+
+flag enable-aws-tests
+    Description: Enable tests which use AWS resources
+    Manual: True
+    Default: False
+
 test-suite tests
-  type:             exitcode-stdio-1.0
-  hs-source-dirs:   test
-  main-is:          Test.hs
-  default-language: Haskell2010
-  ghc-options:      -Wall -static -optl-static -optl-pthread -fPIC
-  build-depends:    base >=4.7 && < 5
+    if !flag(enable-aws-tests)
+      buildable: False
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Test.hs
+    default-language: Haskell2010
+    ghc-options:      -Wall -static -optl-static -optl-pthread -fPIC
+    build-depends:  base >=4.7 && < 5
                   , distributed-dataset
                   , distributed-dataset-aws
                   , tasty

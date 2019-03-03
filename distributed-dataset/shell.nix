@@ -1,1 +1,1 @@
-(import ../default.nix {}).distributed-dataset.env
+(import ../default.nix {}).shell

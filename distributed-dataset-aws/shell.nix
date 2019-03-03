@@ -1,1 +1,1 @@
-(import ../default.nix {}).distributed-dataset-aws.env
+(import ../default.nix {}).shell

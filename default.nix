@@ -9,7 +9,7 @@ overlays = se: su: {
   "distributed-dataset" =
     pkgs.haskell.lib.overrideCabal (
       se.callCabal2nix 
-        "distributed-dataset-foo" 
+        "distributed-dataset" 
         (gitignore ./distributed-dataset) 
         {}
     ) (_: {
@@ -26,7 +26,6 @@ overlays = se: su: {
             (libffi.override { stdenv = makeStaticLibraries stdenv; })
             (gmp.override { withStatic = true; })
           ];
-        doCheck = false;
     });
   "distributed-dataset-opendatasets" =
     se.callCabal2nix 
@@ -56,17 +55,26 @@ haskellPackages = pkgs.haskell.packages.${compiler}.override {
   overrides = overlays;
 };
 
-prepareDev = se: drv:
-  pkgs.haskell.lib.addBuildDepends se.${drv} (
-    pkgs.lib.optionals pkgs.lib.inNixShell [
-      se.cabal-install se.ghcid se.stylish-haskell
-    ]
-  );
-
 in
 { 
-  "distributed-dataset" = prepareDev haskellPackages "distributed-dataset";
-  "distributed-dataset-aws" = prepareDev haskellPackages "distributed-dataset-aws";
-  "distributed-dataset-opendatasets" = prepareDev haskellPackages "distributed-dataset-opendatasets";
-  "example-gh" = prepareDev haskellPackages "example-gh";
+  "distributed-dataset" = haskellPackages.distributed-dataset;
+  "distributed-dataset-aws" = haskellPackages.distributed-dataset-aws;
+  "distributed-dataset-opendatasets" = haskellPackages.distributed-dataset-opendatasets;
+  "example-gh" = haskellPackages.example-gh;
+
+  shell = haskellPackages.shellFor {
+    packages = p: with p; [ 
+      distributed-dataset 
+      distributed-dataset-aws
+      distributed-dataset-opendatasets
+      example-gh
+    ];
+    buildInputs = with haskellPackages; [ 
+      cabal-install 
+      ghcid 
+      stylish-haskell 
+    ]; 
+    withHoogle = true;
+  };
 }
+

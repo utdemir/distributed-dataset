@@ -1,1 +1,1 @@
-(import ../../default.nix {}).example-gh.env
+(import ../default.nix {}).shell

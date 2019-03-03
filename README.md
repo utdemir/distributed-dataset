@@ -87,10 +87,9 @@ I am open to contributions; any issue, PR or opinion is more than welcome.
 ## Hacking
 
 * I use Nix to develop. If you use `stack` or any alternative build system, I'd appreciate a PR.
-* Every subproject have a `shell.nix`, which gives you a development shell with `cabal`, `ghcid` and `stylish-haskell`. Example:
+* 'nix-shell' gives you a development shell with `cabal`, `ghcid` and `stylish-haskell`. Example:
 
 ```
-$ cd distributed-dataset-opendatasets
 $ nix-shell --pure --run 'ghcid -c "cabal new-repl distributed-dataset-opendatasets"'
 ```
 * You can use [my binary cache on cachix](https://utdemir.cachix.org/) to make sure that you don't recompile half of the hackage.

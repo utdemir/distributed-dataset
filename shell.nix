@@ -1,1 +1,1 @@
-throw "Only run nix-shell on subprojects."
+(import ./default.nix {}).shell
