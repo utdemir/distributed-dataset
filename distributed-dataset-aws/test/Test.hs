@@ -77,7 +77,15 @@ tests =
                 (unclosure $ ssGet ss) 42 RangeAll
                   .| C.foldMap id
           r @?= "foobarbaz"
-      , testCase "get range after put" $ undefined
+      , testCase "get range after put" $ do
+          let ss = s3ShuffleStore "distributed-dataset" "shuffle-store/"
+          runConduitRes $
+            mapM_ yield ["foo", "bar", "baz"]
+              .| (unclosure $ ssPut ss) 42
+          r <- runConduitRes $
+                (unclosure $ ssGet ss) 42 (RangeOnly 3 5)
+                  .| C.foldMap id
+          r @?= "bar"
       ]
     ]
   where

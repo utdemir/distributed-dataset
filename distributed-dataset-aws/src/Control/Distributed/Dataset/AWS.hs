@@ -40,7 +40,8 @@ s3ShuffleStore bucket' prefix'
                    & S3.goRange
                        .~ (case range of
                              RangeAll -> Nothing
-                             RangeOnly lo hi -> Just $ T.pack (show lo) <> T.pack "-" <> T.pack (show hi)
+                             RangeOnly lo hi ->
+                               Just . T.pack $ "bytes=" <> show lo <> "-" <> show hi
                           )
         _streamBody $ ret ^. S3.gorsBody
       ) `cap` cpure (static Dict) bucket' `cap` cpure (static Dict) prefix'
