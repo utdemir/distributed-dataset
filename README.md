@@ -93,6 +93,11 @@ I am open to contributions; any issue, PR or opinion is more than welcome.
 $ nix-shell --pure --run 'ghcid -c "cabal new-repl distributed-dataset-opendatasets"'
 ```
 * You can use [my binary cache on cachix](https://utdemir.cachix.org/) to make sure that you don't recompile half of the hackage.
+* Use stylish-haskell:
+
+```
+nix-shell --command 'find distributed-dataset* -name "*.hs" -exec stylish-haskell -i {} \;'
+``` 
 
 ## See Also
 
