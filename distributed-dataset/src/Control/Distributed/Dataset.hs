@@ -40,6 +40,7 @@ module Control.Distributed.Dataset
   , dCount
   , dSum
   , dAvg
+  , dCollect
   , Aggr(..)
   -- * Class
   , StaticSerialise(..)
