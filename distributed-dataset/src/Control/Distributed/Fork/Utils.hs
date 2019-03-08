@@ -16,7 +16,6 @@ import           Data.Function                     (fix)
 import qualified System.Console.Terminal.Size      as TS
 --------------------------------------------------------------------------------
 import           Control.Distributed.Fork
-import           Control.Distributed.Fork.Internal
 --------------------------------------------------------------------------------
 
 -- |
@@ -41,11 +40,11 @@ mapConcurrentlyWithProgress :: Backend
 mapConcurrentlyWithProgress backend dict xs = do
   st <- atomically $ newTVar (True, 0::Int, 0::Int, 0::Int, 0::Int)
   handles <- mapM (fork backend dict) xs
-  asyncs <- forM handles $ \(Handle tv) ->
+  asyncs <- forM handles $ \handle ->
     async . flip evalStateT (0, 0, 0, 0) . fix $ \recurse -> do
       oldState <- get
       (newState, result) <- liftIO $ atomically $ do
-        (n, r) <- readTVar tv >>= return . \case
+        (n, r) <- pollHandle handle >>= return . \case
           ExecutorPending (ExecutorWaiting _)   -> ((1, 0, 0, 0), Nothing)
           ExecutorPending (ExecutorSubmitted _) -> ((0, 1, 0, 0), Nothing)
           ExecutorPending (ExecutorStarted _)   -> ((0, 0, 1, 0), Nothing)

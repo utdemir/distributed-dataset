@@ -153,10 +153,14 @@ data ExecutorFinalStatus a
 -- Result of a 'fork' is an Handle where you can 'await' a result.
 newtype Handle a = Handle (TVar (ExecutorStatus a))
 
+-- |
+-- Get the current status of given 'Handle'.
+pollHandle :: Handle a -> STM (ExecutorStatus a)
+pollHandle (Handle t) = readTVar t
+
 tryAwait :: Handle a -> IO (Either Text a)
-tryAwait (Handle t) = do
-  r <- liftIO . atomically $
-    readTVar t >>= \case
+tryAwait h = do
+  r <- liftIO . atomically $ pollHandle h >>= \case
       ExecutorPending _ -> retry
       ExecutorFinished a -> return a
   return $ case r of
