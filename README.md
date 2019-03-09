@@ -96,7 +96,7 @@ $ nix-shell --pure --run 'ghcid -c "cabal new-repl distributed-dataset-opendatas
 * Use stylish-haskell:
 
 ```
-nix-shell --command 'find distributed-dataset* -name "*.hs" -exec stylish-haskell -i {} \;'
+nix-shell --command 'find -name "*.hs" -exec stylish-haskell -i {} \;'
 ``` 
 
 ## See Also
