@@ -20,7 +20,7 @@ app :: DD ()
 app = do
   result <-
     -- Fetch events from GitHub between given dates
-    ghArchive (fromGregorian 2018 12 1, fromGregorian 2019 1 1)
+    ghArchive (fromGregorian 2018 1 1, fromGregorian 2018 12 31)
 
       -- Extract every commit
       & dConcatMap (static (\e ->
@@ -36,7 +36,7 @@ app = do
 
       -- Count the authors
       & dMap (static fst)
-      & dGroupedAggr 200 (static id) dCount
+      & dGroupedAggr 50 (static id) dCount
 
       -- Fetch them to driver as a list
       & dToList
