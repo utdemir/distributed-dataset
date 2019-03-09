@@ -1,94 +1,136 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
 
-module Control.Distributed.Fork.Utils where
+module Control.Distributed.Fork.Utils
+  ( forkConcurrently
+  , Options(..)
+  , defaultOptions
+  ) where
 
 --------------------------------------------------------------------------------
-import           Control.Concurrent                (threadDelay)
-import           Control.Concurrent.Async          (async, wait, waitBoth)
-import           Control.Concurrent.STM            (atomically, modifyTVar,
-                                                    newTVar, readTVar, retry,
-                                                    writeTVar)
-import           Control.Exception                 (throwIO)
-import           Control.Monad                     (forM, unless)
-import           Control.Monad.IO.Class            (liftIO)
-import           Control.Monad.Trans.State         (evalStateT, get, put)
-import           Data.Function                     (fix)
-import qualified System.Console.Terminal.Size      as TS
+import           Control.Concurrent           (threadDelay)
+import           Control.Concurrent.Async     (async, wait, waitBoth)
+import           Control.Concurrent.STM
+import           Control.Exception            (throwIO)
+import           Control.Monad                (forM, when)
+import           Control.Monad.IO.Class       (liftIO)
+import           Control.Retry
+import           Data.Function                (fix)
+import           Data.Functor
+import           Data.Group
+import qualified System.Console.Terminal.Size as TS
 --------------------------------------------------------------------------------
 import           Control.Distributed.Fork
 --------------------------------------------------------------------------------
 
--- |
--- Runs given closures concurrently using the 'Backend'.
---
--- Throws 'ExecutorFailedException' if something fails.
-mapConcurrently :: Backend
-                -> Closure (Dict (Serializable a))
-                -> [Closure (IO a)]
-                -> IO [a]
-mapConcurrently backend dict xs =
-  mapM (fork backend dict) xs >>= mapM await
+data Options
+  = Options
+      { oRetries      :: Int
+      , oShowProgress :: Bool
+      }
+
+defaultOptions :: Options
+defaultOptions = Options 2 True
+
+data Progress =
+  Progress
+    { waiting   :: Int
+    , submitted :: Int
+    , started   :: Int
+    , finished  :: Int
+    , retried   :: Int
+    }
+  deriving (Eq)
+
+instance Semigroup Progress where
+  Progress a1 b1 c1 d1 e1 <> Progress a2 b2 c2 d2 e2
+    = Progress (a1 + a2) (b1 + b2) (c1 + c2) (d1 + d2) (e1 + e2)
+
+instance Monoid Progress where
+  mempty = Progress 0 0 0 0 0
+
+instance Group Progress where
+  invert (Progress a b c d e) =
+    Progress (negate a) (negate b) (negate c) (negate d) (negate e)
 
 -- |
--- Runs given closures concurrently using the 'Backend' with a progress bar.
+-- Runs given closures concurrently using the 'Backend', showing a
+-- progress bar.
 --
--- Throws 'ExecutorFailedException' if something fails.
-mapConcurrentlyWithProgress :: Backend
-                            -> Closure (Dict (Serializable a))
-                            -> [Closure (IO a)]
-                            -> IO [a]
-mapConcurrentlyWithProgress backend dict xs = do
-  st <- atomically $ newTVar (True, 0::Int, 0::Int, 0::Int, 0::Int)
-  handles <- mapM (fork backend dict) xs
-  asyncs <- forM handles $ \handle ->
-    async . flip evalStateT (0, 0, 0, 0) . fix $ \recurse -> do
-      oldState <- get
-      (newState, result) <- liftIO $ atomically $ do
-        (n, r) <- pollHandle handle >>= return . \case
-          ExecutorPending (ExecutorWaiting _)   -> ((1, 0, 0, 0), Nothing)
-          ExecutorPending (ExecutorSubmitted _) -> ((0, 1, 0, 0), Nothing)
-          ExecutorPending (ExecutorStarted _)   -> ((0, 0, 1, 0), Nothing)
-          ExecutorFinished fr                   -> ((0, 0, 0, 1), Just fr)
-        unless (oldState /= n) retry
-        return (n, r)
-      put newState
-      liftIO . atomically $
-        modifyTVar st $ \case
-          (_, s1, s2, s3, s4) -> case (oldState, newState) of
-            ((o1, o2, o3, o4), (n1, n2, n3, n4)) ->
-              (True, s1 - o1 + n1, s2 - o2 + n2, s3 - o3 + n3, s4 - o4 + n4)
-      case result of
-        Nothing -> recurse
-        Just (ExecutorFailed err) -> liftIO . throwIO $ ExecutorFailedException err
-        Just (ExecutorSucceeded x) -> return x
+-- Throws 'Execut orFailedException' if something fails.
+forkConcurrently :: Options
+                 -> Backend
+                 -> Closure (Dict (Serializable a))
+                 -> [Closure (IO a)]
+                 -> IO [a]
+forkConcurrently options backend dict xs = do
+  st <- atomically $ newTVar (True, mempty)
 
+  asyncs <- forM xs $ updateThread st
   result <- async $ mapM wait asyncs
 
-  termWidth <- maybe 40 TS.width <$> TS.size :: IO Int
-  let total = length xs
-      ratio = fromIntegral total / fromIntegral (termWidth - 2) :: Double
-
-  pbar <- async . fix $ \recurse -> do
-    (waiting, submitted, started, finished) <- atomically $
-      readTVar st >>= \case
-        (False, _, _, _, _) -> retry
-        (True, a, b, c, d) -> do
-          writeTVar st (False, a, b, c, d)
-          return (a, b, c, d)
-
-    let p c n = replicate (truncate (fromIntegral n / ratio)) c
-    putStr . concat $
-      [ "\r"
-      , "["
-      , p '#' finished
-      , p ':' started
-      , p '.' submitted
-      , p ' ' waiting
-      , "]"
-      ]
-
-    if finished < total
-      then threadDelay 10000 >> recurse
-      else putStrLn ""
+  pbar <-
+    if oShowProgress options
+    then progressThread st (length xs)
+    else async $ return ()
 
   fst <$> waitBoth result pbar
+
+ where
+
+  updateThread st act = async $ do
+    progress <- newTVarIO mempty
+
+    recoverAll (limitRetries $ oRetries options) $ \retryStatus -> do
+      handle <- fork backend dict act
+      fix $ \recurse -> do
+        res <- liftIO $ atomically $ do
+          old <- readTVar progress
+          let base = mempty { retried = rsIterNumber retryStatus }
+          (new, res) <- pollHandle handle <&> \case
+             ExecutorPending (ExecutorWaiting _)   -> (base { waiting = 1 }, Nothing)
+             ExecutorPending (ExecutorSubmitted _) -> (base { submitted = 1 }, Nothing)
+             ExecutorPending (ExecutorStarted _)   -> (base { started = 1 }, Nothing)
+             ExecutorFinished fr                   -> (base { finished = 1 }, Just fr)
+
+          when (old == new) retry
+          writeTVar progress new
+          modifyTVar st $ \case
+            (_, m) -> (True, m <> invert old <> new)
+
+          return res
+
+        case res of
+          Just (ExecutorFailed err) -> liftIO . throwIO $ ExecutorFailedException err
+          Just (ExecutorSucceeded x) -> return x
+          Nothing -> recurse
+
+  progressThread st total = do
+    termWidth <- maybe 40 TS.width <$> TS.size :: IO Int
+    let ratio = fromIntegral total / fromIntegral (termWidth - 2) :: Double
+
+    async . fix $ \recurse -> do
+      progress <- atomically $
+        readTVar st >>= \case
+          (False, _) -> retry
+          (True, p) -> do
+            writeTVar st (False, p)
+            return p
+
+      let p c n = replicate (truncate (fromIntegral n / ratio)) c
+      putStr . concat $
+        [ "\r"
+        , "["
+        , p '#' (finished progress)
+        , p ':' (started progress)
+        , p '.' (submitted progress)
+        , p ' ' (waiting progress)
+        , "]"
+        ]
+
+      if finished progress < total
+        then threadDelay 10000 >> recurse
+        else putStrLn ""
+
+

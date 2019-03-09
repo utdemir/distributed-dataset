@@ -36,6 +36,7 @@ library
                      , Control.Distributed.Dataset.Internal.Class
                      , Control.Distributed.Dataset.Internal.Aggr
                      , Control.Distributed.Dataset.Internal.Process
+                     , Data.Binary.Zlib
   ghc-options:         -Wall
   build-depends:       base >= 4.11 && < 5
                      , distributed-dataset-internal
@@ -50,11 +51,13 @@ library
                      , distributed-closure
                      , exceptions
                      , filepath
+                     , groups
                      , hashable
                      , lens
                      , monad-logger
                      , mtl
                      , random
+                     , retry
                      , serialise
                      , split
                      , stm
@@ -65,6 +68,7 @@ library
                      , unix
                      , unliftio-core
                      , unordered-containers
+                     , zlib
 
 test-suite distributed-dataset-tests
   type:             exitcode-stdio-1.0

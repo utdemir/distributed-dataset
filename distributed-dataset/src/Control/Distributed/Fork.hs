@@ -30,7 +30,7 @@ module Control.Distributed.Fork
   -- * Handle
   , Handle
   , await
-  
+
   -- * ExecutorStatus
   , pollHandle
   , ExecutorStatus (..)

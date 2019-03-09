@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
@@ -17,6 +18,7 @@ import           Control.Monad.IO.Class
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Trans.Reader
 import           Data.Binary
+import           Data.Binary.Zlib
 import qualified Data.ByteString             as BS
 import qualified Data.ByteString.Lazy        as BL
 import           Data.Monoid                 ((<>))
@@ -58,12 +60,12 @@ initDistributedFork =
 runExecutor :: IO Void
 runExecutor =
   BL.hGetContents stdin
-    >>= unclosure . decode @ExecutorClosure
+    >>= unclosure . unZlibWrapper . decode @ExecutorClosure
     >> exitSuccess
 
 -- |
 -- An ExecutorClosure is a serialisable IO action.
-type ExecutorClosure = Closure (IO ())
+type ExecutorClosure = ZlibWrapper (Closure (IO ()))
 
 -- |
 -- 'Backend' is responsible for running your functions in a remote environment.
@@ -102,7 +104,7 @@ runBackend dict cls (Backend backend) =
   case unclosure dict of
     Dict -> do
       let BackendM m =
-            backend $ BL.toStrict $ encode @ExecutorClosure (toExecutorClosure dict cls)
+            backend . BL.toStrict . encode $ toExecutorClosure dict cls
       t <- atomically (newTVar $ ExecutorPending (ExecutorWaiting Nothing))
       _ <-
         forkIO $ do
@@ -117,10 +119,10 @@ runBackend dict cls (Backend backend) =
           return ()
       return $ Handle t
 
-toExecutorClosure :: Closure (Dict (Serializable a)) -> Closure (IO a) -> Closure (IO ())
+toExecutorClosure :: Closure (Dict (Serializable a)) -> Closure (IO a) -> ExecutorClosure
 toExecutorClosure dict cls =
   case unclosure dict of
-    Dict -> static run `cap` dict `cap` cls
+    Dict -> ZlibWrapper $ static run `cap` dict `cap` cls
   where
     run :: forall a. Dict (Serializable a) -> IO a -> IO ()
     run Dict a =
@@ -138,16 +140,18 @@ parseAnswer bs =
 data ExecutorStatus a
   = ExecutorPending ExecutorPendingStatus
   | ExecutorFinished (ExecutorFinalStatus a)
+  deriving (Eq, Functor)
 
 data ExecutorPendingStatus
   = ExecutorWaiting (Maybe Text)
   | ExecutorSubmitted (Maybe Text)
   | ExecutorStarted (Maybe Text)
+  deriving (Eq)
 
 data ExecutorFinalStatus a
   = ExecutorFailed Text
   | ExecutorSucceeded a
-  deriving (Generic)
+  deriving (Eq, Generic, Functor)
 
 -- |
 -- Result of a 'fork' is an Handle where you can 'await' a result.

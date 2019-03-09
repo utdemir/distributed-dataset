@@ -39,7 +39,7 @@ import           System.Random
 import           Control.Distributed.Dataset.Internal.Class
 import           Control.Distributed.Dataset.Internal.Process
 import           Control.Distributed.Dataset.ShuffleStore
-import           Control.Distributed.Fork.Utils
+import qualified Control.Distributed.Fork.Utils               as D
 import           Data.Conduit.Serialise
 -------------------------------------------------------------------------------
 
@@ -196,7 +196,11 @@ runStages stage@(SNarrow cpipe rest) = do
     return (crun, newPartition)
   backend <- view ddBackend
   level <- view ddLogLevel
-  let f = if level <= LevelInfo then mapConcurrentlyWithProgress else mapConcurrently
+  let f = D.forkConcurrently
+            (D.defaultOptions
+              { D.oShowProgress = level <= LevelInfo
+              , D.oRetries = 2
+              })
   ret <- liftIO $ f backend (static Dict) (map fst tasks)
   logDebugN $ "Stats: " <> T.pack (show $ foldMap erStats ret)
   return $ map snd tasks
@@ -231,7 +235,11 @@ runStages stage@(SWide count cpipe rest) = do
 
   backend <- view ddBackend
   level <- view ddLogLevel
-  let f = if level <= LevelInfo then mapConcurrentlyWithProgress else mapConcurrently
+  let f = D.forkConcurrently
+            (D.defaultOptions
+              { D.oShowProgress = level <= LevelInfo
+              , D.oRetries = 2
+              })
   ret <- liftIO $ f backend (static Dict) (map fst tasks)
   logDebugN $ "Stats: " <> T.pack (show $ foldMap erStats ret)
 
@@ -285,4 +293,3 @@ dToList :: StaticSerialise a
 dToList ds = do
   c <- dFetch ds
   liftIO $ runConduitRes $ c .| sinkList
-
