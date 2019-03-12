@@ -46,11 +46,12 @@ overlays = se: su: {
           ];
     });
 
-  # test dependency 'chell' does not build
+  # Has a broken test dependency
   system-fileio =
     pkgs.haskell.lib.dontCheck su.system-fileio;
 
-  # tests fail on ghc8.6
+  # Tests fail to compile on GHC 8.6
+  # https://github.com/tweag/distributed-closure/issues/23
   distributed-closure =
     pkgs.haskell.lib.dontCheck su.distributed-closure ;
 };
