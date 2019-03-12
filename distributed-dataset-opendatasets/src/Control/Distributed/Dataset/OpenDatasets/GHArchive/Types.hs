@@ -33,15 +33,15 @@ data GHEventType = GHPushEvent GHPushEventPayload
 instance StaticSerialise GHEventType where
   staticSerialise = static Dict
 instance FromJSON GHEventType where
-  parseJSON val = withObject "GHEventType" (\obj -> do
+  parseJSON = withObject "GHEventType" (\obj -> do
     ty <- obj .: "type"
     payload <- obj .: "payload"
     case ty of
       "PushEvent" -> GHPushEvent <$> parseJSON payload
       other       -> return $ GHOtherEvent other
-    ) val
+    )
 
-data GHPushEventPayload = GHPushEventPayload { _ghpepCommits :: [GHCommit] }
+newtype GHPushEventPayload = GHPushEventPayload { _ghpepCommits :: [GHCommit] }
   deriving (Eq, Show, Generic, Serialise)
 instance StaticSerialise GHPushEventPayload where
   staticSerialise = static Dict

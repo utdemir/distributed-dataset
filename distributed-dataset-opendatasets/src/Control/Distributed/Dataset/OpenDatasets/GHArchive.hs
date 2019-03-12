@@ -52,7 +52,7 @@ processUrl url = handleC wrapEx $ do
   req <- parseRequest (T.unpack url)
   httpSource req call
  where
-  call req = do
+  call req =
     case getResponseStatusCode req of
       200 -> getResponseBody req
                .| ungzip

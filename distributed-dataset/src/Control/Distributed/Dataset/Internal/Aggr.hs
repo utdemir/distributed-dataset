@@ -47,7 +47,7 @@ instance Typeable m => StaticApply (Aggr m) where
   staticApply (Aggr m1 r1 e1) (Aggr m2 r2 e2) =
     Aggr (static (\m1' m2' a -> (m1' a, m2' a)) `cap` m1 `cap` m2)
          (static (\Dict Dict -> Dict) `cap` r1 `cap` r2)
-         (static (\e1' e2' (b1, b2) -> (e1' b1) (e2' b2)) `cap` e1 `cap` e2)
+         (static (\e1' e2' (b1, b2) -> e1' b1 (e2' b2)) `cap` e1 `cap` e2)
 
 instance StaticProfunctor Aggr where
   staticDimap l r (Aggr m d e) =

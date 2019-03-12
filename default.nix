@@ -78,6 +78,7 @@ in
       cabal-install 
       ghcid 
       stylish-haskell 
+      hlint
     ]; 
     withHoogle = true;
   };

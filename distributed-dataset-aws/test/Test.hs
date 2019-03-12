@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StaticPointers    #-}
 {-# LANGUAGE TypeApplications  #-}
@@ -32,7 +31,7 @@ tests :: TestTree
 tests =
   testGroup "distributed-dataset-aws"
     [ testGroup "Backend"
-      [ testCase "creates backend" $ do
+      [ testCase "creates backend" $
           withLambdaBackend opts $ \_ -> do
             threadDelay $ 5*1000*1000
             return ()
@@ -62,7 +61,7 @@ tests =
             Right _ ->
               assertFailure "should have failed."
       ]
-    , testGroup "ShuffleStore" $
+    , testGroup "ShuffleStore"
       [ testCase "put" $ do
           let ss = s3ShuffleStore "distributed-dataset" "shuffle-store/"
           runConduitRes $

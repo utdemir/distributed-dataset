@@ -1,18 +1,14 @@
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE KindSignatures             #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StaticPointers             #-}
-{-# LANGUAGE TypeApplications           #-}
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StaticPointers      #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Control.Distributed.Dataset.Internal.Dataset where
 
@@ -28,10 +24,9 @@ import           Data.Hashable
 import qualified Data.IntMap                                  as M
 import qualified Data.IntMap.Merge.Strict                     as M
 import           Data.IORef
-import           Data.List                                    (foldl', sortBy,
+import           Data.List                                    (foldl', sortOn,
                                                                transpose)
 import           Data.List.Split
-import           Data.Ord
 import qualified Data.Text                                    as T
 import           Data.Typeable
 import           System.Random
@@ -129,7 +124,7 @@ mkStages (DExternal a) = SInit a
 mkStages (DPipe p rest) =
   case mkStages rest of
     SNarrow prev r ->
-      SNarrow (static (\prev' p' -> prev' .| p') `cap` prev `cap` p) r
+      SNarrow (static (.|) `cap` prev `cap` p) r
     other ->
       SNarrow p other
 mkStages (DPartition count (cf :: Closure (a -> k)) rest) =
@@ -210,7 +205,7 @@ runStages stage@(SWide count cpipe rest) = do
   logInfoN $ "Running: " <> T.pack (showTopStage stage)
   shuffleStore <- view ddShuffleStore
   tasks <- forM inputs $ \partition -> do
-    num <- liftIO $ randomIO
+    num <- liftIO randomIO
     let coutput = ssPut shuffleStore `cap` cpure (static Dict) num
         crun = static (\Dict count' input pipe output ->
           withExecutorStats $ \ExecutorStatsHooks{..} -> do
@@ -245,7 +240,7 @@ runStages stage@(SWide count cpipe rest) = do
 
   let ret' = zip (map erResponse ret) (map snd tasks)
 
-  partitions <- forM ret' $ \(res, num) -> do
+  partitions <- forM ret' $ \(res, num) ->
     forM res $ \(partition, (start, end)) ->
       return ( partition
              , PSimple @a (static (\Dict input' -> input' .| deserialiseC)
@@ -265,7 +260,7 @@ runStages stage@(SWide count cpipe rest) = do
 
   where
     sort :: Monad m => ConduitT (Int, t) (Int, t) m ()
-    sort = mapM_ yield . sortBy (comparing fst) =<< C.sinkList
+    sort = mapM_ yield . sortOn fst =<< C.sinkList
 
 runStages stage@(SCoalesce count rest) = do
   inputs <- runStages rest

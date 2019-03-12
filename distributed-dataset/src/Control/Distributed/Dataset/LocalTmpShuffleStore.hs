@@ -1,7 +1,6 @@
-{-# LANGUAGE LambdaCase       #-}
-{-# LANGUAGE RankNTypes       #-}
-{-# LANGUAGE StaticPointers   #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE LambdaCase     #-}
+{-# LANGUAGE RankNTypes     #-}
+{-# LANGUAGE StaticPointers #-}
 
 module Control.Distributed.Dataset.LocalTmpShuffleStore
   ( withLocalTmpShuffleStore
@@ -30,7 +29,7 @@ import           Control.Distributed.Fork.LocalProcessBackend
 --
 -- Useful for testing purposes.
 withLocalTmpShuffleStore :: (ShuffleStore -> IO a) -> IO a
-withLocalTmpShuffleStore act = do
+withLocalTmpShuffleStore act =
   bracket
     (mkdtemp "/tmp/dd-")
     removeDirectoryRecursive

@@ -35,7 +35,7 @@ s3ShuffleStore bucket' prefix'
     { ssGet = static (\bucket prefix num range -> do
         ret <- runAWS globalAWSEnv $
           send $ S3.getObject
-                   (S3.BucketName $ bucket)
+                   (S3.BucketName bucket)
                    (S3.ObjectKey $ prefix <> T.pack (show num))
                    & S3.goRange
                        .~ (case range of

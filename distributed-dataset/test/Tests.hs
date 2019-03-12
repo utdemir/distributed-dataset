@@ -1,5 +1,4 @@
-{-# LANGUAGE StaticPointers   #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE StaticPointers #-}
 
 module Main where
 

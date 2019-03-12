@@ -7,7 +7,7 @@
 {-# LANGUAGE ParallelListComp      #-}
 {-# LANGUAGE PatternGuards         #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-
+{-# HLINT ignore #-}
 -- |
 -- This is copied & modified from the package 'amazonka-s3-streaming'.
 --

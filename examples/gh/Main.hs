@@ -43,7 +43,7 @@ app = do
 
   -- Print top 20 authors
   result
-    & sortBy (comparing (Down . snd))
+    & sortOn (Down . snd)
     & take 20
     & mapM_ (liftIO . print)
 
