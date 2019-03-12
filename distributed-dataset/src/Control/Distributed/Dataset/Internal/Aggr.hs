@@ -75,7 +75,7 @@ dConstAggr ca =
 
 dSum :: StaticSerialise a => Closure (Dict (Num a)) -> Aggr a a
 dSum d =
-  Aggr (static (\Dict -> Sum) `cap` d)
+  Aggr (static Sum)
        (static (\Dict -> Dict) `cap` d)
        (static getSum)
 
