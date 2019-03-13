@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/utdemir/distributed-dataset.svg?branch=master)](https://travis-ci.org/utdemir/distributed-dataset)
 
-An experiment to create a distributed data processing framework in pure Haskell. Highly inspired by [Apache Spark](https://spark.apache.org/).
+An experiment to create a distributed data processing framework in pure Haskell. Inspired by [Apache Spark](https://spark.apache.org/).
 
 ## Packages
 
@@ -12,7 +12,7 @@ An experiment to create a distributed data processing framework in pure Haskell.
 
   This module provides a `Dataset` type which lets you express transformations on a distributed multiset.
 
-  API is highly inspired from Apache Spark's RDD API. You can see the example below to get a taste of how it looks.
+  API is highly inspired from Apache Spark's RDD API. See the [example](/examples/gh/Main.hs) to get a taste.
 
   It uses pluggable `ShuffleStore`'s for storing intermediate compuation results. See 'distributed-dataset-aws' for an implementation using S3.
 
@@ -40,7 +40,7 @@ A [Common Crawl](http://commoncrawl.org/) implementation is planned next.
 
 ## Example
 
-See [the example](examples/gh).
+See [the example](examples/gh/Main.hs).
 
 ### Running
 
@@ -58,6 +58,8 @@ aws configure
 aws s3api create-bucket --bucket my-s3-bucket
 ```
 
+* Optional: Use [my binary cache on Cachix](https://utdemir.cachix.org/) to reduce the amount of compilation necessary.
+
 * Build an run the example:
 
 ```sh
@@ -66,13 +68,11 @@ $(nix-build -A example-gh)/bin/example-gh my-s3-bucket
 
 ## Stability
 
-Experimental. Expect lots of missing features, bugs, instability and API changes. On the plus side, I believe the codebase is small and easy to contribute/extend.
+Experimental. Expect lots of missing features, bugs, instability and API changes. You will probably need to modify the source if you want to do anything serious.
 
 ### Known Bugs & Missing features & TODO
 
 * Exceptions does not always cause the created resources to terminate.
-* Retrying tasks on failures.
-* Monitoring the progress of running tasks.
 * Sorting datasets, topN queries.
 * Joins.
 * Documentation.
