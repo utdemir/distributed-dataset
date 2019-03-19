@@ -35,8 +35,7 @@ app = do
         ))
 
       -- Count the authors
-      & dMap (static fst)
-      & dGroupedAggr 50 (static id) dCount
+      & dGroupedAggr 50 (static fst) dCount
 
       -- Fetch them to driver as a list
       & dToList
