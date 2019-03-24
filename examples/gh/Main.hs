@@ -6,8 +6,6 @@ module Main where
 
 --------------------------------------------------------------------------------
 import           Control.Lens
-import           Data.List
-import           Data.Ord
 import qualified Data.Text                                          as T
 import           System.Environment                                 (getArgs)
 --------------------------------------------------------------------------------
@@ -17,34 +15,30 @@ import           Control.Distributed.Dataset.OpenDatasets.GHArchive
 --------------------------------------------------------------------------------
 
 app :: DD ()
-app = do
-  result <-
-    -- Fetch events from GitHub between given dates
-    ghArchive (fromGregorian 2018 1 1, fromGregorian 2018 12 31)
+app = 
+  -- Fetch events from GitHub between given dates
+  ghArchive (fromGregorian 2018 1 1, fromGregorian 2018 12 31)
 
-      -- Extract every commit
-      & dConcatMap (static (\e ->
-          let author = e ^. gheActor . ghaLogin
-              commits = e ^.. gheType . _GHPushEvent . ghpepCommits . traverse . ghcMessage
-          in  map (author, ) commits
-        ))
+    -- Extract every commit
+    & dConcatMap (static (\e ->
+        let author = e ^. gheActor . ghaLogin
+            commits = e ^.. gheType . _GHPushEvent . ghpepCommits . traverse . ghcMessage
+        in  map (author, ) commits
+      ))
 
-      -- Filter commits containing the word 'cabal'
-      & dFilter (static (\(_, commit) ->
-          T.pack "cabal" `T.isInfixOf` T.toLower commit
-        ))
+    -- Filter commits containing the word 'cabal'
+    & dFilter (static (\(_, commit) ->
+        T.pack "cabal" `T.isInfixOf` T.toLower commit
+      ))
 
-      -- Count the authors
-      & dGroupedAggr 50 (static fst) dCount
+    -- Count the authors
+    & dGroupedAggr 50 (static fst) dCount
 
-      -- Fetch them to driver as a list
-      & dToList
+    -- Fetch the top 20 to driver as a list
+    & dAggr (dTopK (static Dict) 20 (static snd))
 
-  -- Print top 20 authors
-  result
-    & sortOn (Down . snd)
-    & take 20
-    & mapM_ (liftIO . print)
+    -- Print them
+    >>= mapM_ (liftIO . print)
 
 main ::  IO ()
 main = do

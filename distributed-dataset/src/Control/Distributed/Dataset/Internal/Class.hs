@@ -18,6 +18,7 @@ import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Data.Hashable
 import           Data.Monoid
+import           Data.Ord
 import           Data.Text
 import           Data.Typeable
 -------------------------------------------------------------------------------
@@ -74,6 +75,8 @@ instance StaticSerialise a => StaticSerialise [a] where
 instance StaticSerialise a => StaticSerialise (Maybe a) where
    staticSerialise = static (\Dict -> Dict) `cap` staticSerialise @a
 instance StaticSerialise a => StaticSerialise (Sum a) where
+   staticSerialise = static (\Dict -> Dict) `cap` staticSerialise @a
+instance StaticSerialise a => StaticSerialise (Down a) where
    staticSerialise = static (\Dict -> Dict) `cap` staticSerialise @a
 instance (StaticSerialise a, StaticSerialise b) => StaticSerialise (a, b) where
    staticSerialise = static (\Dict Dict -> Dict) `cap` staticSerialise @a `cap` staticSerialise @b

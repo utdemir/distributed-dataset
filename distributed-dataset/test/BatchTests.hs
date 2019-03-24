@@ -77,6 +77,18 @@ datasetTests = testGroup "BatchTests"
         & fmap sort
 
       ret === expected
+  , testProperty "prop_bottomk" $ property $ do
+      input <- forAll $ Gen.list (Range.linear 0 200) $
+        Gen.list (Range.constant 0 1000) $
+          Gen.integral (Range.constant 0 1000)
+      let expected = take 5 . sort . concat $ input
+      ret <- liftIO . run $
+        dExternal @Integer
+          [ mkPartition (static (mapM_ yield) `cap` cpure (static Dict) p)
+          | p <- input
+          ]
+        & dAggr (dBottomK (static Dict) 5 (static id))
+      ret === expected
   ]
 
 run :: DD a -> IO a

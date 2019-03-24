@@ -30,14 +30,14 @@ library
                      , Control.Distributed.Dataset
                      , Control.Distributed.Dataset.ShuffleStore
                      , Control.Distributed.Dataset.LocalTmpShuffleStore
-                     , Data.Monoid.Commutative
   other-modules:       Control.Distributed.Fork.Internal
                      , Control.Distributed.Dataset.Internal.Dataset
                      , Control.Distributed.Dataset.Internal.Class
                      , Control.Distributed.Dataset.Internal.Aggr
                      , Control.Distributed.Dataset.Internal.Process
                      , Data.Binary.Zlib
-  ghc-options:         -Wall
+                     , Data.Conduit.Foldl
+  ghc-options:         -Wall -fno-warn-name-shadowing
   build-depends:       base >= 4.11 && < 5
                      , distributed-dataset-internal
                      , async
@@ -51,11 +51,14 @@ library
                      , distributed-closure
                      , exceptions
                      , filepath
+                     , foldl
                      , groups
                      , hashable
+                     , heaps
                      , lens
                      , monad-logger
                      , mtl
+                     , profunctors
                      , random
                      , retry
                      , serialise

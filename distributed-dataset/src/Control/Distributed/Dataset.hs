@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
@@ -37,12 +36,12 @@ module Control.Distributed.Dataset
   , dSum
   , dAvg
   , dCollect
+  , dTopK
+  , dBottomK
   , Aggr(..)
   -- * Class
   , StaticSerialise(..)
   , StaticHashable(..)
-  , CommutativeSemigroup
-  , CommutativeMonoid
   -- * Utilities
   , (&)
   -- * Re-exports
@@ -64,15 +63,18 @@ import           Conduit                                      hiding (Consumer,
 import qualified Conduit                                      as C
 import           Control.Distributed.Closure
 import           Control.Distributed.Fork
+import qualified Control.Foldl                                as F
 import           Control.Lens
+import           Data.Hashable
 import qualified Data.HashMap.Strict                          as HM
-import           Data.Monoid.Commutative
 import           Data.Typeable
+import           Data.Void
 -------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.Internal.Aggr
 import           Control.Distributed.Dataset.Internal.Class
 import           Control.Distributed.Dataset.Internal.Dataset
 import           Control.Distributed.Dataset.ShuffleStore
+import           Data.Conduit.Foldl
 -------------------------------------------------------------------------------
 
 mkPartition :: Typeable a => Closure (ConduitT () a (ResourceT IO) ()) -> Partition a
@@ -121,54 +123,63 @@ dFilter f = dConcatMap $ static (\f_ a -> if f_ a then [a] else []) `cap` f
 -- Apply an aggregation to all items on a Dataset, and fetch the result.
 --
 -- Every partition will be reduced remotely, and the results will be reduced on the driver.
-dAggr :: (StaticSerialise a, StaticSerialise b) => Aggr a b -> Dataset a -> DD b
-dAggr (Aggr (m :: Closure (a -> t)) r e) ds = do
+dAggr :: forall a b. (StaticSerialise a, StaticSerialise b) => Aggr a b -> Dataset a -> DD b
+dAggr (Aggr f1c f2c) ds = do
   c <- ds
-         & dMap m
-         & dPipe (static (\Dict -> go @t mempty) `cap` r)
+         & dPipe (static (\f1 ->
+             (C.mapOutput absurd (foldConduit f1)) >>= C.yield) `cap` f1c
+           )
          & dFetch
-  case unclosure r of
-    Dict -> do
-      t <- liftIO . runConduitRes $ c .| C.foldMapC id
-      return $ unclosure e t
- where
-   go :: forall a' m. (CommutativeSemigroup a', Monad m) => a' -> ConduitT a' a' m ()
-   go !i =
-     C.await >>= \case
-       Nothing -> C.yield i
-       Just a  -> go (i <> a)
+  liftIO . runConduitRes $ c .| foldConduit (unclosure f2c)
 
 -- |
 -- Apply an aggregation to all items sharing the same key on a Dataset.
 --
 -- All computation will happen on the executors.
-dGroupedAggr :: forall k v r.
+dGroupedAggr :: forall k a b.
                 ( StaticHashable k, StaticSerialise k
-                , StaticSerialise v, StaticSerialise r
+                , StaticSerialise a, StaticSerialise b
                 )
              => Int              -- ^ Number of partitions
-             -> Closure (v -> k) -- ^ Key function
-             -> Aggr v r
-             -> Dataset v
-             -> Dataset (k, r)
+             -> Closure (a -> k) -- ^ Key function
+             -> Aggr a b
+             -> Dataset a
+             -> Dataset (k, b)
 dGroupedAggr
- partitionCount
- keyC
- (Aggr (m :: Closure (v -> t))
-       (r :: Closure (Dict (CommutativeMonoid t)))
-       (e :: Closure (t -> r))
- )
- ds
+  partitionCount
+  kc
+  (Aggr
+    (f1c :: Closure (F.Fold a t))
+    (f2c :: Closure (F.Fold t b))
+  ) ds
   = ds
-      & dMap @_ @(k, t) (static (\key m' v -> (key v, m' v)) `cap` keyC `cap` m)
-      & dPipe bucket
+      & dMap (static (\k a -> (k a, a)) `cap` kc)
+      & dPipe (static (\Dict -> aggrC @a @t @k)
+                `cap` staticHashable @k `cap` f1c)
       & dPartition partitionCount (static (fst @k @t))
-      & dPipe bucket
-      & dMap (static (\e' (k, v) -> (k, e' v)) `cap` e)
+      & dPipe (static (\Dict -> aggrC @t @b @k)
+                `cap` staticHashable @k `cap` f2c)
   where
-    bucket :: Closure (ConduitT (k, t) (k, t) (ResourceT IO) ())
-    bucket = static (\Dict Dict -> go HM.empty) `cap` r `cap` staticHashable @k
+    aggrC :: forall a' b' k'. (Eq k', Hashable k')
+          => F.Fold a' b'
+          -> ConduitT (k', a') (k', b') (ResourceT IO) ()
+    aggrC (F.Fold step init extract) =
+      go step init extract HM.empty
 
-    go hm = C.await >>= \case
-      Nothing -> mapM_ C.yield (HM.toList hm)
-      Just (k, v) -> go $ HM.insertWith (<>) k v hm
+    go :: forall a' b' x' k'. (Eq k', Hashable k')
+       => (b' -> a' -> b') -> b' -> (b' -> x')
+       -> HM.HashMap k' b'
+       -> ConduitT (k', a') (k', x') (ResourceT IO) ()
+    go step init extract hm = C.await >>= \case
+      Nothing ->
+        mapM_
+          (\(k, b) -> C.yield (k, extract b))
+          (HM.toList hm)
+      Just (k, a) ->
+        go step init extract $ HM.alter
+          (Just . \case
+             Nothing -> step init a
+             Just st -> step st a
+          )
+          k
+          hm
