@@ -5,15 +5,17 @@ module BatchTests where
 
 --------------------------------------------------------------------------------
 import           Conduit
+import           Control.Arrow
 import           Control.Monad.Logger
+import           Data.Binary
 import           Data.Function
 import           Data.List                                        (group, sort)
+import           Data.Typeable
 import           Hedgehog
 import qualified Hedgehog.Gen                                     as Gen
 import qualified Hedgehog.Range                                   as Range
 import           Test.Tasty
 import           Test.Tasty.Hedgehog
-import           Test.Tasty.HUnit
 --------------------------------------------------------------------------------
 import           Control.Distributed.Dataset
 import           Control.Distributed.Dataset.LocalTmpShuffleStore
@@ -21,75 +23,56 @@ import           Control.Distributed.Dataset.LocalTmpShuffleStore
 
 datasetTests :: TestTree
 datasetTests = testGroup "BatchTests"
-  [ testCase "empty" $ do
-      ret <- run $
-        dExternal @Int [mkPartition (static (return ()))]
-          & dToList
-      ret @?= []
-  , testCase "empty/count" $ do
-      ret <- run $
-        dExternal @Int [mkPartition (static (return ()))]
-          & dAggr dCount
-      ret @?= 0
-  , testCase "aggr1" $ do
-      ret <- run $
-        dExternal @Int
-            [ mkPartition (static (mapM_ yield [1..5]))
-            , mkPartition (static (mapM_ yield [6..10]))
-            ]
-          & dAggr dCount
-      ret @?= 10
-  , testCase "aggr2" $ do
-      ret <- run $
-        dExternal @Int
-          [ mkPartition (static (mapM_ yield [1..5]))
-          , mkPartition (static (mapM_ yield [6..10]))
-          ]
-        & dAggr (dSum (static Dict))
-      ret @?= 55
-  , testProperty "prop_aggr" $ property $ do
-      input <- forAll $ Gen.list (Range.linear 0 200) $
-        Gen.list (Range.linear 0 1000) $
-          Gen.integral (Range.constant 0 1000)
-      let expected = sum . concat $ input
-      ret <- liftIO . run $
-        dExternal @Integer
-          [ mkPartition (static (mapM_ yield) `cap` cpure (static Dict) p)
-          | p <- input
-          ]
-        & dAggr (dSum (static Dict))
-      ret === expected
-  , testProperty "prop_groupedAggr" $ property $ do
-      input <- forAll $ Gen.list (Range.linear 0 200) $
-        Gen.list (Range.linear 0 1000) $
-          Gen.enum 'a' 'z'
-      let expected =
-            map (\xs@(x:_) -> (x, fromIntegral $ length xs))
-            . group . sort . concat
-            $ input
-      ret <- liftIO . run $
-        dExternal @Char
-          [ mkPartition (static (mapM_ yield) `cap` cpure (static Dict) p)
-          | p <- input
-          ]
-        & dGroupedAggr 5 (static id) dCount
-        & dToList
-        & fmap sort
-
-      ret === expected
-  , testProperty "prop_bottomk" $ property $ do
-      input <- forAll $ Gen.list (Range.linear 0 200) $
-        Gen.list (Range.constant 0 1000) $
-          Gen.integral (Range.constant 0 1000)
-      let expected = take 5 . sort . concat $ input
-      ret <- liftIO . run $
-        dExternal @Integer
-          [ mkPartition (static (mapM_ yield) `cap` cpure (static Dict) p)
-          | p <- input
-          ]
-        & dAggr (dBottomK (static Dict) 5 (static id))
-      ret === expected
+  [ testProperty "prop_aggr_sum" $
+      propTest
+        (static Dict)
+        (Gen.integral (Range.constant (0 :: Integer) 1000))
+        sum
+        (dAggr (dSum (static Dict)))
+  , testProperty "prop_groupedAggr_count" $
+      propTest
+        (static Dict)
+        (Gen.enum 'a' 'z')
+        (sort
+          >>> group
+          >>> map (\xs@(x:_) -> (x, fromIntegral $ length xs))
+        )
+        (dGroupedAggr 5 (static id) dCount
+          >>> dToList
+          >>> fmap sort
+        )
+  , testProperty "prop_aggr_bottomk" $
+      propTest
+        (static Dict)
+        (Gen.integral (Range.constant (0 :: Integer) 1000))
+        (take 5 . sort)
+        (dAggr (dBottomK (static Dict) 5 (static id)))
   ]
+
+propTest :: (Show a, Typeable a, StaticSerialise a, Eq b, Show b)
+         => Closure (Dict (Binary a, Typeable a))
+         -> GenT Identity a
+         -> ([a] -> b)
+         -> (Dataset a -> DD b)
+         -> Property
+propTest dict gen reference impl = property $ do
+  input <- forAll $ Gen.list (Range.linear 0 200) $
+    Gen.list (Range.constant 0 1000) $
+      gen
+  let expected = reference $ concat input
+  actual <- liftIO . run $
+    dExternal
+      [ mkPartition (static (\Dict -> mapM_ yield)
+                       `cap` dict
+                       `cap` cpure
+                               (static (\Dict -> Dict) `cap` dict)
+                               p
+                    )
+      | p <- input
+      ]
+      & impl
+
+  actual === expected
 
 run :: DD a -> IO a
 run dd =
