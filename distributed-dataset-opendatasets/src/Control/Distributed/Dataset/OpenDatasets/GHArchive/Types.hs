@@ -7,7 +7,8 @@
 module Control.Distributed.Dataset.OpenDatasets.GHArchive.Types where
 
 --------------------------------------------------------------------------------
-import           Control.Distributed.Dataset (Dict (Dict), Serialise,
+import           Codec.Serialise             (Serialise)
+import           Control.Distributed.Dataset (Dict (Dict),
                                               StaticSerialise (staticSerialise))
 import           Control.Lens.TH             (makeLenses, makePrisms)
 import           Data.Aeson                  (FromJSON (..), withObject, (.:))

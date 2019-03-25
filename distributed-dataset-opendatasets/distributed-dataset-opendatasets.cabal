@@ -26,5 +26,6 @@ library
                      , http-conduit
                      , lens
                      , ndjson-conduit
+                     , serialise
                      , text
                      , time
