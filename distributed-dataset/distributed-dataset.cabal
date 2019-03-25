@@ -45,7 +45,6 @@ library
                      , bytestring
                      , clock
                      , conduit
-                     , constraints
                      , containers
                      , directory
                      , distributed-closure
