@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes     #-}
 {-# LANGUAGE StaticPointers #-}
 
 module Control.Distributed.Dataset.Aggr
@@ -26,7 +26,7 @@ import           Data.Ord
 import           Data.Profunctor.Static
 import           Data.Typeable
 -------------------------------------------------------------------------------
-import Control.Distributed.Dataset.Internal.Aggr
+import           Control.Distributed.Dataset.Internal.Aggr
 import           Control.Distributed.Dataset.Internal.Class
 -------------------------------------------------------------------------------
 

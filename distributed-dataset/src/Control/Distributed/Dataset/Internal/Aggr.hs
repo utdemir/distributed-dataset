@@ -33,7 +33,7 @@ import           Control.Distributed.Dataset.Internal.Class
 -- You can use the 'StaticApply' and 'StaticProfunctor' instances to compose
 -- 'Aggr's together. See the implementation of 'dAvg' function for an example.
 --
--- Alternatively, you can use 'aggrFromMonoid' and 'aggrFromFold' functions to 
+-- Alternatively, you can use 'aggrFromMonoid' and 'aggrFromFold' functions to
 -- create 'Aggr's.
 data Aggr a b =
   forall t. StaticSerialise t =>

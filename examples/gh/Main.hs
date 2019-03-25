@@ -15,7 +15,7 @@ import           Control.Distributed.Dataset.OpenDatasets.GHArchive
 --------------------------------------------------------------------------------
 
 app :: DD ()
-app = 
+app =
   -- Fetch events from GitHub between given dates
   ghArchive (fromGregorian 2018 1 1, fromGregorian 2018 12 31)
 
