@@ -65,11 +65,7 @@ partitionProducer (PCombined p1 p2) =
 -- * Dataset
 
 -- |
--- Represents a set of transformations that results in a set of 'a's.
---
--- Dataset's are partitioned and transformed by in a distributed fashion.
---
--- Operations on 'Dataset's will only be performed when the result is requested.
+-- Represents a partitioned multiset that can be transformed in a distributed fashion.
 data Dataset a where
   DExternal  :: Typeable a => [Partition a] -> Dataset a
   DPipe      :: (StaticSerialise a, StaticSerialise b)
@@ -270,7 +266,7 @@ runStages stage@(SCoalesce count rest) = do
 -- * Dataset API
 
 -- |
--- Streams the complete Dataset.
+-- Returns a Conduit to fetch the results lazily to the driver.
 dFetch :: StaticSerialise a
        => Dataset a
        -> DD (ConduitT () a (ResourceT IO) ())

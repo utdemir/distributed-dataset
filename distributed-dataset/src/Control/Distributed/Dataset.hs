@@ -9,47 +9,39 @@
 {-# LANGUAGE TypeFamilies        #-}
 
 module Control.Distributed.Dataset
-  (
-  -- * Dataset
-    Dataset
+  ( Dataset
+  -- * Transformations
+  , dMap
+  , dFilter
+  , dConcatMap
+  , dGroupedAggr
+  -- ** Low-level transformations
+  , dCoalesce
+  , dPipe
+  , dPartition
+  -- * Aggregations
+  , module Control.Distributed.Dataset.Aggr
+  -- * Execution
+  , dAggr
+  , dFetch
+  , dToList
   , DD
   , runDD
   , runDDWith
   , Backend
   , ShuffleStore
-  , dPartition
-  , dExternal
+  -- * Creating datasets
   , Partition
   , mkPartition
-  -- * Transformations
-  , dMap
-  , dFilter
-  , dToList
-  , dPipe
-  , dConcatMap
-  , dCoalesce
-  , dFetch
-  -- * Aggregations
-  , dAggr
-  , dGroupedAggr
-  , dCount
-  , dSum
-  , dAvg
-  , dCollect
-  , dTopK
-  , dBottomK
-  , Aggr(..)
+  , dExternal
   -- * Class
   , StaticSerialise(..)
   , StaticHashable(..)
-  -- * Utilities
-  , (&)
   -- * Re-exports
   , initDistributedFork
   , liftIO
-  , Serialise
-  -- * Closure
-  , Serializable
+  , (&)
+  -- ** Closure
   , Closure
   , cap
   , cpure
@@ -57,7 +49,6 @@ module Control.Distributed.Dataset
   ) where
 
 -------------------------------------------------------------------------------
-import           Codec.Serialise
 import           Conduit                                      hiding (Consumer,
                                                                Producer, await)
 import qualified Conduit                                      as C
@@ -70,6 +61,7 @@ import qualified Data.HashMap.Strict                          as HM
 import           Data.Typeable
 import           Data.Void
 -------------------------------------------------------------------------------
+import           Control.Distributed.Dataset.Aggr
 import           Control.Distributed.Dataset.Internal.Aggr
 import           Control.Distributed.Dataset.Internal.Class
 import           Control.Distributed.Dataset.Internal.Dataset
@@ -97,15 +89,14 @@ dExternal :: Typeable a => [Partition a] -> Dataset a
 dExternal = DExternal
 
 -- |
--- Re-partition the dataset using the given function so that the rows with the same 'k' will
+-- Re-partition the dataset using the given function so that the items with the same 'k' will
 -- end up in the same partition.
 dPartition :: (StaticSerialise a, StaticHashable k) => Int -> Closure (a -> k) -> Dataset a -> Dataset a
 dPartition = DPartition
 
 -- |
--- Re-partition the dataset using the given function so that the rows with the same 'k' will
--- end up in the same partition.
-dCoalesce :: Typeable a => Int -> Dataset a -> Dataset a
+-- Coalesce partitions together to get the specified number of partitions.
+dCoalesce :: Typeable a => Int -> Dataset a  -> Dataset a
 dCoalesce = DCoalesce
 
 -- * Dataset API
@@ -133,15 +124,13 @@ dAggr (Aggr f1c f2c) ds = do
   liftIO . runConduitRes $ c .| foldConduit (unclosure f2c)
 
 -- |
--- Apply an aggregation to all items sharing the same key on a Dataset.
---
--- All computation will happen on the executors.
+-- Apply an aggregation to all rows sharing the same key.
 dGroupedAggr :: forall k a b.
                 ( StaticHashable k, StaticSerialise k
                 , StaticSerialise a, StaticSerialise b
                 )
-             => Int              -- ^ Number of partitions
-             -> Closure (a -> k) -- ^ Key function
+             => Int              -- ^ Target number of partitions
+             -> Closure (a -> k) -- ^ Grouping key
              -> Aggr a b
              -> Dataset a
              -> Dataset (k, b)

@@ -21,7 +21,7 @@ import           GHC.Generics
 --
 -- See:
 --
---   * 'Control.Distributed.Dataset.LocalTmpShuffleStore.withLocalTmpShuffleStore
+--   * 'Control.Distributed.Dataset.LocalTmpShuffleStore.withLocalTmpShuffleStore'
 --
 --   * <http://hackage.haskell.org/package/distributed-dataset-aws distributed-dataset-aws>
 data ShuffleStore =

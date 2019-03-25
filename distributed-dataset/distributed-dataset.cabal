@@ -28,6 +28,7 @@ library
                      , Control.Distributed.Fork.LocalProcessBackend
                      , Control.Distributed.Fork.Backend
                      , Control.Distributed.Dataset
+                     , Control.Distributed.Dataset.Aggr
                      , Control.Distributed.Dataset.ShuffleStore
                      , Control.Distributed.Dataset.LocalTmpShuffleStore
   other-modules:       Control.Distributed.Fork.Internal
