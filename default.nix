@@ -51,9 +51,12 @@ overlays = se: su: {
     pkgs.haskell.lib.dontCheck su.system-fileio;
 
   # Tests fail to compile on GHC 8.6
-  # https://github.com/tweag/distributed-closure/issues/23
+  # Fixed on v0.4.1.1, but it's not in nixpkgs yet
   distributed-closure =
-    pkgs.haskell.lib.dontCheck su.distributed-closure ;
+    pkgs.haskell.lib.overrideCabal su.distributed-closure (_: { 
+      broken = false; 
+      doCheck = false; 
+    });
 };
 
 haskellPackages = pkgs.haskell.packages.${compiler}.override {
