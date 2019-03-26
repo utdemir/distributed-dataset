@@ -1,9 +1,6 @@
-{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE ExistentialQuantification  #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StaticPointers             #-}
-{-# LANGUAGE TypeApplications           #-}
 
 module Control.Distributed.Dataset.Internal.Aggr
   ( Aggr (..)

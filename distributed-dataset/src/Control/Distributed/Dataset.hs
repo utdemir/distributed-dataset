@@ -118,7 +118,7 @@ dAggr :: forall a b. (StaticSerialise a, StaticSerialise b) => Aggr a b -> Datas
 dAggr (Aggr f1c f2c) ds = do
   c <- ds
          & dPipe (static (\f1 ->
-             (C.mapOutput absurd (foldConduit f1)) >>= C.yield) `cap` f1c
+             C.mapOutput absurd (foldConduit f1) >>= C.yield) `cap` f1c
            )
          & dFetch
   liftIO . runConduitRes $ c .| foldConduit (unclosure f2c)

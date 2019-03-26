@@ -1,5 +1,4 @@
 {-# LANGUAGE StaticPointers   #-}
-{-# LANGUAGE TypeApplications #-}
 
 module BatchTests where
 
@@ -57,7 +56,7 @@ propTest :: (Show a, Typeable a, StaticSerialise a, Eq b, Show b)
          -> Property
 propTest dict gen reference impl = property $ do
   input <- forAll $ Gen.list (Range.linear 0 10) $
-    Gen.list (Range.constant 0 10) $
+    Gen.list (Range.constant 0 10)
       gen
   let expected = reference $ concat input
   actual <- liftIO . run $

@@ -77,12 +77,11 @@ dTopK :: forall a k. (StaticSerialise a, Typeable k)
       -> Aggr a [a]
 dTopK dict count fc =
   aggrFromFold
-    ((static (\Dict c f ->
+    (static (\Dict c f ->
       F.foldMap
         (\a -> TopK c . H.singleton $ H.Entry (f a) a)
-        (\(TopK _ h) -> map H.payload . sortBy (comparing Down) $ H.toUnsortedList h)
-      )
-     ) `cap` dict `cap` cpure (static Dict) count `cap` fc
+        (\(TopK _ h) -> map H.payload . sortOn Down $ H.toUnsortedList h)
+      ) `cap` dict `cap` cpure (static Dict) count `cap` fc
     )
     (static (\Dict c f ->
                 F.Fold (\a b -> take c $ merge f a b) [] id
