@@ -26,7 +26,7 @@ datasetTests = testGroup "BatchTests"
   [ testProperty "prop_aggr_sum" $
       propTest
         (static Dict)
-        (Gen.integral (Range.constant (0 :: Integer) 1000))
+        (Gen.integral (Range.constant (0 :: Integer) 10))
         sum
         (dAggr (dSum (static Dict)))
   , testProperty "prop_groupedAggr_count" $
@@ -44,7 +44,7 @@ datasetTests = testGroup "BatchTests"
   , testProperty "prop_aggr_bottomk" $
       propTest
         (static Dict)
-        (Gen.integral (Range.constant (0 :: Integer) 1000))
+        (Gen.integral (Range.constant (0 :: Integer) 10))
         (take 5 . sort)
         (dAggr (dBottomK (static Dict) 5 (static id)))
   ]
@@ -56,8 +56,8 @@ propTest :: (Show a, Typeable a, StaticSerialise a, Eq b, Show b)
          -> (Dataset a -> DD b)
          -> Property
 propTest dict gen reference impl = property $ do
-  input <- forAll $ Gen.list (Range.linear 0 200) $
-    Gen.list (Range.constant 0 1000) $
+  input <- forAll $ Gen.list (Range.linear 0 10) $
+    Gen.list (Range.constant 0 10) $
       gen
   let expected = reference $ concat input
   actual <- liftIO . run $
