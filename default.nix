@@ -46,16 +46,21 @@ overlays = se: su: {
           ];
     });
 
-  # Has a broken test dependency
-  system-fileio =
-    pkgs.haskell.lib.dontCheck su.system-fileio;
+  # Pulls in a broken dependency on 1.8.1, fixed in master but no new release yet.
+  # https://github.com/yesodweb/Shelly.hs/commit/8288d27b93b57574135014d0888cf33f325f7c80
+  shelly =
+    se.callCabal2nix 
+      "shelly"
+      (builtins.fetchGit {
+        url = "https://github.com/yesodweb/Shelly.hs";
+        rev = "8288d27b93b57574135014d0888cf33f325f7c80";
+      })
+      {};
 
-  # Tests fail to compile on GHC 8.6
-  # Fixed on v0.4.1.1, but it's not in nixpkgs yet
+  # For some reason this is marked as broken in nixpkgs
   distributed-closure =
     pkgs.haskell.lib.overrideCabal su.distributed-closure (_: { 
       broken = false; 
-      doCheck = false; 
     });
 };
 
