@@ -28,7 +28,7 @@ app =
 
     -- Filter commits containing the word 'cabal'
     & dFilter (static (\(_, commit) ->
-        T.pack "cabal" `T.isInfixOf` T.toLower commit
+        "cabal" `T.isInfixOf` T.toLower commit
       ))
 
     -- Count the authors
