@@ -33,7 +33,7 @@ import           Control.Distributed.Dataset.Internal.Class
 -- Alternatively, you can use 'aggrFromMonoid' and 'aggrFromFold' functions to
 -- create 'Aggr's.
 data Aggr a b =
-  forall t. StaticSerialise t =>
+  forall t. (StaticSerialise t, Typeable a, Typeable b) =>
   Aggr
     (Closure (F.Fold a t))
     (Closure (F.Fold t b))
@@ -60,7 +60,7 @@ aggrFromMonoid d
  where
   go = static (\Dict -> F.foldMap id id) `cap` d
 
-aggrFromFold :: StaticSerialise t
+aggrFromFold :: (StaticSerialise t, Typeable a, Typeable b)
              => Closure (F.Fold a t) -- ^ Fold to run before the shuffle
              -> Closure (F.Fold t b) -- ^ Fold to run after the shuffle
              -> Aggr a b

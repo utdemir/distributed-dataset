@@ -7,9 +7,12 @@ module Control.Distributed.Dataset.Aggr
   , dCount
   , dSum
   , dMean
+  , dMax
+  , dMin
   , dCollect
   , dBottomK
   , dTopK
+  , dFilteredAggr
   , aggrFromMonoid
   , aggrFromFold
   ) where
@@ -25,6 +28,7 @@ import           Data.Monoid
 import           Data.Ord
 import           Data.Profunctor.Static
 import           Data.Typeable
+import           Data.Semigroup
 -------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.Internal.Aggr
 import           Control.Distributed.Dataset.Internal.Class
@@ -46,6 +50,28 @@ dMean =
   dConstAggr (static (/))
     `staticApply` dSum (static Dict)
     `staticApply` staticMap (static realToFrac) dCount
+
+dMax :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
+dMax dict = 
+  staticDimap
+    (static (Just . Max))
+    (static (fmap getMax))
+    (aggrFromMonoid (static (\Dict -> Dict) `cap` dict))
+
+dMin :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
+dMin dict = 
+  staticDimap
+    (static (Just . Min))
+    (static (fmap getMin))
+    (aggrFromMonoid (static (\Dict -> Dict) `cap` dict))
+
+-- |
+-- Returns a new Aggr which only aggregates rows matching the predicate.
+dFilteredAggr :: Closure (a -> Bool) -> Aggr a b -> Aggr a b
+dFilteredAggr predc (Aggr f1 f2) = 
+  Aggr 
+    (static F.prefilter `cap` predc `cap` f1)
+    f2
 
 -- * Collect
 

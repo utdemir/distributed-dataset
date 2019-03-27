@@ -21,6 +21,7 @@ import           Data.Monoid
 import           Data.Ord
 import           Data.Text
 import           Data.Typeable
+import           Data.Semigroup
 -------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.ShuffleStore
 import           Control.Distributed.Fork                 (Backend)
@@ -77,6 +78,10 @@ instance StaticSerialise a => StaticSerialise (Maybe a) where
 instance StaticSerialise a => StaticSerialise (Sum a) where
    staticSerialise = static (\Dict -> Dict) `cap` staticSerialise @a
 instance StaticSerialise a => StaticSerialise (Down a) where
+   staticSerialise = static (\Dict -> Dict) `cap` staticSerialise @a
+instance StaticSerialise a => StaticSerialise (Max a) where
+   staticSerialise = static (\Dict -> Dict) `cap` staticSerialise @a
+instance StaticSerialise a => StaticSerialise (Min a) where
    staticSerialise = static (\Dict -> Dict) `cap` staticSerialise @a
 instance (StaticSerialise a, StaticSerialise b) => StaticSerialise (a, b) where
    staticSerialise = static (\Dict Dict -> Dict) `cap` staticSerialise @a `cap` staticSerialise @b
