@@ -1,4 +1,4 @@
-{-# LANGUAGE StaticPointers   #-}
+{-# LANGUAGE StaticPointers #-}
 
 module BatchTests where
 

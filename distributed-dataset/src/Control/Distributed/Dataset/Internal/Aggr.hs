@@ -1,6 +1,6 @@
-{-# LANGUAGE ExistentialQuantification  #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StaticPointers             #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE StaticPointers            #-}
 
 module Control.Distributed.Dataset.Internal.Aggr
   ( Aggr (..)

@@ -17,11 +17,12 @@ import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Data.Hashable
+import           Data.HashSet                             (HashSet)
 import           Data.Monoid
 import           Data.Ord
+import           Data.Semigroup
 import           Data.Text
 import           Data.Typeable
-import           Data.Semigroup
 -------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.ShuffleStore
 import           Control.Distributed.Fork                 (Backend)
@@ -73,6 +74,8 @@ instance StaticSerialise Text where
    staticSerialise = static Dict
 instance StaticSerialise a => StaticSerialise [a] where
    staticSerialise = static (\Dict -> Dict) `cap` staticSerialise @a
+instance (StaticHashable a, StaticSerialise a) => StaticSerialise (HashSet a) where
+   staticSerialise = static (\Dict Dict -> Dict) `cap` staticSerialise @a `cap` staticHashable @a
 instance StaticSerialise a => StaticSerialise (Maybe a) where
    staticSerialise = static (\Dict -> Dict) `cap` staticSerialise @a
 instance StaticSerialise a => StaticSerialise (Sum a) where

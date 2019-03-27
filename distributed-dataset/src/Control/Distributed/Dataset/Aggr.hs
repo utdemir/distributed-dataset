@@ -1,5 +1,7 @@
-{-# LANGUAGE RankNTypes     #-}
-{-# LANGUAGE StaticPointers #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StaticPointers      #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Control.Distributed.Dataset.Aggr
   ( Aggr
@@ -10,6 +12,7 @@ module Control.Distributed.Dataset.Aggr
   , dMax
   , dMin
   , dCollect
+  , dDistinct
   , dBottomK
   , dTopK
   , dFilteredAggr
@@ -22,13 +25,14 @@ import           Control.Applicative.Static
 import           Control.Distributed.Closure
 import qualified Control.Foldl                              as F
 import           Data.Functor.Static
+import           Data.HashSet                               (HashSet)
 import qualified Data.Heap                                  as H
 import           Data.List
 import           Data.Monoid
 import           Data.Ord
 import           Data.Profunctor.Static
-import           Data.Typeable
 import           Data.Semigroup
+import           Data.Typeable
 -------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.Internal.Aggr
 import           Control.Distributed.Dataset.Internal.Class
@@ -52,14 +56,14 @@ dMean =
     `staticApply` staticMap (static realToFrac) dCount
 
 dMax :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
-dMax dict = 
+dMax dict =
   staticDimap
     (static (Just . Max))
     (static (fmap getMax))
     (aggrFromMonoid (static (\Dict -> Dict) `cap` dict))
 
 dMin :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
-dMin dict = 
+dMin dict =
   staticDimap
     (static (Just . Min))
     (static (fmap getMin))
@@ -68,8 +72,8 @@ dMin dict =
 -- |
 -- Returns a new Aggr which only aggregates rows matching the predicate.
 dFilteredAggr :: Closure (a -> Bool) -> Aggr a b -> Aggr a b
-dFilteredAggr predc (Aggr f1 f2) = 
-  Aggr 
+dFilteredAggr predc (Aggr f1 f2) =
+  Aggr
     (static F.prefilter `cap` predc `cap` f1)
     f2
 
@@ -82,6 +86,12 @@ dCollect =
   aggrFromFold
     (static F.list)
     (static (concat <$> F.list))
+
+dDistinct :: forall a. (StaticSerialise a, StaticHashable a) => Aggr a (HashSet a)
+dDistinct =
+  aggrFromFold
+    (static (\Dict -> F.hashSet) `cap` staticHashable @a)
+    (static (\Dict -> mconcat <$> F.list) `cap` staticHashable @a)
 
 -- * Top K
 
