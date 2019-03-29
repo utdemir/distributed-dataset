@@ -102,7 +102,7 @@ dCoalesce = DCoalesce
 -- * Dataset API
 
 dConcatMap :: (StaticSerialise a, StaticSerialise b) => Closure (a -> [b]) -> Dataset a -> Dataset b
-dConcatMap f_ = dPipe $ static (C.concatMapC @(ResourceT IO)) `cap` f_
+dConcatMap f = dPipe $ static (C.concatMapC @(ResourceT IO)) `cap` f
 
 dMap :: (StaticSerialise a, StaticSerialise b) => Closure (a -> b) -> Dataset a -> Dataset b
 dMap f = dConcatMap $ static (pure .) `cap` f
@@ -114,7 +114,7 @@ dFilter f = dConcatMap $ static (\f_ a -> if f_ a then [a] else []) `cap` f
 -- Apply an aggregation to all items on a Dataset, and fetch the result.
 --
 -- Every partition will be reduced remotely, and the results will be reduced on the driver.
-dAggr :: forall a b. (StaticSerialise a, StaticSerialise b) => Aggr a b -> Dataset a -> DD b
+dAggr :: (StaticSerialise a, StaticSerialise b) => Aggr a b -> Dataset a -> DD b
 dAggr (Aggr f1c f2c) ds = do
   c <- ds
          & dPipe (static (\f1 ->
@@ -125,8 +125,7 @@ dAggr (Aggr f1c f2c) ds = do
 
 -- |
 -- Apply an aggregation to all rows sharing the same key.
-dGroupedAggr :: forall k a b.
-                ( StaticHashable k, StaticSerialise k
+dGroupedAggr :: ( StaticHashable k, StaticSerialise k
                 , StaticSerialise a, StaticSerialise b
                 )
              => Int              -- ^ Target number of partitions
@@ -136,7 +135,7 @@ dGroupedAggr :: forall k a b.
              -> Dataset (k, b)
 dGroupedAggr
   partitionCount
-  kc
+  (kc :: Closure (a -> k))
   (Aggr
     (f1c :: Closure (F.Fold a t))
     (f2c :: Closure (F.Fold t b))

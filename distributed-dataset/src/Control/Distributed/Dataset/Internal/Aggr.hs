@@ -5,6 +5,7 @@
 module Control.Distributed.Dataset.Internal.Aggr
   ( Aggr (..)
   , aggrFromMonoid
+  , aggrFromReduce
   , aggrFromFold
   , dConstAggr
   ) where
@@ -13,8 +14,8 @@ module Control.Distributed.Dataset.Internal.Aggr
 import           Control.Applicative.Static
 import           Control.Distributed.Closure
 import qualified Control.Foldl                              as F
+import           Control.Lens
 import           Data.Functor.Static
-import           Data.Profunctor
 import           Data.Profunctor.Static
 import           Data.Typeable
 -------------------------------------------------------------------------------
@@ -59,6 +60,14 @@ aggrFromMonoid d
   = aggrFromFold go go
  where
   go = static (\Dict -> F.foldMap id id) `cap` d
+
+aggrFromReduce :: StaticSerialise a
+               => Closure (a -> a -> a)
+               -> Aggr a (Maybe a)
+aggrFromReduce dc
+  = aggrFromFold
+      (static F._Fold1 `cap` dc)
+      (static (F.handles _Just . F._Fold1) `cap` dc)
 
 aggrFromFold :: (StaticSerialise t, Typeable a, Typeable b)
              => Closure (F.Fold a t) -- ^ Fold to run before the shuffle

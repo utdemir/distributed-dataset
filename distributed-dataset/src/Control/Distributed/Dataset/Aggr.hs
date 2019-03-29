@@ -17,6 +17,7 @@ module Control.Distributed.Dataset.Aggr
   , dTopK
   , dFilteredAggr
   , aggrFromMonoid
+  , aggrFromReduce
   , aggrFromFold
   ) where
 
@@ -31,7 +32,6 @@ import           Data.List
 import           Data.Monoid
 import           Data.Ord
 import           Data.Profunctor.Static
-import           Data.Semigroup
 import           Data.Typeable
 -------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.Internal.Aggr
@@ -56,18 +56,10 @@ dMean =
     `staticApply` staticMap (static realToFrac) dCount
 
 dMax :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
-dMax dict =
-  staticDimap
-    (static (Just . Max))
-    (static (fmap getMax))
-    (aggrFromMonoid (static (\Dict -> Dict) `cap` dict))
+dMax dict = aggrFromReduce $ static (\Dict -> max) `cap` dict
 
 dMin :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
-dMin dict =
-  staticDimap
-    (static (Just . Min))
-    (static (fmap getMin))
-    (aggrFromMonoid (static (\Dict -> Dict) `cap` dict))
+dMin dict = aggrFromReduce $ static (\Dict -> min) `cap` dict
 
 -- |
 -- Returns a new Aggr which only aggregates rows matching the predicate.
@@ -106,7 +98,7 @@ instance Semigroup (TopK a) where
 instance Monoid (TopK a) where
   mempty = TopK maxBound H.empty
 
-dTopK :: forall a k. (StaticSerialise a, Typeable k)
+dTopK :: (StaticSerialise a, Typeable k)
       => Closure (Dict (Ord k))
       -> Int              -- ^ Number of rows to return
       -> Closure (a -> k) -- ^ Sorting key
