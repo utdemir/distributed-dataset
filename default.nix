@@ -61,6 +61,9 @@ overlays = se: su: {
       broken = false; 
     });
 
+  # Always use the new Cabal
+  Cabal = se.Cabal_2_4_1_0;
+  
   # Upstream does not compile with Cabal 2.4 yet.
   # See: https://github.com/ktvoelker/standalone-haddock/issues/18  
   standalone-haddock = 
@@ -107,10 +110,10 @@ in rec
         standalone-haddock
       ];
   } ''
-    mkdir $out
+    mkdir "$out"
     standalone-haddock \
-      --dist-dir $(mktemp -d) \
-      -o $out \
+      --dist-dir "$(mktemp -d)" \
+      -o "$out" \
       ${distributed-dataset.src} \
       ${distributed-dataset-aws.src} \
       ${distributed-dataset-opendatasets.src} 
