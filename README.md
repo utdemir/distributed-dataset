@@ -5,6 +5,8 @@
 
 An experiment to create a distributed data processing framework in pure Haskell. Inspired by [Apache Spark](https://spark.apache.org/).
 
+[An example is worth a thousand words](/examples/gh/Main.hs).
+
 ## Packages
 
 ### distributed-dataset
