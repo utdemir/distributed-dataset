@@ -29,10 +29,17 @@ import           Control.Distributed.Dataset.Internal.Class
 -- functions to use them on 'Dataset's.
 --
 -- You can use the 'StaticApply' and 'StaticProfunctor' instances to compose
--- 'Aggr's together. See the implementation of 'dAvg' function for an example.
+-- 'Aggr's together. Example:
 --
--- Alternatively, you can use 'aggrFromMonoid' and 'aggrFromFold' functions to
--- create 'Aggr's.
+-- @
+-- dAvg :: Aggr Double Double
+-- dAvg =
+--   dConstAggr (static (/))
+--     \`staticApply\` dSum (static Dict)
+--     \`staticApply\` staticMap (static realToFrac) dCount
+-- @
+--
+-- Alternatively, you can use aggrFrom* functions to create 'Aggr's.
 data Aggr a b =
   forall t. (StaticSerialise t, Typeable a, Typeable b) =>
   Aggr
@@ -53,6 +60,8 @@ instance StaticProfunctor Aggr where
     Aggr (static lmap `cap` l `cap` f1)
          (static rmap `cap` r `cap` f2)
 
+-- |
+-- Create an aggregation given a 'Monoid' instance.
 aggrFromMonoid :: StaticSerialise a
                => Closure (Dict (Monoid a))
                -> Aggr a a
@@ -61,6 +70,10 @@ aggrFromMonoid d
  where
   go = static (\Dict -> F.foldMap id id) `cap` d
 
+-- |
+-- Create an aggregation given a reduce function.
+--
+-- Returns 'Nothing' on empty 'Dataset's.
 aggrFromReduce :: StaticSerialise a
                => Closure (a -> a -> a)
                -> Aggr a (Maybe a)
@@ -69,6 +82,14 @@ aggrFromReduce dc
       (static F._Fold1 `cap` dc)
       (static (F.handles _Just . F._Fold1) `cap` dc)
 
+-- |
+-- Create an aggregation given two 'Fold's.
+--
+-- This is the most primitive way to create an aggregation, use other 
+-- methods if possible.
+--
+-- The first 'Fold' will be applied on each partition, and the results will
+-- be shuffled and fed to the second 'Fold'.
 aggrFromFold :: (StaticSerialise t, Typeable a, Typeable b)
              => Closure (F.Fold a t) -- ^ Fold to run before the shuffle
              -> Closure (F.Fold t b) -- ^ Fold to run after the shuffle
@@ -77,16 +98,6 @@ aggrFromFold = Aggr
 
 -- |
 -- An aggregation which ignores the input data and always yields the given value.
---
--- Useful with 'staticApply'. e.g:
---
--- @
--- dAvg :: Aggr Double Double
--- dAvg =
---   dConstAggr (static (/))
---     `staticApply` dSum (static Dict)
---     `staticApply` staticMap (static realToFrac) dCount
--- @
 dConstAggr :: forall a t. (Typeable a, Typeable t) => Closure a -> Aggr t a
 dConstAggr ac =
   staticDimap

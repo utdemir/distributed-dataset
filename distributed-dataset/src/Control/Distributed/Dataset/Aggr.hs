@@ -13,9 +13,10 @@ module Control.Distributed.Dataset.Aggr
   , dMin
   , dCollect
   , dDistinct
-  , dBottomK
   , dTopK
+  , dBottomK
   , dFilteredAggr
+  -- * Creating Aggr's
   , aggrFromMonoid
   , aggrFromReduce
   , aggrFromFold
@@ -38,6 +39,10 @@ import           Control.Distributed.Dataset.Internal.Aggr
 import           Control.Distributed.Dataset.Internal.Class
 -------------------------------------------------------------------------------
 
+-- |
+-- Returns the sum of the inputs.
+--
+-- Returns 'Nothing' on empty 'Dataset's.
 dSum :: StaticSerialise a => Closure (Dict (Num a)) -> Aggr a a
 dSum d =
   staticDimap
@@ -45,19 +50,35 @@ dSum d =
     (static getSum)
     (aggrFromMonoid $ static (\Dict -> Dict) `cap` d)
 
+-- |
+-- Returns the number of inputs.
+--
+-- Returns 'Nothing' on empty 'Dataset's.
 dCount :: Typeable a => Aggr a Integer
 dCount =
   static (const 1) `staticLmap` dSum (static Dict)
 
+-- |
+-- Calculates the mean of the inputs.
+--
+-- Returns 'Nothing' on empty 'Dataset's.
 dMean :: Aggr Double Double
 dMean =
   dConstAggr (static (/))
     `staticApply` dSum (static Dict)
     `staticApply` staticMap (static realToFrac) dCount
 
+-- |
+-- Return the maximum of the inputs.
+--
+-- Returns 'Nothing' on empty 'Dataset's.
 dMax :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
 dMax dict = aggrFromReduce $ static (\Dict -> max) `cap` dict
 
+-- |
+-- Return the minimum of the inputs.
+--
+-- Returns 'Nothing' on empty 'Dataset's.
 dMin :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
 dMin dict = aggrFromReduce $ static (\Dict -> min) `cap` dict
 
@@ -69,9 +90,9 @@ dFilteredAggr predc (Aggr f1 f2) =
     (static F.prefilter `cap` predc `cap` f1)
     f2
 
--- * Collect
-
 -- |
+-- Collects the inputs as a list.
+--
 -- Warning: Ordering of the resulting list is non-deterministic.
 dCollect :: StaticSerialise a => Aggr a [a]
 dCollect =
@@ -79,6 +100,10 @@ dCollect =
     (static F.list)
     (static (concat <$> F.list))
 
+-- |
+-- Collects the inputs to a 'HashSet'.
+--
+-- Warning: Ordering of the resulting list is non-deterministic.
 dDistinct :: forall a. (StaticSerialise a, StaticHashable a) => Aggr a (HashSet a)
 dDistinct =
   aggrFromFold
@@ -98,6 +123,11 @@ instance Semigroup (TopK a) where
 instance Monoid (TopK a) where
   mempty = TopK maxBound H.empty
 
+-- |
+-- Returns the 'n' greatest elements according to a key function. Similar to:
+-- @take n . sortOn (Down . f)@
+--
+-- Warning: Ordering of the repeated elements is non-deterministic.
 dTopK :: (StaticSerialise a, Typeable k)
       => Closure (Dict (Ord k))
       -> Int              -- ^ Number of rows to return
@@ -123,6 +153,11 @@ dTopK dict count fc =
         then x:merge f xs yss
         else y:merge f xss ys
 
+-- |
+-- Returns the 'n' least elements according to a key function. Similar to:
+-- @take n . sortOn (Down . f)@
+--
+-- Warning: Ordering of the repeated elements is non-deterministic.
 dBottomK :: (StaticSerialise a, Typeable k)
          => Closure (Dict (Ord k))
          -> Int              -- ^ Number of rows to return
@@ -133,3 +168,4 @@ dBottomK d count fc =
     (static (\Dict -> Dict) `cap` d)
     count
     (static (Down .) `cap` fc)
+    

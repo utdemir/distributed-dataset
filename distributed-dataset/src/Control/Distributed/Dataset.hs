@@ -69,6 +69,8 @@ import           Control.Distributed.Dataset.ShuffleStore
 import           Data.Conduit.Foldl
 -------------------------------------------------------------------------------
 
+-- |
+-- Create a 'Partition' given a Source conduit.
 mkPartition :: Typeable a => Closure (ConduitT () a (ResourceT IO) ()) -> Partition a
 mkPartition = PSimple
 
@@ -82,7 +84,7 @@ dPipe :: (StaticSerialise a, StaticSerialise b)
 dPipe = DPipe
 
 -- |
--- Create a dataset from given 'Partition'''s.
+-- Create a dataset from given `Partition`'s.
 --
 -- This is how every 'Dataset' is created initially.
 dExternal :: Typeable a => [Partition a] -> Dataset a
@@ -101,12 +103,19 @@ dCoalesce = DCoalesce
 
 -- * Dataset API
 
+-- |
+-- Returns a new Dataset by first applying a function to all elements of this Dataset, and then
+-- flattening the results.
 dConcatMap :: (StaticSerialise a, StaticSerialise b) => Closure (a -> [b]) -> Dataset a -> Dataset b
 dConcatMap f = dPipe $ static (C.concatMapC @(ResourceT IO)) `cap` f
 
+-- |
+-- Returns a new Dataset that contains the result of applying the given function to each element.
 dMap :: (StaticSerialise a, StaticSerialise b) => Closure (a -> b) -> Dataset a -> Dataset b
 dMap f = dConcatMap $ static (pure .) `cap` f
 
+-- |
+-- Returns a new Dataset that only contains elements where the given function returns true.
 dFilter :: (StaticSerialise a) => Closure (a -> Bool) -> Dataset a -> Dataset a
 dFilter f = dConcatMap $ static (\f_ a -> if f_ a then [a] else []) `cap` f
 

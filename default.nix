@@ -7,14 +7,11 @@ gitignore = pkgs.nix-gitignore.gitignoreSourcePure [ ./.gitignore ];
 
 overlays = se: su: {
   "distributed-dataset" =
-    pkgs.haskell.lib.overrideCabal (
-      se.callCabal2nix 
-        "distributed-dataset" 
-        (gitignore ./distributed-dataset) 
-        {}
-    ) (_: {
-      doHaddock = compiler > "ghc86";
-    });
+    se.callCabal2nix 
+      "distributed-dataset" 
+      (gitignore ./distributed-dataset) 
+      {};
+      
   "distributed-dataset-aws" =
     let orig = se.callCabal2nix
                  "distributed-dataset-aws"
@@ -27,6 +24,7 @@ overlays = se: su: {
             (gmp.override { withStatic = true; })
           ];
     });
+    
   "distributed-dataset-opendatasets" =
     se.callCabal2nix 
       "distributed-dataset-opendatasets" 
@@ -62,13 +60,24 @@ overlays = se: su: {
     pkgs.haskell.lib.overrideCabal su.distributed-closure (_: { 
       broken = false; 
     });
+
+  # Upstream does not compile with Cabal 2.4 yet.
+  # See: https://github.com/ktvoelker/standalone-haddock/issues/18  
+  standalone-haddock = 
+    se.callCabal2nix
+      "standalone-haddock"
+      (builtins.fetchGit {
+        url = "https://github.com/utdemir/standalone-haddock";
+        rev = "134c0560156a49cbdc3d656543d1a44092765500";
+      })
+      {};
 };
 
 haskellPackages = pkgs.haskell.packages.${compiler}.override {
   overrides = overlays;
 };
 
-in
+in rec
 { 
   "distributed-dataset" = haskellPackages.distributed-dataset;
   "distributed-dataset-aws" = haskellPackages.distributed-dataset-aws;
@@ -90,5 +99,21 @@ in
     ]; 
     withHoogle = true;
   };
+  
+  docs = pkgs.runCommand "distributed-dataset-docs" {
+    buildInputs = with haskellPackages;
+      [ (haskellPackages.ghcWithPackages (hp: 
+          [ distributed-dataset distributed-dataset-aws distributed-dataset-opendatasets ]))
+        standalone-haddock
+      ];
+  } ''
+    mkdir $out
+    standalone-haddock \
+      --dist-dir $(mktemp -d) \
+      -o $out \
+      ${distributed-dataset.src} \
+      ${distributed-dataset-aws.src} \
+      ${distributed-dataset-opendatasets.src} 
+  '';
 }
 
