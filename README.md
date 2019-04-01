@@ -106,6 +106,7 @@ nix-shell --run 'hlint .'
 ## See Also
 
 * [Sparkle](https://github.com/tweag/sparkle): Run Haskell on top of Apache Spark. This is what you are looking for if you are going to do anything serious.
+* [HSpark](https://github.com/yogeshsajanikar/hspark): An attempt at porting Apache Spark to Haskell.
 
 ## Related Work
 
