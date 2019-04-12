@@ -1,0 +1,14 @@
+resolver: lts-13.16
+
+packages:
+  - distributed-dataset
+  - distributed-dataset-aws
+  - distributed-dataset-opendatasets
+  - examples/gh
+
+extra-deps:
+  - tasty-hedgehog-0.2.0.0
+
+docker:
+  enable: true
+  stack-exe: download

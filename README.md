@@ -89,7 +89,7 @@ I am open to contributions; any issue, PR or opinion is more than welcome.
 
 ## Hacking
 
-* I use Nix to develop. If you use `stack` or any alternative build system, I'd appreciate a PR.
+* I use Nix to develop. If you use `stack` or any alternative build system, I'd appreciate a PR to extend the docs.
 * 'nix-shell' gives you a development shell with `cabal`, `ghcid` and `stylish-haskell`. Example:
 
 ```
