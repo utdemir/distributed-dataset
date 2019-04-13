@@ -13,9 +13,7 @@ An experiment to create a distributed data processing framework in pure Haskell.
 
 * Control.Distributed.Dataset
 
-  This module provides a `Dataset` type which lets you express transformations on a distributed multiset.
-
-  API is highly inspired from Apache Spark's RDD API. See the [example](/examples/gh/Main.hs) to get a taste.
+  This module provides a `Dataset` type which lets you express transformations on a distributed multiset. It's API is highly inspired by Apache Spark.
 
   It uses pluggable `ShuffleStore`'s for storing intermediate compuation results. See 'distributed-dataset-aws' for an implementation using S3.
 
@@ -41,11 +39,7 @@ Provides `Dataset`'s reading from public open datasets. Currently it can fetch G
 
 A [Common Crawl](http://commoncrawl.org/) implementation is planned next.
 
-## Example
-
-See [the example](examples/gh/Main.hs).
-
-### Running
+## Running the example
 
 * Make sure that you have a working [Nix](https://nixos.org/nix/) installation. 
 
