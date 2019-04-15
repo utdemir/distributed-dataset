@@ -1,3 +1,11 @@
+{- 
+This application will process every public GitHub event occured in 2018 to get
+the top 20 users who used the word "cabal" in their commit messages the most.
+
+This will download and process around 126 GB of compressed, 909 GB uncompressed
+data; and it'll set you back a few dollars on your AWS bill.
+-}
+
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StaticPointers    #-}
 {-# LANGUAGE TupleSections     #-}
