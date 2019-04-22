@@ -73,7 +73,6 @@ seTemplate StackOptions{ soLambdaCode = S3Loc (BucketName bucketName) path, soLa
   S.template
     (S.Resources
        [ S.resource templateOutputFunc $
-         S.LambdaFunctionProperties $
          S.lambdaFunction
            (S.lambdaFunctionCode
               & S.lfcS3Bucket ?~ S.Literal bucketName
@@ -86,9 +85,9 @@ seTemplate StackOptions{ soLambdaCode = S3Loc (BucketName bucketName) path, soLa
          & S.lfDeadLetterConfig ?~
              S.LambdaFunctionDeadLetterConfig (Just $ S.GetAtt "deadLetterQueue" "Arn")
        , S.resource "role" seRole
-       , S.resource templateOutputAnswerQueue $ S.SQSQueueProperties S.sqsQueue
-       , S.resource templateOutputDeadLetterQueue $ S.SQSQueueProperties S.sqsQueue
-       , S.resource templateOutputAnswerBucket $ S.S3BucketProperties S.s3Bucket
+       , S.resource templateOutputAnswerQueue S.sqsQueue
+       , S.resource templateOutputDeadLetterQueue S.sqsQueue
+       , S.resource templateOutputAnswerBucket S.s3Bucket
        ]) &
   S.templateOutputs ?~
     S.Outputs
@@ -98,9 +97,8 @@ seTemplate StackOptions{ soLambdaCode = S3Loc (BucketName bucketName) path, soLa
       , S.output templateOutputAnswerBucket (S.Ref templateOutputAnswerBucket)
       ]
 
-seRole :: S.ResourceProperties
+seRole :: S.IAMRole
 seRole =
-  S.IAMRoleProperties $
   S.iamRole assumeRolePolicy
   & S.iamrPolicies ?~
     [ S.iamRolePolicy sqsAccessPolicy (S.Literal "sqs")

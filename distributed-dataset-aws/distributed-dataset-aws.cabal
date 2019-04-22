@@ -57,7 +57,7 @@ library
                      , safe-exceptions
                      , SHA
                      , stm
-                     , stratosphere >= 0.15.0
+                     , stratosphere >= 0.33.0
                      , text
                      , time
                      , transformers
