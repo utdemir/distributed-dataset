@@ -13,7 +13,7 @@ A distributed data processing framework in pure Haskell. Inspired by [Apache Spa
 
 * Control.Distributed.Dataset
 
-This module provides a `Dataset` type which lets you express transformations on a distributed multiset. It's API is highly inspired by Apache Spark.
+This module provides a `Dataset` type which lets you express transformations on a distributed multiset. Its API is highly inspired by Apache Spark.
 
 It uses pluggable `ShuffleStore`'s for storing intermediate compuation results. See 'distributed-dataset-aws' for an implementation using S3.
 
@@ -23,9 +23,9 @@ This module contains a `fork` function which lets you run arbitrary IO actions o
 
 This module is useful when your task is [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel):
 
-    * Load test an application by sending thousands of HTTP requests.
-    * Run different iterations of a simulation in parallel.
-    * Generate thumbnails for a set of images.
+* Load test an application by sending thousands of HTTP requests.
+* Run different iterations of a simulation in parallel.
+* Generate thumbnails for a set of images.
 
 It uses pluggable `Backend`s for spawning executors. See 'distributed-dataset-aws' for an implementation using AWS Lambda .
 
