@@ -85,7 +85,7 @@ aggrFromReduce dc
 -- |
 -- Create an aggregation given two 'Fold's.
 --
--- This is the most primitive way to create an aggregation, use other 
+-- This is the most primitive way to create an aggregation, use other
 -- methods if possible.
 --
 -- The first 'Fold' will be applied on each partition, and the results will

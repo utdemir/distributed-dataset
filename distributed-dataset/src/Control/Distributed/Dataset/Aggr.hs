@@ -168,4 +168,4 @@ dBottomK d count fc =
     (static (\Dict -> Dict) `cap` d)
     count
     (static (Down .) `cap` fc)
-    
+

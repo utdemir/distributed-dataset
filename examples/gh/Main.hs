@@ -1,4 +1,4 @@
-{- 
+{-
 This application will process every public GitHub event occured in 2018 to get
 the top 20 users who used the word "cabal" in their commit messages the most.
 
