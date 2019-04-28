@@ -62,7 +62,7 @@ Experimental. Expect lots of missing features, bugs, instability and API changes
 
 ### Known Bugs & Missing features & TODO
 
-See [issues](https://github.com/utdemir/distribut-dataset/issues).
+See [issues](https://github.com/utdemir/distributed-dataset/issues).
 
 ## Contributing
 
