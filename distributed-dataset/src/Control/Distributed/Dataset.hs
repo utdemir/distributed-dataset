@@ -59,14 +59,12 @@ import           Control.Lens
 import           Data.Hashable
 import qualified Data.HashMap.Strict                          as HM
 import           Data.Typeable
-import           Data.Void
 -------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.Aggr
 import           Control.Distributed.Dataset.Internal.Aggr
 import           Control.Distributed.Dataset.Internal.Class
 import           Control.Distributed.Dataset.Internal.Dataset
 import           Control.Distributed.Dataset.ShuffleStore
-import           Data.Conduit.Foldl
 -------------------------------------------------------------------------------
 
 -- |
@@ -121,16 +119,14 @@ dFilter f = dConcatMap $ static (\f_ a -> if f_ a then [a] else []) `cap` f
 
 -- |
 -- Apply an aggregation to all items on a Dataset, and fetch the result.
---
--- Every partition will be reduced remotely, and the results will be reduced on the driver.
 dAggr :: (StaticSerialise a, StaticSerialise b) => Aggr a b -> Dataset a -> DD b
-dAggr (Aggr f1c f2c) ds = do
+dAggr aggr@(Aggr _ fc) ds = do
   c <- ds
-         & dPipe (static (\f1 ->
-             C.mapOutput absurd (foldConduit f1) >>= C.yield) `cap` f1c
-           )
+         & dGroupedAggr 1 (static (const ())) aggr
          & dFetch
-  liftIO . runConduitRes $ c .| foldConduit (unclosure f2c)
+  liftIO (runConduitRes $ c .| C.await) >>= return . \case
+    Just ((), r) -> r
+    Nothing -> F.fold (unclosure fc) []
 
 -- |
 -- Apply an aggregation to all rows sharing the same key.

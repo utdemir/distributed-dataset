@@ -28,7 +28,6 @@ library
                      , Control.Distributed.Dataset.Internal.Aggr
                      , Control.Distributed.Dataset.Internal.Process
                      , Data.Binary.Zlib
-                     , Data.Conduit.Foldl
                      , Data.Conduit.Serialise
   ghc-options:         -Wall -fno-warn-name-shadowing
   build-depends:       base >= 4.11 && < 5
