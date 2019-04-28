@@ -39,22 +39,34 @@ Provides `Dataset`'s reading from public open datasets. Currently it can fetch G
 
 ## Running the example
 
+* Clone the repository.
+  
+  ```sh
+  $ git clone https://github.com/utdemir/distributed-dataset
+  $ cd distributed-dataset
+  ```
+  
 * Make sure that you have AWS credentials set up. The easiest way is to install [AWS command line interface](https://aws.amazon.com/cli/) and to run:
 
-```sh
-$ aws configure
-```
+  ```sh
+  $ aws configure
+  ```
 
-* Create a bucket on AWS to put the deployment artifact in. You can use the console or the CLI:
+* Create an S3 bucket to put the deployment artifact in. You can use the console or the CLI:
 
-```sh
-$ aws s3api create-bucket --bucket my-s3-bucket
-```
+  ```sh
+  $ aws s3api create-bucket --bucket my-s3-bucket
+  ```
 
 * Build an run the example:
 
-  * If you use Nix: `$(nix-build -A example-gh)/bin/example-gh my-s3-bucket`
-  * If you use stack: `stack run example-gh my-s3-bucket`
+  * If you use Nix on Linux: 
+  
+        $(nix-build -A example-gh)/bin/example-gh my-s3-bucket
+    
+  * If you use stack (requires Docker, works on Linux and MacOS): 
+  
+        stack run --docker-mount $HOME/.aws/ --docker-env HOME=$HOME example-gh my-s3-bucket
 
 ## Stability
 
