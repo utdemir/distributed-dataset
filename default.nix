@@ -59,12 +59,6 @@ overlays = se: su: {
       })
       {};
 
-  # For some reason this is marked as broken in nixpkgs
-  distributed-closure =
-    pkgs.haskell.lib.overrideCabal su.distributed-closure (_: { 
-      broken = false; 
-    });
-
   # Always use the new Cabal
   Cabal = se.Cabal_2_4_1_0;
   
@@ -108,10 +102,10 @@ in rec
   };
   
   docs = pkgs.runCommand "distributed-dataset-docs" {
-    buildInputs = with haskellPackages;
-      [ (haskellPackages.ghcWithPackages (hp: 
+    buildInputs = 
+      [ (haskellPackages.ghcWithPackages (hp: with hp;
           [ distributed-dataset distributed-dataset-aws distributed-dataset-opendatasets ]))
-        standalone-haddock
+        haskellPackages.standalone-haddock
       ];
   } ''
     mkdir "$out"
