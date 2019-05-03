@@ -1,4 +1,4 @@
-{ compiler ? "ghc864"
+{ compiler ? "ghc865"
 , pkgs ? import ./pkgs.nix
 }:
 
