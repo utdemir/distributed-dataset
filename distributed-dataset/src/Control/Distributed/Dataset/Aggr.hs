@@ -5,17 +5,17 @@
 
 module Control.Distributed.Dataset.Aggr
   ( Aggr
-  , dConstAggr
-  , dCount
-  , dSum
-  , dMean
-  , dMax
-  , dMin
-  , dCollect
-  , dDistinct
-  , dTopK
-  , dBottomK
-  , dFilteredAggr
+  , aggrConst
+  , aggrCount
+  , aggrSum
+  , aggrMean
+  , aggrMax
+  , aggrMin
+  , aggrCollect
+  , aggrDistinct
+  , aggrTopK
+  , aggrBottomK
+  , aggrFiltered
   -- * Creating Aggr's
   , aggrFromMonoid
   , aggrFromReduce
@@ -43,8 +43,8 @@ import           Control.Distributed.Dataset.Internal.Class
 -- Returns the sum of the inputs.
 --
 -- Returns 'Nothing' on empty 'Dataset's.
-dSum :: StaticSerialise a => Closure (Dict (Num a)) -> Aggr a a
-dSum d =
+aggrSum :: StaticSerialise a => Closure (Dict (Num a)) -> Aggr a a
+aggrSum d =
   staticDimap
     (static Sum)
     (static getSum)
@@ -54,38 +54,39 @@ dSum d =
 -- Returns the number of inputs.
 --
 -- Returns 'Nothing' on empty 'Dataset's.
-dCount :: Typeable a => Aggr a Integer
-dCount =
-  static (const 1) `staticLmap` dSum (static Dict)
+aggrCount :: Typeable a => Aggr a Integer
+aggrCount =
+  static (const 1) `staticLmap` aggrSum (static Dict)
 
 -- |
 -- Calculates the mean of the inputs.
 --
 -- Returns 'Nothing' on empty 'Dataset's.
-dMean :: Aggr Double Double
-dMean =
-  dConstAggr (static (/))
-    `staticApply` dSum (static Dict)
-    `staticApply` staticMap (static realToFrac) dCount
+aggrMean :: Aggr Double Double
+aggrMean =
+  aggrConst (static (/))
+    `staticApply` aggrSum (static Dict)
+    `staticApply` staticMap (static realToFrac) aggrCount
 
 -- |
 -- Return the maximum of the inputs.
 --
 -- Returns 'Nothing' on empty 'Dataset's.
-dMax :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
-dMax dict = aggrFromReduce $ static (\Dict -> max) `cap` dict
+aggrMax :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
+aggrMax dict = aggrFromReduce $ static (\Dict -> max) `cap` dict
 
 -- |
 -- Return the minimum of the inputs.
 --
 -- Returns 'Nothing' on empty 'Dataset's.
-dMin :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
-dMin dict = aggrFromReduce $ static (\Dict -> min) `cap` dict
+aggrMin :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
+aggrMin dict = aggrFromReduce $ static (\Dict -> min) `cap` dict
 
 -- |
--- Returns a new Aggr which only aggregates rows matching the predicate.
-dFilteredAggr :: Closure (a -> Bool) -> Aggr a b -> Aggr a b
-dFilteredAggr predc (Aggr f1 f2) =
+-- Returns a new Aggr which only aggregates rows matching the predicate,
+-- discarding others.
+aggrFiltered :: Closure (a -> Bool) -> Aggr a b -> Aggr a b
+aggrFiltered predc (Aggr f1 f2) =
   Aggr
     (static F.prefilter `cap` predc `cap` f1)
     f2
@@ -94,8 +95,8 @@ dFilteredAggr predc (Aggr f1 f2) =
 -- Collects the inputs as a list.
 --
 -- Warning: Ordering of the resulting list is non-deterministic.
-dCollect :: StaticSerialise a => Aggr a [a]
-dCollect =
+aggrCollect :: StaticSerialise a => Aggr a [a]
+aggrCollect =
   aggrFromFold
     (static F.list)
     (static (concat <$> F.list))
@@ -104,8 +105,8 @@ dCollect =
 -- Collects the inputs to a 'HashSet'.
 --
 -- Warning: Ordering of the resulting list is non-deterministic.
-dDistinct :: forall a. (StaticSerialise a, StaticHashable a) => Aggr a (HashSet a)
-dDistinct =
+aggrDistinct :: forall a. (StaticSerialise a, StaticHashable a) => Aggr a (HashSet a)
+aggrDistinct =
   aggrFromFold
     (static (\Dict -> F.hashSet) `cap` staticHashable @a)
     (static (\Dict -> mconcat <$> F.list) `cap` staticHashable @a)
@@ -128,12 +129,12 @@ instance Monoid (TopK a) where
 -- @take n . sortOn (Down . f)@
 --
 -- Warning: Ordering of the repeated elements is non-deterministic.
-dTopK :: (StaticSerialise a, Typeable k)
+aggrTopK :: (StaticSerialise a, Typeable k)
       => Closure (Dict (Ord k))
       -> Int              -- ^ Number of rows to return
       -> Closure (a -> k) -- ^ Sorting key
       -> Aggr a [a]
-dTopK dict count fc =
+aggrTopK dict count fc =
   aggrFromFold
     (static (\Dict c f ->
       F.foldMap
@@ -158,13 +159,13 @@ dTopK dict count fc =
 -- @take n . sortOn (Down . f)@
 --
 -- Warning: Ordering of the repeated elements is non-deterministic.
-dBottomK :: (StaticSerialise a, Typeable k)
+aggrBottomK :: (StaticSerialise a, Typeable k)
          => Closure (Dict (Ord k))
          -> Int              -- ^ Number of rows to return
          -> Closure (a -> k) -- ^ Sorting key
          -> Aggr a [a]
-dBottomK d count fc =
-  dTopK
+aggrBottomK d count fc =
+  aggrTopK
     (static (\Dict -> Dict) `cap` d)
     count
     (static (Down .) `cap` fc)

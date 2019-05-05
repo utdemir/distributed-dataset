@@ -15,6 +15,7 @@ module Control.Distributed.Dataset
   , dFilter
   , dConcatMap
   , dGroupedAggr
+  , dDistinct
   -- ** Low-level transformations
   , dCoalesce
   , dPipe
@@ -58,6 +59,7 @@ import qualified Control.Foldl                                as F
 import           Control.Lens
 import           Data.Hashable
 import qualified Data.HashMap.Strict                          as HM
+import           Data.Profunctor.Static
 import           Data.Typeable
 -------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.Aggr
@@ -85,7 +87,7 @@ dPipe = DPipe
 -- Create a dataset from given `Partition`'s.
 --
 -- This is how every 'Dataset' is created initially.
-dExternal :: Typeable a => [Partition a] -> Dataset a
+dExternal :: StaticSerialise a => [Partition a] -> Dataset a
 dExternal = DExternal
 
 -- |
@@ -128,11 +130,26 @@ dAggr aggr@(Aggr _ fc) ds = do
     Just ((), r) -> r
     Nothing -> F.fold (unclosure fc) []
 
+
+-- |
+-- Removes a new dataset with duplicate rows removed.
+dDistinct :: StaticHashable a
+          => Int -- ^ Target number of partitions
+          -> Dataset a
+          -> Dataset a
+dDistinct partitionCount ds =
+  case dStaticSerialise ds of
+    Dict ->
+      dGroupedAggr
+        partitionCount
+        (static id)
+        (staticLmap (static (const ())) $ aggrFromMonoid (static Dict))
+        ds
+        & dMap (static fst)
+
 -- |
 -- Apply an aggregation to all rows sharing the same key.
-dGroupedAggr :: ( StaticHashable k, StaticSerialise k
-                , StaticSerialise a, StaticSerialise b
-                )
+dGroupedAggr :: ( StaticHashable k, StaticSerialise k , StaticSerialise b)
              => Int              -- ^ Target number of partitions
              -> Closure (a -> k) -- ^ Grouping key
              -> Aggr a b
@@ -145,13 +162,14 @@ dGroupedAggr
     (f1c :: Closure (F.Fold a t))
     (f2c :: Closure (F.Fold t b))
   ) ds
-  = ds
-      & dMap (static (\k a -> (k a, a)) `cap` kc)
-      & dPipe (static (\Dict -> aggrC @a @t @k)
-                `cap` staticHashable @k `cap` f1c)
-      & dPartition partitionCount (static (fst @k @t))
-      & dPipe (static (\Dict -> aggrC @t @b @k)
-                `cap` staticHashable @k `cap` f2c)
+  = case dStaticSerialise ds of
+      Dict -> ds
+        & dMap (static (\k a -> (k a, a)) `cap` kc)
+        & dPipe (static (\Dict -> aggrC @a @t @k)
+                  `cap` staticHashable @k `cap` f1c)
+        & dPartition partitionCount (static (fst @k @t))
+        & dPipe (static (\Dict -> aggrC @t @b @k)
+                  `cap` staticHashable @k `cap` f2c)
   where
     aggrC :: forall a' b' k'. (Eq k', Hashable k')
           => F.Fold a' b'

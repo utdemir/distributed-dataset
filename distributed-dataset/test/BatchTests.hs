@@ -27,7 +27,7 @@ datasetTests = testGroup "BatchTests"
         (static Dict)
         (Gen.integral (Range.constant (0 :: Integer) 10))
         sum
-        (dAggr (dSum (static Dict)))
+        (dAggr (aggrSum (static Dict)))
   , testProperty "prop_groupedAggr_count" $
       propTest
         (static Dict)
@@ -36,7 +36,7 @@ datasetTests = testGroup "BatchTests"
           >>> group
           >>> map (\xs@(x:_) -> (x, fromIntegral $ length xs))
         )
-        (dGroupedAggr 5 (static id) dCount
+        (dGroupedAggr 5 (static id) aggrCount
           >>> dToList
           >>> fmap sort
         )
@@ -45,7 +45,7 @@ datasetTests = testGroup "BatchTests"
         (static Dict)
         (Gen.integral (Range.constant (0 :: Integer) 10))
         (take 5 . sort)
-        (dAggr (dBottomK (static Dict) 5 (static id)))
+        (dAggr (aggrBottomK (static Dict) 5 (static id)))
   ]
 
 propTest :: (Show a, Typeable a, StaticSerialise a, Eq b, Show b)

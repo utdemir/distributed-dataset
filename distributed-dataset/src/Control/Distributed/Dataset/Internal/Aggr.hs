@@ -7,7 +7,7 @@ module Control.Distributed.Dataset.Internal.Aggr
   , aggrFromMonoid
   , aggrFromReduce
   , aggrFromFold
-  , dConstAggr
+  , aggrConst
   ) where
 
 -------------------------------------------------------------------------------
@@ -34,9 +34,9 @@ import           Control.Distributed.Dataset.Internal.Class
 -- @
 -- dAvg :: Aggr Double Double
 -- dAvg =
---   dConstAggr (static (/))
---     \`staticApply\` dSum (static Dict)
---     \`staticApply\` staticMap (static realToFrac) dCount
+--   aggrConst (static (/))
+--     \`staticApply\` aggrSum (static Dict)
+--     \`staticApply\` staticMap (static realToFrac) aggrCount
 -- @
 --
 -- Alternatively, you can use aggrFrom* functions to create 'Aggr's.
@@ -98,8 +98,8 @@ aggrFromFold = Aggr
 
 -- |
 -- An aggregation which ignores the input data and always yields the given value.
-dConstAggr :: forall a t. (Typeable a, Typeable t) => Closure a -> Aggr t a
-dConstAggr ac =
+aggrConst :: forall a t. (Typeable a, Typeable t) => Closure a -> Aggr t a
+aggrConst ac =
   staticDimap
     (static (const ()))
     (static const `cap` ac)

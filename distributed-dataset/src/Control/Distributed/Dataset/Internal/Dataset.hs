@@ -67,7 +67,7 @@ partitionProducer (PCombined p1 p2) =
 -- |
 -- Represents a partitioned multiset that can be transformed in a distributed fashion.
 data Dataset a where
-  DExternal  :: Typeable a => [Partition a] -> Dataset a
+  DExternal  :: StaticSerialise a => [Partition a] -> Dataset a
   DPipe      :: (StaticSerialise a, StaticSerialise b)
              => Closure (ConduitT a b (ResourceT IO) ())
              -> Dataset a -> Dataset b
@@ -78,6 +78,12 @@ data Dataset a where
   DCoalesce  :: Int
              -> Dataset a
              -> Dataset a
+
+dStaticSerialise :: Dataset a -> Dict (StaticSerialise a)
+dStaticSerialise (DExternal _)      = Dict
+dStaticSerialise (DPipe _ _)        = Dict
+dStaticSerialise (DPartition _ _ _) = Dict
+dStaticSerialise (DCoalesce _ d)    = dStaticSerialise d
 
 -- * Stage
 

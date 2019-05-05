@@ -30,7 +30,8 @@ app =
     -- Extract every commit
     & dConcatMap (static (\e ->
         let author = e ^. gheActor . ghaLogin
-            commits = e ^.. gheType . _GHPushEvent . ghpepCommits . traverse . ghcMessage
+            commits = e ^.. gheType . _GHPushEvent . ghpepCommits
+                        . traverse . ghcMessage
         in  map (author, ) commits
       ))
 
@@ -40,10 +41,10 @@ app =
       ))
 
     -- Count the authors
-    & dGroupedAggr 50 (static fst) dCount
+    & dGroupedAggr 50 (static fst) aggrCount
 
     -- Fetch the top 20 to driver as a list
-    & dAggr (dTopK (static Dict) 20 (static snd))
+    & dAggr (aggrTopK (static Dict) 20 (static snd))
 
     -- Print them
     >>= mapM_ (liftIO . print)
