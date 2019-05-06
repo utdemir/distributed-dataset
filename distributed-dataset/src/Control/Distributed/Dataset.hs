@@ -16,6 +16,7 @@ module Control.Distributed.Dataset
   , dConcatMap
   , dGroupedAggr
   , dDistinct
+  , dDistinctBy
   -- ** Low-level transformations
   , dCoalesce
   , dPipe
@@ -59,7 +60,7 @@ import qualified Control.Foldl                                as F
 import           Control.Lens
 import           Data.Hashable
 import qualified Data.HashMap.Strict                          as HM
-import           Data.Profunctor.Static
+import qualified Data.HashSet                                 as HS
 import           Data.Typeable
 -------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.Aggr
@@ -130,22 +131,34 @@ dAggr aggr@(Aggr _ fc) ds = do
     Just ((), r) -> r
     Nothing -> F.fold (unclosure fc) []
 
-
 -- |
 -- Removes a new dataset with duplicate rows removed.
-dDistinct :: StaticHashable a
-          => Int -- ^ Target number of partitions
-          -> Dataset a
-          -> Dataset a
-dDistinct partitionCount ds =
+dDistinct :: StaticHashable a => Int -> Dataset a -> Dataset a
+dDistinct partitionCount ds = dDistinctBy partitionCount (static id) ds
+
+-- |
+-- Removes a new dataset with rows with the duplicate keys removed.
+dDistinctBy :: StaticHashable b
+            => Int -- ^ Target number of partitions
+            -> Closure (a -> b)
+            -> Dataset a
+            -> Dataset a
+dDistinctBy partitionCount (key :: Closure (a -> b)) ds =
   case dStaticSerialise ds of
     Dict ->
-      dGroupedAggr
-        partitionCount
-        (static id)
-        (staticLmap (static (const ())) $ aggrFromMonoid (static Dict))
-        ds
-        & dMap (static fst)
+      ds
+        & dPipe (static (\Dict -> dedupe HS.empty) `cap` staticHashable @b `cap` key)
+        & dPartition partitionCount key
+        & dPipe (static (\Dict -> dedupe HS.empty) `cap` staticHashable @b `cap` key)
+  where
+    dedupe acc f = do
+      C.await >>= \case
+        Nothing -> return ()
+        Just a ->
+          let b = f a
+          in  if b `HS.member` acc
+              then dedupe acc f
+              else yield a >> dedupe (b `HS.insert` acc) f
 
 -- |
 -- Apply an aggregation to all rows sharing the same key.
