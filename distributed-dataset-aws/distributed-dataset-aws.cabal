@@ -83,6 +83,6 @@ test-suite distributed-dataset-aws-tests
                   , distributed-dataset-aws
                   , distributed-closure
                   , conduit
-                  , tasty
-                  , tasty-hunit
+                  , hedgehog
+                  , template-haskell
                   , text

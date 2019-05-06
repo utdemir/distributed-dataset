@@ -1,4 +1,5 @@
-{-# LANGUAGE StaticPointers #-}
+{-# LANGUAGE StaticPointers  #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module BatchTests where
 
@@ -13,40 +14,51 @@ import           Data.Typeable
 import           Hedgehog
 import qualified Hedgehog.Gen                                     as Gen
 import qualified Hedgehog.Range                                   as Range
-import           Test.Tasty
-import           Test.Tasty.Hedgehog
+import           Language.Haskell.TH                              (unType)
 --------------------------------------------------------------------------------
 import           Control.Distributed.Dataset
 import           Control.Distributed.Dataset.LocalTmpShuffleStore
 --------------------------------------------------------------------------------
 
-datasetTests :: TestTree
-datasetTests = testGroup "BatchTests"
-  [ testProperty "prop_aggr_sum" $
-      propTest
-        (static Dict)
-        (Gen.integral (Range.constant (0 :: Integer) 10))
-        sum
-        (dAggr (aggrSum (static Dict)))
-  , testProperty "prop_groupedAggr_count" $
-      propTest
-        (static Dict)
-        (Gen.enum 'a' 'z')
-        (sort
-          >>> group
-          >>> map (\xs@(x:_) -> (x, fromIntegral $ length xs))
-        )
-        (dGroupedAggr 5 (static id) aggrCount
-          >>> dToList
-          >>> fmap sort
-        )
-  , testProperty "prop_aggr_bottomk" $
-      propTest
-        (static Dict)
-        (Gen.integral (Range.constant (0 :: Integer) 10))
-        (take 5 . sort)
-        (dAggr (aggrBottomK (static Dict) 5 (static id)))
-  ]
+prop_aggrSum :: Property
+prop_aggrSum = propTest
+  (static Dict)
+  (Gen.integral (Range.constant (0 :: Integer) 10))
+  sum
+  (dAggr (aggrSum (static Dict)))
+
+prop_groupedAggrCount :: Property
+prop_groupedAggrCount = propTest
+  (static Dict)
+  (Gen.enum 'a' 'z')
+  (sort
+    >>> group
+    >>> map (\xs@(x:_) -> (x, fromIntegral $ length xs))
+  )
+  (dGroupedAggr 5 (static id) aggrCount
+    >>> dToList
+    >>> fmap sort
+  )
+
+prop_distinct :: Property
+prop_distinct = propTest
+  (static Dict)
+  (Gen.enum 'a' 'z')
+  (sort
+    >>> group
+    >>> map head
+  )
+  (dDistinct 10
+    >>> dToList
+    >>> fmap sort
+  )
+
+prop_groupedAggrBottomK :: Property
+prop_groupedAggrBottomK = propTest
+  (static Dict)
+  (Gen.integral (Range.constant (0 :: Integer) 10))
+  (take 5 . sort)
+  (dAggr (aggrBottomK (static Dict) 5 (static id)))
 
 propTest :: (Show a, Typeable a, StaticSerialise a, Eq b, Show b)
          => Closure (Dict (Binary a, Typeable a))
@@ -77,3 +89,7 @@ run :: DD a -> IO a
 run dd =
   withLocalTmpShuffleStore $ \ss ->
     runDDWith LevelWarn localProcessBackend ss dd
+
+batchTests :: Group
+batchTests = $(unType <$> discover)
+

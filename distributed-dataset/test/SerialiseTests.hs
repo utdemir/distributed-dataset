@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE StaticPointers   #-}
+{-# LANGUAGE TemplateHaskell  #-}
 {-# LANGUAGE TupleSections    #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -15,61 +16,55 @@ import           Data.List              (sort)
 import           Hedgehog
 import qualified Hedgehog.Gen           as Gen
 import qualified Hedgehog.Range         as Range
-import           Test.Tasty
-import           Test.Tasty.Hedgehog
-import           Test.Tasty.HUnit       hiding (assert)
+import           Language.Haskell.TH    (unType)
 --------------------------------------------------------------------------------
 import           Data.Conduit.Serialise
 --------------------------------------------------------------------------------
 
-serialiseTests :: TestTree
-serialiseTests = testGroup "Serialise"
-  [ testCase "serialise/empty" $ do
-        r <- runConduitRes $ return () .| deserialiseC @Int .| sinkList
-        r @=? []
+prop_serialiseEmpty :: Property
+prop_serialiseEmpty = property $ do
+  r <- liftIO . runConduitRes $ return () .| deserialiseC @Int .| sinkList
+  r === []
 
-  , testProperty "deserialise . serialise == id" $ property $ do
-      xs <- forAll $ Gen.list (Range.linear 0 1000) $ do
-        m <- Gen.maybe $ Gen.integral (Range.constant 0 1000)
-        t <- Gen.bytes (Range.constant 0 100)
-        return (m :: Maybe Int, t :: BS.ByteString)
+prop_serialiseRoundtrip :: Property
+prop_serialiseRoundtrip = property $ do
+  xs <- forAll $ Gen.list (Range.linear 0 1000) $ do
+    m <- Gen.maybe $ Gen.integral (Range.constant 0 1000)
+    t <- Gen.bytes (Range.constant 0 100)
+    return (m :: Maybe Int, t :: BS.ByteString)
+  ch <- forAll $ Gen.integral (Range.constant 1 100)
+  r <- liftIO . runConduitRes $
+    mapM_ yield xs
+      .| serialiseC
+      .| chunker ch
+      .| deserialiseC
+      .| sinkList
+  r === xs
 
-      ch <- forAll $ Gen.integral (Range.constant 1 100)
+prop_serialiseWithLocRoundtrip :: Property
+prop_serialiseWithLocRoundtrip = property $ do
+  xs <- fmap sort . forAll $ Gen.list (Range.linear 0 1000) $ do
+    k <- Gen.integral (Range.constant 0 1000)
+    m <- Gen.maybe $ Gen.integral (Range.constant 0 1000)
+    t <- Gen.bytes (Range.constant 0 100)
+    return (k :: Int, (m :: Maybe Int, t :: BS.ByteString))
 
-      r <- liftIO . runConduitRes $
-        mapM_ yield xs
-          .| serialiseC
-          .| chunker ch
+  ref <- liftIO $ newIORef []
+  bs <- fmap BL.toStrict . liftIO . runConduitRes $
+    mapM_ yield xs
+      .| (serialiseWithLocC >>= liftIO . writeIORef ref)
+      .| sinkLazy
+  ref' <- liftIO $ readIORef ref
+
+  r <- fmap concat . forM ref' $ \(k, (from, to)) -> do
+    assert $ from < to
+    let slice = BS.take (fromIntegral $ to - from + 1) . BS.drop (fromIntegral from) $ bs
+    fmap (map (k,)) . liftIO . runConduitRes $
+        yield slice
           .| deserialiseC
           .| sinkList
 
-      r === xs
-
- , testProperty "deserialise . serialiseWithLoc == id" $ property $ do
-      xs <- fmap sort . forAll $ Gen.list (Range.linear 0 1000) $ do
-        k <- Gen.integral (Range.constant 0 1000)
-        m <- Gen.maybe $ Gen.integral (Range.constant 0 1000)
-        t <- Gen.bytes (Range.constant 0 100)
-        return (k :: Int, (m :: Maybe Int, t :: BS.ByteString))
-
-      ref <- liftIO $ newIORef []
-      bs <- fmap BL.toStrict . liftIO . runConduitRes $
-        mapM_ yield xs
-          .| (serialiseWithLocC >>= liftIO . writeIORef ref)
-          .| sinkLazy
-
-      ref' <- liftIO $ readIORef ref
-
-      r <- fmap concat . forM ref' $ \(k, (from, to)) -> do
-        assert $ from < to
-        let slice = BS.take (fromIntegral $ to - from + 1) . BS.drop (fromIntegral from) $ bs
-        fmap (map (k,)) . liftIO . runConduitRes $
-            yield slice
-              .| deserialiseC
-              .| sinkList
-
-      r === xs
-  ]
+  r === xs
 
 chunker :: Monad m => Int -> ConduitT BS.ByteString BS.ByteString m ()
 chunker ch = go BS.empty
@@ -81,4 +76,6 @@ chunker ch = go BS.empty
         Nothing -> unless (BS.null l) (yield l)
         Just xs -> go (l <> xs)
 
+serialiseTests :: Group
+serialiseTests = $(unType <$> discover)
 

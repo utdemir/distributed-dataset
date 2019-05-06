@@ -7,7 +7,6 @@ packages:
   - examples/gh
 
 extra-deps:
-  - tasty-hedgehog-0.2.0.0
   - stratosphere-0.36.0
 
 docker:

@@ -1,9 +1,13 @@
-{-# LANGUAGE StaticPointers #-}
+{-# LANGUAGE LambdaCase      #-}
+{-# LANGUAGE StaticPointers  #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
 --------------------------------------------------------------------------------
-import           Test.Tasty
+import           Control.Monad
+import           Hedgehog
+import           System.Exit
 --------------------------------------------------------------------------------
 import           BatchTests
 import           Control.Distributed.Fork (initDistributedFork)
@@ -13,11 +17,5 @@ import           SerialiseTests
 main :: IO ()
 main = do
   initDistributedFork
-  defaultMain tests
-
-tests :: TestTree
-tests = testGroup
-  "Tests"
-  [ serialiseTests
-  , datasetTests
-  ]
+  result <- and <$> mapM checkSequential [batchTests, serialiseTests]
+  unless result exitFailure
