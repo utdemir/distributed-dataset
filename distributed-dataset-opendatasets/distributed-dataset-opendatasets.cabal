@@ -22,7 +22,6 @@ library
                      , base
                      , conduit
                      , conduit-extra
-                     , containers
                      , http-conduit
                      , lens
                      , ndjson-conduit

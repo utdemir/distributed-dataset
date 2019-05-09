@@ -45,14 +45,10 @@ library
                      , dlist
                      , elf
                      , exceptions
-                     , http-client
                      , interpolate
                      , lens
                      , lens-aeson
-                     , lifted-async
-                     , mmap
                      , mmorph
-                     , mtl
                      , resourcet
                      , safe-exceptions
                      , SHA
