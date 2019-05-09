@@ -50,6 +50,7 @@
 # Ignore some builtin hints
 - ignore: {name: Reduce duplication}
 - ignore: {name: Use list comprehension}
+- ignore: {name: Use <$>}
 # - ignore: {name: Use const, within: SpecialModule} # Only within certain modules
 
 

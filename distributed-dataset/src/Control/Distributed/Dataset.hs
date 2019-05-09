@@ -134,7 +134,7 @@ dAggr aggr@(Aggr _ fc) ds = do
 -- |
 -- Removes a new dataset with duplicate rows removed.
 dDistinct :: StaticHashable a => Int -> Dataset a -> Dataset a
-dDistinct partitionCount ds = dDistinctBy partitionCount (static id) ds
+dDistinct partitionCount = dDistinctBy partitionCount (static id)
 
 -- |
 -- Removes a new dataset with rows with the duplicate keys removed.
@@ -151,7 +151,7 @@ dDistinctBy partitionCount (key :: Closure (a -> b)) ds =
         & dPartition partitionCount key
         & dPipe (static (\Dict -> dedupe HS.empty) `cap` staticHashable @b `cap` key)
   where
-    dedupe acc f = do
+    dedupe acc f =
       C.await >>= \case
         Nothing -> return ()
         Just a ->

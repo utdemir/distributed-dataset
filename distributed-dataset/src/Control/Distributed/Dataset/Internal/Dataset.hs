@@ -80,10 +80,10 @@ data Dataset a where
              -> Dataset a
 
 dStaticSerialise :: Dataset a -> Dict (StaticSerialise a)
-dStaticSerialise (DExternal _)      = Dict
-dStaticSerialise (DPipe _ _)        = Dict
-dStaticSerialise (DPartition _ _ _) = Dict
-dStaticSerialise (DCoalesce _ d)    = dStaticSerialise d
+dStaticSerialise DExternal{}     = Dict
+dStaticSerialise DPipe{}         = Dict
+dStaticSerialise DPartition{}    = Dict
+dStaticSerialise (DCoalesce _ d) = dStaticSerialise d
 
 -- * Stage
 

@@ -24,7 +24,7 @@ import           Control.Distributed.Fork
 --------------------------------------------------------------------------------
 
 prop_backendCreate :: Property
-prop_backendCreate = property $ do
+prop_backendCreate = property $
   liftIO . withLambdaBackend opts $ \_ -> do
     threadDelay $ 5*1000*1000
     return ()
@@ -58,7 +58,7 @@ prop_backendOOM = property $ do
     Left other -> do
       annotateShow other
       failure
-    Right _ -> do
+    Right _ -> 
       failure
 
 prop_shuffleStorePut :: Property

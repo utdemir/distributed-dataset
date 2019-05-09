@@ -1,7 +1,3 @@
-{-# LANGUAGE LambdaCase      #-}
-{-# LANGUAGE StaticPointers  #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 module Main where
 
 --------------------------------------------------------------------------------
