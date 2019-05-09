@@ -58,7 +58,7 @@ prop_backendOOM = property $ do
     Left other -> do
       annotateShow other
       failure
-    Right _ -> 
+    Right _ ->
       failure
 
 prop_shuffleStorePut :: Property
