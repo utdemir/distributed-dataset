@@ -41,8 +41,6 @@ import           Control.Distributed.Dataset.Internal.Class
 
 -- |
 -- Returns the sum of the inputs.
---
--- Returns 'Nothing' on empty 'Dataset's.
 aggrSum :: StaticSerialise a => Closure (Dict (Num a)) -> Aggr a a
 aggrSum d =
   staticDimap
@@ -52,16 +50,12 @@ aggrSum d =
 
 -- |
 -- Returns the number of inputs.
---
--- Returns 'Nothing' on empty 'Dataset's.
 aggrCount :: Typeable a => Aggr a Integer
 aggrCount =
   static (const 1) `staticLmap` aggrSum (static Dict)
 
 -- |
 -- Calculates the mean of the inputs.
---
--- Returns 'Nothing' on empty 'Dataset's.
 aggrMean :: Aggr Double Double
 aggrMean =
   aggrConst (static (/))
@@ -103,8 +97,6 @@ aggrCollect =
 
 -- |
 -- Collects the inputs to a 'HashSet'.
---
--- Warning: Ordering of the resulting list is non-deterministic.
 aggrDistinct :: forall a. (StaticSerialise a, StaticHashable a) => Aggr a (HashSet a)
 aggrDistinct =
   aggrFromFold
