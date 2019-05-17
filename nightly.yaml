@@ -1,0 +1,22 @@
+resolver: nightly-2019-05-06
+
+packages:
+  - distributed-dataset
+  - distributed-dataset-aws
+  - distributed-dataset-opendatasets
+  - examples/gh
+
+allow-newer: true
+
+extra-deps:
+  - amazonka-1.6.1
+  - amazonka-cloudformation-1.6.1
+  - amazonka-core-1.6.1
+  - amazonka-lambda-1.6.1
+  - amazonka-s3-1.6.1
+  - amazonka-sqs-1.6.1
+  
+docker:
+  enable: true
+  stack-exe: download
+  image: fpco/stack-build:lts-13.21
