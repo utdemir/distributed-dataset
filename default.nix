@@ -69,17 +69,6 @@ overlays = se: su: {
 
   # Always use the new Cabal
   Cabal = se.Cabal_2_4_1_0;
-  
-  # Upstream does not compile with Cabal 2.4 yet.
-  # See: https://github.com/ktvoelker/standalone-haddock/issues/18  
-  standalone-haddock = 
-    se.callCabal2nix
-      "standalone-haddock"
-      (builtins.fetchGit {
-        url = "https://github.com/utdemir/standalone-haddock";
-        rev = "134c0560156a49cbdc3d656543d1a44092765500";
-      })
-      {};
 };
 
 haskellPackages = pkgs.haskell.packages.${compiler}.override {
