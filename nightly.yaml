@@ -15,6 +15,7 @@ extra-deps:
   - amazonka-lambda-1.6.1
   - amazonka-s3-1.6.1
   - amazonka-sqs-1.6.1
+  - amazonka-s3-streaming-1.0.0.1
   
 docker:
   enable: true

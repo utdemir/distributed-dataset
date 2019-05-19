@@ -48,6 +48,14 @@ overlays = se: su: {
   # Haddocks does not work with ghc 8.4
   stratosphere = pkgs.haskell.lib.dontHaddock se.stratosphere_0_36_0;
 
+  # Latest Hackage package is not on nixpkgs yet
+  amazonka-s3-streaming =
+    se.callHackageDirect {
+      pkg =  "amazonka-s3-streaming";
+      ver = "1.0.0.1";
+      sha256 = "1vdh8pw3nxyyjba0cnyyxigvf1ccvmzja4l2xxfx507by38q3w65";
+    } {};
+
   # Pulls in a broken dependency on 1.8.1, fixed in master but no new release yet.
   # https://github.com/yesodweb/Shelly.hs/commit/8288d27b93b57574135014d0888cf33f325f7c80
   shelly =

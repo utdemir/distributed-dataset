@@ -8,6 +8,7 @@ packages:
 
 extra-deps:
   - stratosphere-0.36.0
+  - amazonka-s3-streaming-1.0.0.1
 
 docker:
   enable: true

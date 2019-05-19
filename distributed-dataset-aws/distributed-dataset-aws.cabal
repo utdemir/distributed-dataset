@@ -23,7 +23,6 @@ library
                      , Control.Distributed.Fork.AWS.Lambda.Internal.Archive
                      , Control.Distributed.Fork.AWS.Lambda.Internal.Invoke
                      , Control.Concurrent.Throttled
-                     , Network.AWS.S3.StreamingUpload
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , distributed-dataset
@@ -34,6 +33,7 @@ library
                      , amazonka-core >= 1.6.1
                      , amazonka-lambda >= 1.6.0
                      , amazonka-s3
+                     , amazonka-s3-streaming
                      , amazonka-sqs
                      , async
                      , base64-bytestring
