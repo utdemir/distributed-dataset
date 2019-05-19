@@ -13,11 +13,11 @@ import           Conduit
 import           Control.Distributed.Closure
 import           Control.Exception                            (bracket)
 import qualified Data.ByteString                              as BS
+import           Data.Conduit.Binary
 import qualified Data.Conduit.Combinators                     as C
 import           Prelude                                      hiding (rem)
 import           System.Directory
 import           System.FilePath
-import           System.IO
 import           System.Posix.Temp
 --------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.ShuffleStore
@@ -43,20 +43,4 @@ withLocalTmpShuffleStore act =
 
 streamFile :: Range -> FilePath -> ConduitT t BS.ByteString (ResourceT IO) ()
 streamFile RangeAll fp = C.sourceFile fp
-streamFile (RangeOnly start end) _ | start == end = return ()
-streamFile (RangeOnly start end) fp =
-  let src = C.sourceIOHandle $ do
-              handle <- openFile fp ReadMode
-              hSeek handle AbsoluteSeek start
-              return handle
-      pull 0 = return ()
-      pull rem = await >>= \case
-        Nothing -> return ()
-        Just bs ->
-          let len = fromIntegral $ BS.length bs
-          in  if len <= rem
-                then yield bs >> pull (rem - len)
-                else yield (BS.take (fromIntegral rem) bs)
-
-  in src .| pull (end - start + 1)
-
+streamFile (RangeOnly start end) fp = sourceFileRange fp (Just start) (Just $ end - start + 1)

@@ -36,6 +36,7 @@ library
                      , bytestring
                      , clock
                      , conduit
+                     , conduit-extra
                      , containers
                      , directory
                      , distributed-closure
