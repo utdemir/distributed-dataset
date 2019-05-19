@@ -24,13 +24,13 @@ import           Control.Distributed.Fork
 --------------------------------------------------------------------------------
 
 prop_backendCreate :: Property
-prop_backendCreate = property $
+prop_backendCreate = withTests 1 . property $
   liftIO . withLambdaBackend opts $ \_ -> do
     threadDelay $ 5*1000*1000
     return ()
 
 prop_backendFork :: Property
-prop_backendFork = property $ do
+prop_backendFork = withTests 1 . property $ do
   r <-
     liftIO . withLambdaBackend opts $ \backend ->
       fork backend (static Dict) (static (return $ Just @Integer 42))
@@ -38,7 +38,7 @@ prop_backendFork = property $ do
   r === Just 42
 
 prop_backendLargeReturnValue :: Property
-prop_backendLargeReturnValue = property $ do
+prop_backendLargeReturnValue = withTests 1 . property $ do
   r <-
     liftIO . withLambdaBackend opts $ \backend ->
       fork backend (static Dict) (static (return $ T.replicate (pow 2 22) "h"))
@@ -46,7 +46,7 @@ prop_backendLargeReturnValue = property $ do
   T.length r === pow 2 22
 
 prop_backendOOM :: Property
-prop_backendOOM = property $ do
+prop_backendOOM = withTests 1 . property $ do
   r <-
     liftIO . try $ withLambdaBackend opts $ \backend ->
       fork backend (static Dict) (static (return $ T.replicate (pow 2 32) "h"))
@@ -62,14 +62,14 @@ prop_backendOOM = property $ do
       failure
 
 prop_shuffleStorePut :: Property
-prop_shuffleStorePut = property $ do
+prop_shuffleStorePut = withTests 1 . property $ do
   let ss = s3ShuffleStore "distributed-dataset" "shuffle-store/"
   liftIO . runConduitRes $
     mapM_ yield ["foo", "bar", "baz"]
       .| (unclosure $ ssPut ss) 42
 
 prop_shuffleStoreGetAfterPut :: Property
-prop_shuffleStoreGetAfterPut = property $ do
+prop_shuffleStoreGetAfterPut = withTests 1 . property $ do
   let ss = s3ShuffleStore "distributed-dataset" "shuffle-store/"
   liftIO . runConduitRes $
     mapM_ yield ["foo", "bar", "baz"]
@@ -80,7 +80,7 @@ prop_shuffleStoreGetAfterPut = property $ do
   r === "foobarbaz"
 
 prop_shuffleStoreGetRangeAfterPut :: Property
-prop_shuffleStoreGetRangeAfterPut = property $ do
+prop_shuffleStoreGetRangeAfterPut = withTests 1 . property $ do
   let ss = s3ShuffleStore "distributed-dataset" "shuffle-store/"
   liftIO . runConduitRes $
     mapM_ yield ["foo", "bar", "baz"]
