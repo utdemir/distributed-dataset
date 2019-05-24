@@ -2,7 +2,7 @@
 {-# LANGUAGE RankNTypes     #-}
 {-# LANGUAGE StaticPointers #-}
 
-module Control.Distributed.Dataset.LocalTmpShuffleStore
+module Control.Distributed.Dataset.Local
   ( withLocalTmpShuffleStore
   -- * Re-exports
   , localProcessBackend
@@ -21,7 +21,7 @@ import           System.FilePath
 import           System.Posix.Temp
 --------------------------------------------------------------------------------
 import           Control.Distributed.Dataset.ShuffleStore
-import           Control.Distributed.Fork.LocalProcessBackend
+import           Control.Distributed.Fork.Local
 --------------------------------------------------------------------------------
 
 -- |

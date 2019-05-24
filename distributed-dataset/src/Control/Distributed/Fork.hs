@@ -66,12 +66,12 @@ import           Control.Distributed.Fork.Internal
 -- {-\# LANGUAGE StaticPointers #-}
 --
 -- import Control.Distributed.Fork
--- import Control.Distributed.Fork.LocalProcessBackend
+-- import Control.Distributed.Fork.Local
 --
 -- main :: IO ()
 -- main = do
 --   'initDistributedFork'
---   handle <- 'fork' 'Control.Distributed.Fork.LocalProcessBackend.localProcessBackend' (static 'Dict') (static (return "Hello World!"))
+--   handle <- 'fork' 'Control.Distributed.Fork.Local.localProcessBackend' (static 'Dict') (static (return "Hello World!"))
 --   await handle >>= putStrLn
 -- @
 fork :: MonadIO m

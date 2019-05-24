@@ -16,12 +16,12 @@ library
   default-language:    Haskell2010
   exposed-modules:     Control.Distributed.Fork
                      , Control.Distributed.Fork.Utils
-                     , Control.Distributed.Fork.LocalProcessBackend
+                     , Control.Distributed.Fork.Local
                      , Control.Distributed.Fork.Backend
                      , Control.Distributed.Dataset
+                     , Control.Distributed.Dataset.Local
                      , Control.Distributed.Dataset.Aggr
                      , Control.Distributed.Dataset.ShuffleStore
-                     , Control.Distributed.Dataset.LocalTmpShuffleStore
                      , Control.Concurrent.Throttled
   other-modules:       Control.Distributed.Fork.Internal
                      , Control.Distributed.Dataset.Internal.Dataset

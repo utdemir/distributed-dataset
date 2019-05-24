@@ -72,7 +72,7 @@ type ExecutorClosure = ZlibWrapper (Closure (IO ()))
 --
 -- See:
 --
---   * 'Control.Distributed.Fork.LocalProcessBackend.localProcessBackend'
+--   * 'Control.Distributed.Fork.Local.localProcessBackend'
 --
 --   * <http://hackage.haskell.org/package/distributed-dataset-aws distributed-dataset-aws>
 newtype Backend = Backend

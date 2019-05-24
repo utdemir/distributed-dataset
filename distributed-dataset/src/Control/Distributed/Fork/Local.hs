@@ -1,4 +1,4 @@
-module Control.Distributed.Fork.LocalProcessBackend where
+module Control.Distributed.Fork.Local where
 
 --------------------------------------------------------------------------------
 import qualified Data.ByteString.Lazy             as BL

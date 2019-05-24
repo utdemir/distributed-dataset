@@ -17,7 +17,7 @@ import qualified Hedgehog.Range                                   as Range
 import           Language.Haskell.TH                              (unType)
 --------------------------------------------------------------------------------
 import           Control.Distributed.Dataset
-import           Control.Distributed.Dataset.LocalTmpShuffleStore
+import           Control.Distributed.Dataset.Local
 --------------------------------------------------------------------------------
 
 prop_aggrSum :: Property

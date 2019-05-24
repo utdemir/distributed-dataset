@@ -1,7 +1,7 @@
 {-|
 You only need this module if you want to create a new backend for distributed-dataset.
 
-See 'Control.Distributed.Fork.LocalProcessBackend.localProcessBackend' for a minimal example.
+See 'Control.Distributed.Fork.Local.localProcessBackend' for a minimal example.
 -}
 
 module Control.Distributed.Fork.Backend
