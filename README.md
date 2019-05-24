@@ -61,12 +61,20 @@ Provides `Dataset`'s reading from public open datasets. Currently it can fetch G
 * Build an run the example:
 
   * If you use Nix on Linux: 
-  
-        $(nix-build -A example-gh)/bin/example-gh my-s3-bucket
+     
+    * You can use [my binary cache on cachix](https://utdemir.cachix.org/) so that you don't recompile half of the Hackage.
+ 
+    * Then:  
+    
+      ```sh
+      $ $(nix-build -A example-gh)/bin/example-gh my-s3-bucket
+      ```
     
   * If you use stack (requires Docker, works on Linux and MacOS): 
   
-        stack run --docker-mount $HOME/.aws/ --docker-env HOME=$HOME example-gh my-s3-bucket
+      ```sh
+      $ stack run --docker-mount $HOME/.aws/ --docker-env HOME=$HOME example-gh my-s3-bucket
+      ```
 
 ## Stability
 
