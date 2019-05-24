@@ -87,7 +87,9 @@ newtype Backend = Backend
 -- executor.
 newtype BackendM a =
   BackendM (ReaderT (ExecutorPendingStatus -> IO ()) IO a)
-  deriving (Functor, Applicative, Monad, MonadIO, MonadCatch, MonadThrow, MonadUnliftIO)
+  deriving ( Functor, Applicative, Monad, MonadIO
+           , MonadCatch, MonadThrow, MonadMask, MonadUnliftIO
+           )
 
 instance Binary a => Binary (ExecutorFinalStatus a)
 

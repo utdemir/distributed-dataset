@@ -9,12 +9,12 @@ import           Control.Arrow
 import           Control.Monad.Logger
 import           Data.Binary
 import           Data.Function
-import           Data.List                                        (group, sort)
+import           Data.List                         (group, sort)
 import           Data.Typeable
 import           Hedgehog
-import qualified Hedgehog.Gen                                     as Gen
-import qualified Hedgehog.Range                                   as Range
-import           Language.Haskell.TH                              (unType)
+import qualified Hedgehog.Gen                      as Gen
+import qualified Hedgehog.Range                    as Range
+import           Language.Haskell.TH               (unType)
 --------------------------------------------------------------------------------
 import           Control.Distributed.Dataset
 import           Control.Distributed.Dataset.Local

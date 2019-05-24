@@ -11,11 +11,11 @@ module Control.Distributed.Dataset.Local
 --------------------------------------------------------------------------------
 import           Conduit
 import           Control.Distributed.Closure
-import           Control.Exception                            (bracket)
-import qualified Data.ByteString                              as BS
+import           Control.Exception                        (bracket)
+import qualified Data.ByteString                          as BS
 import           Data.Conduit.Binary
-import qualified Data.Conduit.Combinators                     as C
-import           Prelude                                      hiding (rem)
+import qualified Data.Conduit.Combinators                 as C
+import           Prelude                                  hiding (rem)
 import           System.Directory
 import           System.FilePath
 import           System.Posix.Temp
