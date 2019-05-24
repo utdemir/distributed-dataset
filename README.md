@@ -11,27 +11,15 @@ A distributed data processing framework in pure Haskell. Inspired by [Apache Spa
 
 ### distributed-dataset
 
-* Control.Distributed.Dataset
+This package provides a `Dataset` type which lets you express and execute transformations on a distributed multiset. Its API is highly inspired by Apache Spark.
 
-This module provides a `Dataset` type which lets you express transformations on a distributed multiset. Its API is highly inspired by Apache Spark.
+It uses pluggable `Backend`s for spawning executors and `ShuffleStore`s for exchanging information. See 'distributed-dataset-aws' for an implementation using AWS Lambda and S3.
 
-It uses pluggable `ShuffleStore`'s for storing intermediate compuation results. See 'distributed-dataset-aws' for an implementation using S3.
-
-* Control.Distributed.Fork
-
-This module contains a `fork` function which lets you run arbitrary IO actions on remote machines; leveraging [StaticPointers language extension](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#static-pointers) and [distributed-closure library](https://hackage.haskell.org/package/distributed-closure).
-
-This module is useful when your task is [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel):
-
-* Load test an application by sending thousands of HTTP requests.
-* Run different iterations of a simulation in parallel.
-* Generate thumbnails for a set of images.
-
-It uses pluggable `Backend`s for spawning executors. See 'distributed-dataset-aws' for an implementation using AWS Lambda .
+It also exposes a more primitive `Control.Distributed.Fork` module which lets you run `IO` actions remotely. It is especially useful when your task is [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel).
 
 ### distributed-dataset-aws
 
-This package provides backends for 'distributed-dataset' to run using AWS services. Currently it supports running functions on AWS Lambda and using an S3 bucket as a shuffle store.
+This package provides a backend for 'distributed-dataset' using AWS services. Currently it supports running functions on AWS Lambda and using an S3 bucket as a shuffle store.
 
 ### distributed-dataset-opendatasets
 
@@ -78,11 +66,7 @@ Provides `Dataset`'s reading from public open datasets. Currently it can fetch G
 
 ## Stability
 
-Experimental. Expect lots of missing features, bugs, instability and API changes. You will probably need to modify the source if you want to do anything serious.
-
-### Known Bugs & Missing features & TODO
-
-See [issues](https://github.com/utdemir/distributed-dataset/issues).
+Experimental. Expect lots of missing features, bugs, instability and API changes. You will probably need to modify the source if you want to do anything serious. See [issues](https://github.com/utdemir/distributed-dataset/issues).
 
 ## Contributing
 
