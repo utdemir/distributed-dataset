@@ -19,6 +19,8 @@ module Control.Distributed.Fork.Backend
   , submitted, submittedDesc
   , started, startedDesc
 
+  -- * Utils
+  , throttledBackend
 
   -- * Re-exports
   , liftIO
@@ -26,6 +28,7 @@ module Control.Distributed.Fork.Backend
   ) where
 
 --------------------------------------------------------------------------------
+import           Control.Concurrent.Throttled
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
 import           Data.Text                         (Text)
@@ -54,3 +57,8 @@ started = pendingStatus $ ExecutorStarted Nothing
 
 startedDesc :: Text -> BackendM ()
 startedDesc = pendingStatus . ExecutorStarted . Just
+
+throttledBackend :: MonadIO m => Int -> Backend -> m Backend
+throttledBackend limit (Backend b) = do
+  t <- newThrottle limit
+  return $ Backend (throttled t . b)
