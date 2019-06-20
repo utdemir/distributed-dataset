@@ -1,4 +1,4 @@
-resolver: nightly-2019-05-06
+resolver: nightly-2019-06-19
 
 packages:
   - distributed-dataset
@@ -20,4 +20,4 @@ extra-deps:
 docker:
   enable: true
   stack-exe: download
-  image: fpco/stack-build:lts-13.21
+  image: fpco/stack-build:lts-13.25
