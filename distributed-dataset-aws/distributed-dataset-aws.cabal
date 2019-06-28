@@ -32,7 +32,7 @@ library
                      , amazonka-core >= 1.6.1
                      , amazonka-lambda >= 1.6.0
                      , amazonka-s3
-                     , amazonka-s3-streaming
+                     , amazonka-s3-streaming >= 1.0.0
                      , amazonka-sqs
                      , async
                      , base64-bytestring
