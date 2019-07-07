@@ -46,7 +46,7 @@ overlays = se: su: {
 
   # Use newer version
   # Haddocks does not work with ghc 8.4
-  stratosphere = pkgs.haskell.lib.dontHaddock se.stratosphere_0_39_0;
+  stratosphere = pkgs.haskell.lib.dontHaddock se.stratosphere_0_40_0;
 
   # Pulls in a broken dependency on 1.8.1, fixed in master but no new release yet.
   # https://github.com/yesodweb/Shelly.hs/commit/8288d27b93b57574135014d0888cf33f325f7c80
