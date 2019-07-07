@@ -28,12 +28,12 @@ Provides `Dataset`'s reading from public open datasets. Currently it can fetch G
 ## Running the example
 
 * Clone the repository.
-  
+
   ```sh
   $ git clone https://github.com/utdemir/distributed-dataset
   $ cd distributed-dataset
   ```
-  
+
 * Make sure that you have AWS credentials set up. The easiest way is to install [AWS command line interface](https://aws.amazon.com/cli/) and to run:
 
   ```sh
@@ -50,16 +50,20 @@ Provides `Dataset`'s reading from public open datasets. Currently it can fetch G
 
   * If you use Nix on Linux: 
      
-    * You can use [my binary cache on cachix](https://utdemir.cachix.org/) so that you don't recompile half of the Hackage.
+    * (Optional) Use my binary cache on Cachix to reduce compilation times:
+
+    ```sh
+    $(nix-build -A cachix https://cachix.org/api/v1/install)/bin/cachix use utdemir
+    ```
  
-    * Then:  
+    * Then:
     
       ```sh
       $ $(nix-build -A example-gh)/bin/example-gh my-s3-bucket
       ```
     
   * If you use stack (requires Docker, works on Linux and MacOS): 
-  
+
       ```sh
       $ stack run --docker-mount $HOME/.aws/ --docker-env HOME=$HOME example-gh my-s3-bucket
       ```
