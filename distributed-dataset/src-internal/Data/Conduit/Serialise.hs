@@ -36,7 +36,7 @@ deserialiseC :: forall a m. (Serialise a, MonadIO m) => ConduitM ByteString a m 
 deserialiseC = filterC (not . BS.null) .| pipe
   where
     pipe =
-      fix (\rec -> \case
+      fix (\rec' -> \case
         Nothing ->
           await >>= \case
             Nothing -> return ()
@@ -47,20 +47,20 @@ deserialiseC = filterC (not . BS.null) .| pipe
                 Done{} ->
                   error "couldn't init parser"
                 Partial cont ->
-                  liftIO (stToIO $ cont (Just bs)) >>= rec . Just
+                  liftIO (stToIO $ cont (Just bs)) >>= rec' . Just
         Just Fail{} ->
           lift $ error "failed"
         Just (Done leftover _ ret) -> do
           yield ret
           if BS.null leftover
-            then rec Nothing
+            then rec' Nothing
             else liftIO (stToIO $ deserialiseIncremental @a) >>= \case
                    Fail{}  ->
                      error "couldn't init parser"
                    Done{}  ->
                      error "couldn't init parser"
                    Partial cont ->
-                     liftIO (stToIO $ cont (Just leftover)) >>= rec . Just
+                     liftIO (stToIO $ cont (Just leftover)) >>= rec' . Just
         Just (Partial cont) ->
           await >>= \case
             Nothing ->
@@ -72,5 +72,5 @@ deserialiseC = filterC (not . BS.null) .| pipe
                 Partial _ ->
                   error "parse failed. abrubt message?"
             Just bs ->
-              liftIO (stToIO $ cont (Just bs)) >>= rec . Just
+              liftIO (stToIO $ cont (Just bs)) >>= rec' . Just
         ) Nothing
