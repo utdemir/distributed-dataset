@@ -15,6 +15,7 @@ function trace() {
   echo "! $@" >&2; $@
 }
 
+# If I'm running it, also push the derivations to cachix.
 if [ "$USER" = "utdemir" ]; then 
   function nix_build {
     tmp="$(mktemp -d)"
