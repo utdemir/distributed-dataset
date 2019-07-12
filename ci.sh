@@ -3,7 +3,7 @@
 set -o errexit
 set -o errtrace
 
-DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
+cd "$( dirname "${BASH_SOURCE[0]}" )"
 
 function err {
     echo "Test failed!"
