@@ -7,11 +7,11 @@ gitignore = pkgs.nix-gitignore.gitignoreSourcePure [ ./.gitignore ];
 
 overlays = se: su: {
   "distributed-dataset" =
-    se.callCabal2nix 
-      "distributed-dataset" 
-      (gitignore ./distributed-dataset) 
+    se.callCabal2nix
+      "distributed-dataset"
+      (gitignore ./distributed-dataset)
       {};
-      
+
   "distributed-dataset-aws" =
     let orig = se.callCabal2nix
                  "distributed-dataset-aws"
@@ -24,10 +24,10 @@ overlays = se: su: {
             (gmp.override { withStatic = true; })
           ];
     });
-    
+
   "distributed-dataset-opendatasets" =
-    se.callCabal2nix 
-      "distributed-dataset-opendatasets" 
+    se.callCabal2nix
+      "distributed-dataset-opendatasets"
       (gitignore ./distributed-dataset-opendatasets)
       {};
 
@@ -38,7 +38,7 @@ overlays = se: su: {
                  {};
     in  pkgs.haskell.lib.overrideCabal orig (_: {
           extraLibraries = with pkgs; [
-            glibc glibc.static zlib.static 
+            glibc glibc.static zlib.static
             (libffi.override { stdenv = makeStaticLibraries stdenv; })
             (gmp.override { withStatic = true; })
           ];
@@ -51,7 +51,7 @@ overlays = se: su: {
   # Pulls in a broken dependency on 1.8.1, fixed in master but no new release yet.
   # https://github.com/yesodweb/Shelly.hs/commit/8288d27b93b57574135014d0888cf33f325f7c80
   shelly =
-    se.callCabal2nix 
+    se.callCabal2nix
       "shelly"
       (builtins.fetchGit {
         url = "https://github.com/yesodweb/Shelly.hs";
@@ -61,6 +61,16 @@ overlays = se: su: {
 
   # Always use the new Cabal
   Cabal = se.Cabal_2_4_1_0;
+
+  # not on Hackage yet
+  ormolu =
+    se.callCabal2nix
+      "ormolu"
+      (builtins.fetchGit {
+        url = "https://github.com/tweag/ormolu";
+        rev = "28c35cc8dffca668e5472bec76a4f489b2b3198e";
+      })
+      {};
 };
 
 haskellPackages = pkgs.haskell.packages.${compiler}.override {
@@ -68,29 +78,14 @@ haskellPackages = pkgs.haskell.packages.${compiler}.override {
 };
 
 in rec
-{ 
+{
   "distributed-dataset" = haskellPackages.distributed-dataset;
   "distributed-dataset-aws" = haskellPackages.distributed-dataset-aws;
   "distributed-dataset-opendatasets" = haskellPackages.distributed-dataset-opendatasets;
   "example-gh" = haskellPackages.example-gh;
 
-  shell = haskellPackages.shellFor {
-    packages = p: with p; [ 
-      distributed-dataset 
-      distributed-dataset-aws
-      distributed-dataset-opendatasets
-      example-gh
-    ];
-    buildInputs = with haskellPackages; [ 
-      cabal-install 
-      ghcid 
-      stylish-haskell 
-    ]; 
-    withHoogle = true;
-  };
-  
   docs = pkgs.runCommand "distributed-dataset-docs" {
-    buildInputs = 
+    buildInputs =
       [ (haskellPackages.ghcWithPackages (hp: with hp;
           [ distributed-dataset distributed-dataset-aws distributed-dataset-opendatasets ]))
         haskellPackages.standalone-haddock
@@ -102,7 +97,22 @@ in rec
       -o "$out" \
       ${distributed-dataset.src} \
       ${distributed-dataset-aws.src} \
-      ${distributed-dataset-opendatasets.src} 
+      ${distributed-dataset-opendatasets.src}
   '';
-}
-
+} // (if compiler > "ghc86" then {
+  shell = haskellPackages.shellFor {
+    packages = p: with p; [
+      distributed-dataset
+      distributed-dataset-aws
+      distributed-dataset-opendatasets
+      example-gh
+    ];
+    buildInputs = with haskellPackages; [
+      cabal-install
+      ghcid
+      stylish-haskell
+      ormolu
+    ];
+    withHoogle = true;
+  };
+} else {})
