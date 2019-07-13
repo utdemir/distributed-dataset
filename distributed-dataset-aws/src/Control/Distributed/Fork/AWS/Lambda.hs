@@ -1,12 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Control.Distributed.Fork.AWS.Lambda
-  (
-  -- * Usage
+  ( -- * Usage
     withLambdaBackend
-  -- * Options
-  , LambdaBackendOptions
+  , -- * Options
+    LambdaBackendOptions
   , lambdaBackendOptions
   , lboPrefix
   , lboMemory
@@ -14,29 +13,37 @@ module Control.Distributed.Fork.AWS.Lambda
   , lboMaxConcurrentExecutions
   , lboMaxConcurrentDownloads
   , lboKeepStack
-  ) where
+  )
+where
 
-import           Control.Lens                                         (Lens',
-                                                                       lens,
-                                                                       (^.))
-import           Data.Bool                                            (bool)
-import           Data.Monoid                                          ((<>))
-import qualified Data.Text                                            as T
-import           Data.Time.Clock                                      (getCurrentTime)
-import           Data.Time.Format                                     (defaultTimeLocale,
-                                                                       formatTime)
-import           Network.AWS                                          (Credentials (Discover),
-                                                                       envRegion,
-                                                                       newEnv,
-                                                                       runAWS,
-                                                                       runResourceT)
 --------------------------------------------------------------------------------
-import           Control.Concurrent.Throttled
-import           Control.Distributed.Fork.AWS.Lambda.Internal.Archive
-import           Control.Distributed.Fork.AWS.Lambda.Internal.Invoke
-import           Control.Distributed.Fork.AWS.Lambda.Internal.Stack
-import           Control.Distributed.Fork.AWS.Lambda.Internal.Types
-import           Control.Distributed.Fork.Backend
+import Control.Concurrent.Throttled
+import Control.Distributed.Fork.AWS.Lambda.Internal.Archive
+import Control.Distributed.Fork.AWS.Lambda.Internal.Invoke
+import Control.Distributed.Fork.AWS.Lambda.Internal.Stack
+import Control.Distributed.Fork.AWS.Lambda.Internal.Types
+import Control.Distributed.Fork.Backend
+import Control.Lens
+  ( Lens'
+  , (^.)
+  , lens
+  )
+import Data.Bool (bool)
+import Data.Monoid ((<>))
+import qualified Data.Text as T
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Format
+  ( defaultTimeLocale
+  , formatTime
+  )
+import Network.AWS
+  ( Credentials (Discover)
+  , envRegion
+  , newEnv
+  , runAWS
+  , runResourceT
+  )
+
 --------------------------------------------------------------------------------
 
 -- |
@@ -95,44 +102,39 @@ import           Control.Distributed.Fork.Backend
 --     handle <- 'fork' backend (static Dict) (static (return "Hello from Lambda!"))
 --     await handle >>= putStrLn
 -- @
-
 withLambdaBackend :: LambdaBackendOptions -> (Backend -> IO a) -> IO a
 withLambdaBackend LambdaBackendOptions {..} f = do
   env <- newEnv Discover
   putStrLn $ "Detected region: " <> show (env ^. envRegion) <> "."
-
   archive <- mkArchive
   let cksum = archiveChecksum archive
-      size  = fromIntegral (archiveSize archive) / (1000 * 1000) :: Double
+      size = fromIntegral (archiveSize archive) / (1000 * 1000) :: Double
       s3loc =
         S3Loc (BucketName _lboBucket) (_lboPrefix <> "-" <> cksum <> ".zip")
-
   putStrLn $ "Checking if deployment archive exists (" <> show s3loc <> ")."
   runResourceT . runAWS env $
     awsObjectExists s3loc >>=
-      bool
-        (liftIO (putStrLn $ "Uploading the deployment archive. (" <> show size <> " MB)")
-          >> awsUploadObject  s3loc (archiveToByteString archive))
-        (liftIO $ putStrLn "Found archive, skipping upload.")
-
-
+    bool
+      ( liftIO (putStrLn $ "Uploading the deployment archive. (" <> show size <> " MB)") >>
+        awsUploadObject s3loc (archiveToByteString archive)
+      )
+      (liftIO $ putStrLn "Found archive, skipping upload.")
   time <-
     T.pack . formatTime defaultTimeLocale "%Y%m%d%H%M%S" <$> getCurrentTime
   let stackOptions =
-        StackOptions { soName = StackName (_lboPrefix <> "-" <> time <> "-" <> cksum)
-                     , soLambdaMemory = _lboMemory
-                     , soLambdaCode = s3loc
-                     , soKeep = _lboKeepStack
-                     }
-
+        StackOptions
+          { soName = StackName (_lboPrefix <> "-" <> time <> "-" <> cksum)
+          , soLambdaMemory = _lboMemory
+          , soLambdaCode = s3loc
+          , soKeep = _lboKeepStack
+          }
   putStrLn "Creating stack."
   withStack stackOptions env $ \si -> do
     putStrLn $ "Stack created: " <> T.unpack (siId si)
-
-    throttles <- (,,) <$> newThrottle _lboMaxConcurrentInvocations
-                      <*> newThrottle _lboMaxConcurrentExecutions
-                      <*> newThrottle _lboMaxConcurrentDownloads
-
+    throttles <-
+      (,,) <$> newThrottle _lboMaxConcurrentInvocations <*>
+        newThrottle _lboMaxConcurrentExecutions <*>
+        newThrottle _lboMaxConcurrentDownloads
     withInvoke env throttles si $ \invoke ->
       f $ Backend invoke
 
@@ -143,27 +145,30 @@ withLambdaBackend LambdaBackendOptions {..} f = do
 --
 -- Use 'lambdaBackendOptions' smart constructor to create and lenses below for
 -- setting optional fields.
-data LambdaBackendOptions = LambdaBackendOptions
-  { _lboBucket                   :: T.Text
-  , _lboPrefix                   :: T.Text
-  , _lboMemory                   :: Int
-  , _lboMaxConcurrentInvocations :: Int
-  , _lboMaxConcurrentExecutions  :: Int
-  , _lboMaxConcurrentDownloads   :: Int
-  , _lboKeepStack                :: Bool
-  }
+data LambdaBackendOptions
+  = LambdaBackendOptions
+      { _lboBucket :: T.Text
+      , _lboPrefix :: T.Text
+      , _lboMemory :: Int
+      , _lboMaxConcurrentInvocations :: Int
+      , _lboMaxConcurrentExecutions :: Int
+      , _lboMaxConcurrentDownloads :: Int
+      , _lboKeepStack :: Bool
+      }
 
-lambdaBackendOptions :: T.Text -- ^ Name of the S3 bucket to store the deployment archive in.
-                     -> LambdaBackendOptions
+lambdaBackendOptions
+  :: T.Text -- ^ Name of the S3 bucket to store the deployment archive in.
+  -> LambdaBackendOptions
 lambdaBackendOptions bucket =
-  LambdaBackendOptions { _lboBucket = bucket
-                       , _lboPrefix = "distributed-dataset"
-                       , _lboMemory = 1024
-                       , _lboMaxConcurrentInvocations = 64
-                       , _lboMaxConcurrentExecutions  = 0
-                       , _lboMaxConcurrentDownloads   = 16
-                       , _lboKeepStack = False
-                       }
+  LambdaBackendOptions
+    { _lboBucket = bucket
+    , _lboPrefix = "distributed-dataset"
+    , _lboMemory = 1024
+    , _lboMaxConcurrentInvocations = 64
+    , _lboMaxConcurrentExecutions = 0
+    , _lboMaxConcurrentDownloads = 16
+    , _lboKeepStack = False
+    }
 
 -- |
 -- Desired memory for the Lambda functions.
@@ -172,14 +177,14 @@ lambdaBackendOptions bucket =
 --
 --   Default: 1024
 lboMemory :: Lens' LambdaBackendOptions Int
-lboMemory = lens _lboMemory (\s t -> s { _lboMemory = t })
+lboMemory = lens _lboMemory (\s t -> s {_lboMemory = t})
 
 -- |
 -- Prefix to the deployment archive and the CloudFormation stack.
 --
 -- Default: "distributed-dataset"
 lboPrefix :: Lens' LambdaBackendOptions T.Text
-lboPrefix = lens _lboPrefix (\s t -> s { _lboPrefix = t })
+lboPrefix = lens _lboPrefix (\s t -> s {_lboPrefix = t})
 
 -- |
 -- Maximum number of concurrent "invoke" calls to AWS API to trigger executions.
@@ -189,7 +194,7 @@ lboPrefix = lens _lboPrefix (\s t -> s { _lboPrefix = t })
 -- Default: 64
 lboMaxConcurrentInvocations :: Lens' LambdaBackendOptions Int
 lboMaxConcurrentInvocations =
-  lens _lboMaxConcurrentInvocations (\s t -> s { _lboMaxConcurrentInvocations = t })
+  lens _lboMaxConcurrentInvocations (\s t -> s {_lboMaxConcurrentInvocations = t})
 
 -- |
 -- Maximum number of concurrently executing Lambda functions.
@@ -199,7 +204,7 @@ lboMaxConcurrentInvocations =
 -- Default: 0
 lboMaxConcurrentExecutions :: Lens' LambdaBackendOptions Int
 lboMaxConcurrentExecutions =
-  lens _lboMaxConcurrentExecutions (\s t -> s { _lboMaxConcurrentExecutions = t })
+  lens _lboMaxConcurrentExecutions (\s t -> s {_lboMaxConcurrentExecutions = t})
 
 -- |
 -- If the size of the return value from your function is larger than 200 kilobytes,
@@ -211,7 +216,7 @@ lboMaxConcurrentExecutions =
 -- Default: 16
 lboMaxConcurrentDownloads :: Lens' LambdaBackendOptions Int
 lboMaxConcurrentDownloads =
-  lens _lboMaxConcurrentDownloads (\s t -> s { _lboMaxConcurrentDownloads = t })
+  lens _lboMaxConcurrentDownloads (\s t -> s {_lboMaxConcurrentDownloads = t})
 
 -- |
 -- Whether to keep the CloudFormation stack after the 'withLambdaBackend' call.
@@ -219,4 +224,4 @@ lboMaxConcurrentDownloads =
 --
 -- Default: Fales
 lboKeepStack :: Lens' LambdaBackendOptions Bool
-lboKeepStack = lens _lboKeepStack (\s t -> s { _lboKeepStack = t })
+lboKeepStack = lens _lboKeepStack (\s t -> s {_lboKeepStack = t})

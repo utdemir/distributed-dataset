@@ -1,0 +1,22 @@
+resolver: lts-12.26
+
+packages:
+  - distributed-dataset
+  - distributed-dataset-aws
+  - distributed-dataset-opendatasets
+  - examples/gh
+
+extra-deps:
+  - stratosphere-0.36.0
+  - amazonka-1.6.1
+  - amazonka-cloudformation-1.6.1
+  - amazonka-core-1.6.1
+  - amazonka-lambda-1.6.1
+  - amazonka-s3-1.6.1
+  - amazonka-sqs-1.6.1
+  - amazonka-s3-streaming-1.0.0.1
+  - serialise-0.2.1.0
+
+docker:
+  enable: true
+  stack-exe: download

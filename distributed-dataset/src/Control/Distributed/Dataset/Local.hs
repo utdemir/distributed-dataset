@@ -1,27 +1,29 @@
-{-# LANGUAGE LambdaCase     #-}
-{-# LANGUAGE RankNTypes     #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StaticPointers #-}
 
 module Control.Distributed.Dataset.Local
   ( withLocalTmpShuffleStore
-  -- * Re-exports
-  , localProcessBackend
-  ) where
+  , -- * Re-exports
+    localProcessBackend
+  )
+where
 
 --------------------------------------------------------------------------------
-import           Conduit
-import           Control.Distributed.Closure
-import           Control.Exception                        (bracket)
-import qualified Data.ByteString                          as BS
-import           Data.Conduit.Binary
-import qualified Data.Conduit.Combinators                 as C
-import           Prelude                                  hiding (rem)
-import           System.Directory
-import           System.FilePath
-import           System.Posix.Temp
+import Conduit
+import Control.Distributed.Closure
 --------------------------------------------------------------------------------
-import           Control.Distributed.Dataset.ShuffleStore
-import           Control.Distributed.Fork.Local
+import Control.Distributed.Dataset.ShuffleStore
+import Control.Distributed.Fork.Local
+import Control.Exception (bracket)
+import qualified Data.ByteString as BS
+import Data.Conduit.Binary
+import qualified Data.Conduit.Combinators as C
+import System.Directory
+import System.FilePath
+import System.Posix.Temp
+import Prelude hiding (rem)
+
 --------------------------------------------------------------------------------
 
 -- |

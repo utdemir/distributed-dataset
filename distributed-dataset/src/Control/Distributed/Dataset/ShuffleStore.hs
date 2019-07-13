@@ -1,19 +1,21 @@
-{-# LANGUAGE DeriveAnyClass            #-}
-{-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ExistentialQuantification #-}
 
 module Control.Distributed.Dataset.ShuffleStore
-  ( ShuffleStore(..)
-  , Range(..)
-  ) where
+  ( ShuffleStore (..)
+  , Range (..)
+  )
+where
 
 -------------------------------------------------------------------------------
-import           Conduit                     hiding (Consumer, Producer, await)
-import           Control.Distributed.Closure
-import           Data.Binary                 (Binary)
-import           Data.ByteString             (ByteString)
-import           Data.Int
-import           GHC.Generics
+import Conduit hiding (Consumer, Producer, await)
+import Control.Distributed.Closure
+import Data.Binary (Binary)
+import Data.ByteString (ByteString)
+import Data.Int
+import GHC.Generics
+
 -------------------------------------------------------------------------------
 
 -- |
@@ -24,11 +26,11 @@ import           GHC.Generics
 --   * 'Control.Distributed.Dataset.Local.withLocalTmpShuffleStore'
 --
 --   * <http://hackage.haskell.org/package/distributed-dataset-aws distributed-dataset-aws>
-data ShuffleStore =
-  ShuffleStore
-    { ssGet   :: Closure (Int64 -> Range -> ConduitT () ByteString (ResourceT IO) ())
-    , ssPut   :: Closure (Int64 -> ConduitT ByteString Void (ResourceT IO) ())
-    }
+data ShuffleStore
+  = ShuffleStore
+      { ssGet :: Closure (Int64 -> Range -> ConduitT () ByteString (ResourceT IO) ())
+      , ssPut :: Closure (Int64 -> ConduitT ByteString Void (ResourceT IO) ())
+      }
 
 data Range
   = RangeAll

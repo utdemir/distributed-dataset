@@ -1,7 +1,7 @@
-{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StaticPointers      #-}
-{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE StaticPointers #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Control.Distributed.Dataset.Aggr
   ( Aggr
@@ -16,27 +16,29 @@ module Control.Distributed.Dataset.Aggr
   , aggrTopK
   , aggrBottomK
   , aggrFiltered
-  -- * Creating Aggr's
-  , aggrFromMonoid
+  , -- * Creating Aggr's
+    aggrFromMonoid
   , aggrFromReduce
   , aggrFromFold
-  ) where
+  )
+where
 
 -------------------------------------------------------------------------------
-import           Control.Applicative.Static
-import           Control.Distributed.Closure
-import qualified Control.Foldl                              as F
-import           Data.Functor.Static
-import           Data.HashSet                               (HashSet)
-import qualified Data.Heap                                  as H
-import           Data.List
-import           Data.Monoid
-import           Data.Ord
-import           Data.Profunctor.Static
-import           Data.Typeable
+import Control.Applicative.Static
+import Control.Distributed.Closure
 -------------------------------------------------------------------------------
-import           Control.Distributed.Dataset.Internal.Aggr
-import           Control.Distributed.Dataset.Internal.Class
+import Control.Distributed.Dataset.Internal.Aggr
+import Control.Distributed.Dataset.Internal.Class
+import qualified Control.Foldl as F
+import Data.Functor.Static
+import Data.HashSet (HashSet)
+import qualified Data.Heap as H
+import Data.List
+import Data.Monoid
+import Data.Ord
+import Data.Profunctor.Static
+import Data.Typeable
+
 -------------------------------------------------------------------------------
 
 -- |
@@ -58,9 +60,9 @@ aggrCount =
 -- Calculates the mean of the inputs.
 aggrMean :: Aggr Double Double
 aggrMean =
-  aggrConst (static (/))
-    `staticApply` aggrSum (static Dict)
-    `staticApply` staticMap (static realToFrac) aggrCount
+  aggrConst (static (/)) `staticApply`
+    aggrSum (static Dict) `staticApply`
+    staticMap (static realToFrac) aggrCount
 
 -- |
 -- Return the maximum of the inputs.
@@ -104,16 +106,17 @@ aggrDistinct =
     (static (\Dict -> mconcat <$> F.list) `cap` staticHashable @a)
 
 -- * Top K
-
 data TopK a = TopK Int (H.Heap a)
-  deriving (Typeable)
+  deriving Typeable
 
 instance Semigroup (TopK a) where
+
   TopK c1 h1 <> TopK c2 h2 =
     let m = min c1 c2
-    in  TopK m (H.drop (H.size h1 + H.size h2 - m) $ H.union h1 h2)
+     in TopK m (H.drop (H.size h1 + H.size h2 - m) $ H.union h1 h2)
 
 instance Monoid (TopK a) where
+
   mempty = TopK maxBound H.empty
 
 -- |
@@ -121,44 +124,53 @@ instance Monoid (TopK a) where
 -- @take n . sortOn (Down . f)@
 --
 -- Warning: Ordering of the repeated elements is non-deterministic.
-aggrTopK :: (StaticSerialise a, Typeable k)
-      => Closure (Dict (Ord k))
-      -> Int              -- ^ Number of rows to return
-      -> Closure (a -> k) -- ^ Sorting key
-      -> Aggr a [a]
+aggrTopK
+  :: (StaticSerialise a, Typeable k)
+  => Closure (Dict (Ord k))
+  -> Int -- ^ Number of rows to return
+  -> Closure (a -> k) -- ^ Sorting key
+  -> Aggr a [a]
 aggrTopK dict count fc =
   aggrFromFold
-    (static (\Dict c f ->
-      F.foldMap
-        (\a -> TopK c . H.singleton $ H.Entry (f a) a)
-        (\(TopK _ h) -> map H.payload . sortOn Down $ H.toUnsortedList h)
-      ) `cap` dict `cap` cpure (static Dict) count `cap` fc
+    ( static
+      ( \Dict c f ->
+        F.foldMap
+          (\a -> TopK c . H.singleton $ H.Entry (f a) a)
+          (\(TopK _ h) -> map H.payload . sortOn Down $ H.toUnsortedList h)
+      ) `cap`
+      dict `cap`
+      cpure (static Dict) count `cap`
+      fc
     )
-    (static (\Dict c f ->
-                F.Fold (\a b -> take c $ merge f a b) [] id
-     ) `cap` dict `cap` cpure (static Dict) count `cap` fc
+    ( static
+      ( \Dict c f ->
+        F.Fold (\a b -> take c $ merge f a b) [] id
+      ) `cap`
+      dict `cap`
+      cpure (static Dict) count `cap`
+      fc
     )
   where
     merge _ xs [] = xs
     merge _ [] ys = ys
-    merge f xss@(x:xs) yss@(y:ys) =
+    merge f xss@(x : xs) yss@(y : ys) =
       if f x > f y
-        then x:merge f xs yss
-        else y:merge f xss ys
+      then x : merge f xs yss
+      else y : merge f xss ys
 
 -- |
 -- Returns the 'n' least elements according to a key function. Similar to:
 -- @take n . sortOn (Down . f)@
 --
 -- Warning: Ordering of the repeated elements is non-deterministic.
-aggrBottomK :: (StaticSerialise a, Typeable k)
-         => Closure (Dict (Ord k))
-         -> Int              -- ^ Number of rows to return
-         -> Closure (a -> k) -- ^ Sorting key
-         -> Aggr a [a]
+aggrBottomK
+  :: (StaticSerialise a, Typeable k)
+  => Closure (Dict (Ord k))
+  -> Int -- ^ Number of rows to return
+  -> Closure (a -> k) -- ^ Sorting key
+  -> Aggr a [a]
 aggrBottomK d count fc =
   aggrTopK
     (static (\Dict -> Dict) `cap` d)
     count
     (static (Down .) `cap` fc)
-

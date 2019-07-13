@@ -1,9 +1,9 @@
 module Control.Distributed.Fork.AWS
   ( module Control.Distributed.Fork.AWS.Lambda
-  ) where
+  )
+where
 
 --------------------------------------------------------------------------------
-import           Control.Distributed.Fork.AWS.Lambda
+import Control.Distributed.Fork.AWS.Lambda
+
 --------------------------------------------------------------------------------
-
-

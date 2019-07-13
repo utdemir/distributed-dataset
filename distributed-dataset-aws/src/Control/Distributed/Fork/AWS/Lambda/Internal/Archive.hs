@@ -1,33 +1,34 @@
-{-# LANGUAGE BinaryLiterals      #-}
-{-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE BinaryLiterals #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-
 This module contains the executables for the Lambda function.
 -}
-
 module Control.Distributed.Fork.AWS.Lambda.Internal.Archive
   ( Archive (..)
   , mkArchive
   , archiveSize
   , archiveChecksum
-  ) where
+  )
+where
 
 --------------------------------------------------------------------------------
-import           Codec.Archive.Zip                                      hiding (Archive)
-import           Control.Exception
-import           Control.Monad
-import qualified Data.ByteString                                        as BS
-import qualified Data.ByteString.Lazy                                   as BL
-import           Data.Digest.Pure.SHA
-import           Data.Elf
-import           Data.Function
-import           Data.String.Interpolate
-import qualified Data.Text                                              as T
-import qualified Data.Text.Encoding                                     as T
+import Codec.Archive.Zip hiding (Archive)
 --------------------------------------------------------------------------------
-import           Control.Distributed.Fork.AWS.Lambda.Internal.Constants
-import           Control.Distributed.Fork.Backend
+import Control.Distributed.Fork.AWS.Lambda.Internal.Constants
+import Control.Distributed.Fork.Backend
+import Control.Exception
+import Control.Monad
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
+import Data.Digest.Pure.SHA
+import Data.Elf
+import Data.Function
+import Data.String.Interpolate
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
+
 --------------------------------------------------------------------------------
 
 {-
@@ -37,7 +38,10 @@ binary, provide the input from standard input and return the standard output to
 the queue.
 -}
 handlerPy :: BS.ByteString
-handlerPy = T.encodeUtf8 $ T.pack [i|
+handlerPy =
+  T.encodeUtf8 $
+    T.pack
+      [i|
 import os
 import subprocess
 from uuid import uuid4
@@ -105,8 +109,9 @@ mkHsMain = do
 
 assertBinary :: BS.ByteString -> IO ()
 assertBinary contents = do
-  elf <- (return $! parseElf contents)
-    `catch` (\(_ :: SomeException) -> throwIO FileExceptionNotElf)
+  elf <-
+    (return $! parseElf contents) `catch`
+      (\(_ :: SomeException) -> throwIO FileExceptionNotElf)
   unless (elfClass elf == ELFCLASS64) $
     throwIO FileExceptionNot64Bit
   when (any (\s -> elfSegmentType s == PT_DYNAMIC) (elfSegments elf)) $
@@ -120,18 +125,22 @@ data FileException
 instance Exception FileException
 
 instance Show FileException where
-  show FileExceptionNotElf = [i|
+
+  show FileExceptionNotElf =
+    [i|
     Error: I am not an ELF (Linux) binary.
 
     The executable will run on AWS environment, because of that
     this library currently only supports Linux.
     |]
-  show FileExceptionNot64Bit = [i|
+  show FileExceptionNot64Bit =
+    [i|
     Error: I am not a 64bit executable.
 
     AWS Lambda currently only runs 64 bit executables.
     |]
-  show FileExceptionNotStatic = [i|
+  show FileExceptionNotStatic =
+    [i|
     Error: I am not a dynamic executable.
 
     Since the executable will run on AWS environment, it needs
@@ -144,19 +153,20 @@ instance Show FileException where
 {-
 And we're going to put all of them in a zip archive.
 -}
-newtype Archive =
-  Archive { archiveToByteString :: BS.ByteString }
+newtype Archive
+  = Archive {archiveToByteString :: BS.ByteString}
 
 mkArchive :: IO Archive
 mkArchive = do
   hsMain <- mkHsMain
   return . Archive . BL.toStrict . fromArchive $
-    emptyArchive
-      & addEntryToArchive
-          (toEntry handlerPyName 0 $ BL.fromStrict handlerPy)
-      & addEntryToArchive
-          (toEntry hsMainName 0 $ BL.fromStrict hsMain)
-            { eExternalFileAttributes = 0b10000 {- rwx -} }
+    emptyArchive &
+    addEntryToArchive
+      (toEntry handlerPyName 0 $ BL.fromStrict handlerPy) &
+    addEntryToArchive
+      (toEntry hsMainName 0 $ BL.fromStrict hsMain)
+        { eExternalFileAttributes = 0b10000 {- rwx -}
+        }
 
 archiveSize :: Archive -> Integer
 archiveSize = fromIntegral . BS.length . archiveToByteString

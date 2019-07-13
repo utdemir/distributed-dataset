@@ -26,36 +26,34 @@ module Control.Distributed.Fork
   ( fork
   , initDistributedFork
   , Backend
-
-  -- * Handle
-  , Handle
+  , -- * Handle
+    Handle
   , await
-
-  -- * ExecutorStatus
-  , pollHandle
+  , -- * ExecutorStatus
+    pollHandle
   , ExecutorStatus (..)
   , ExecutorPendingStatus (..)
   , ExecutorFinalStatus (..)
-
-  -- * Exceptions
-  , ExecutorFailedException (..)
-
-  -- * Re-exports
-  , Serializable
+  , -- * Exceptions
+    ExecutorFailedException (..)
+  , -- * Re-exports
+    Serializable
   , Closure
   , cap
   , cpure
   , Dict (Dict)
-  ) where
+  )
+where
 
 --------------------------------------------------------------------------------
-import           Control.Distributed.Closure
-import           Control.Monad
-import           Control.Monad.Catch
-import           Control.Monad.IO.Class
-import           Data.Text                         (Text)
+import Control.Distributed.Closure
 --------------------------------------------------------------------------------
-import           Control.Distributed.Fork.Internal
+import Control.Distributed.Fork.Internal
+import Control.Monad
+import Control.Monad.Catch
+import Control.Monad.IO.Class
+import Data.Text (Text)
+
 --------------------------------------------------------------------------------
 
 -- |
@@ -74,11 +72,12 @@ import           Control.Distributed.Fork.Internal
 --   handle <- 'fork' 'Control.Distributed.Fork.Local.localProcessBackend' (static 'Dict') (static (return "Hello World!"))
 --   await handle >>= putStrLn
 -- @
-fork :: MonadIO m
-     => Backend
-     -> Closure (Dict (Serializable a))
-     -> Closure (IO a)
-     -> m (Handle a)
+fork
+  :: MonadIO m
+  => Backend
+  -> Closure (Dict (Serializable a))
+  -> Closure (IO a)
+  -> m (Handle a)
 fork b d c = liftIO $ runBackend d c b
 
 -- |
@@ -89,7 +88,7 @@ await :: (MonadIO m, MonadThrow m) => Handle a -> m a
 await = liftIO . tryAwait >=> either (throwM . ExecutorFailedException) return
 
 --------------------------------------------------------------------------------
-
 newtype ExecutorFailedException = ExecutorFailedException Text
   deriving (Show, Eq)
+
 instance Exception ExecutorFailedException
