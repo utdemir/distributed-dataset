@@ -10,14 +10,12 @@ function trace() {
 function usage() {
 cat << EOF
 Usage:
-  $0 format [--check]
-  $0 dev <target> [ghcid-args...]
-  
-  $0 ci-build
-  $0 nix-build
-  $0 stack-build
-  
-  $0 help
+  ./make.sh format [--check]             Formats the Haskell sources with 'ormolu'. Requires Nix.
+  ./make.sh dev <target> [ghcid-args...] Runs 'ghcid' on the given 'target'. Requires Nix.
+  ./make.sh nix-build                    Builds & tests all subprojects using Nix.
+  ./make.sh stack-build                  Builds & tests all subprojects using Stack.
+  ./make.sh ci                           Builds & tests all subprojects using Stack & Nix. Also checks formatting.
+  ./make.sh help                         Shows this message.
 EOF
 }
 
@@ -65,7 +63,7 @@ case "$mode" in
             ! -path '*/.stack-work/*' \
             -execdir ormolu {} --mode "$mode" \;
         ;;
-    "ci-build")
+    "ci")
         [[ $# -gt 0 ]] && invalid_syntax
         trace ./make.sh format --check
         trace ./make.sh nix-build
@@ -91,9 +89,10 @@ case "$mode" in
     "help")
         [[ $# -gt 0 ]] && invalid_syntax
         usage
+        exit 0
         ;;
     *)
         invalid_syntax
 esac
 
-echo "Done."
+echo "./make.sh: All good."
