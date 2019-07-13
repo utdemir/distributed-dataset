@@ -24,6 +24,12 @@ overlays = se: su: {
           ];
     });
 
+  "distributed-dataset-hadoop" =
+    se.callCabal2nix
+      "distributed-dataset-hadoop"
+      (gitignore ./distributed-dataset-hadoop)
+      {};
+
   "distributed-dataset-opendatasets" =
     se.callCabal2nix
       "distributed-dataset-opendatasets"
@@ -65,13 +71,15 @@ in rec
 {
   "distributed-dataset" = haskellPackages.distributed-dataset;
   "distributed-dataset-aws" = haskellPackages.distributed-dataset-aws;
+  "distributed-dataset-hadoop" = haskellPackages.distributed-dataset-hadoop;
   "distributed-dataset-opendatasets" = haskellPackages.distributed-dataset-opendatasets;
   "example-gh" = haskellPackages.example-gh;
 
   docs = pkgs.runCommand "distributed-dataset-docs" {
     buildInputs =
       [ (haskellPackages.ghcWithPackages (hp: with hp;
-          [ distributed-dataset distributed-dataset-aws distributed-dataset-opendatasets ]))
+          [ distributed-dataset distributed-dataset-aws distributed-dataset-hadoop
+            distributed-dataset-opendatasets ]))
         haskellPackages.standalone-haddock
       ];
   } ''
@@ -81,6 +89,7 @@ in rec
       -o "$out" \
       ${distributed-dataset.src} \
       ${distributed-dataset-aws.src} \
+      ${distributed-dataset-hadoop.src} \
       ${distributed-dataset-opendatasets.src}
   '';
 
@@ -88,6 +97,7 @@ in rec
     packages = p: with p; [
       distributed-dataset
       distributed-dataset-aws
+      distributed-dataset-hadoop
       distributed-dataset-opendatasets
       example-gh
     ];
