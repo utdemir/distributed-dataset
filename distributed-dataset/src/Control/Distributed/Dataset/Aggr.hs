@@ -4,23 +4,23 @@
 {-# LANGUAGE TypeApplications #-}
 
 module Control.Distributed.Dataset.Aggr
-  ( Aggr
-  , aggrConst
-  , aggrCount
-  , aggrSum
-  , aggrMean
-  , aggrMax
-  , aggrMin
-  , aggrCollect
-  , aggrDistinct
-  , aggrTopK
-  , aggrBottomK
-  , aggrFiltered
-  , -- * Creating Aggr's
-    aggrFromMonoid
-  , aggrFromReduce
-  , aggrFromFold
-  )
+  ( Aggr,
+    aggrConst,
+    aggrCount,
+    aggrSum,
+    aggrMean,
+    aggrMax,
+    aggrMin,
+    aggrCollect,
+    aggrDistinct,
+    aggrTopK,
+    aggrBottomK,
+    aggrFiltered,
+    -- * Creating Aggr's
+    aggrFromMonoid,
+    aggrFromReduce,
+    aggrFromFold
+    )
 where
 
 -------------------------------------------------------------------------------
@@ -60,9 +60,9 @@ aggrCount =
 -- Calculates the mean of the inputs.
 aggrMean :: Aggr Double Double
 aggrMean =
-  aggrConst (static (/)) `staticApply`
-    aggrSum (static Dict) `staticApply`
-    staticMap (static realToFrac) aggrCount
+  aggrConst (static (/))
+    `staticApply` aggrSum (static Dict)
+    `staticApply` staticMap (static realToFrac) aggrCount
 
 -- |
 -- Return the maximum of the inputs.
@@ -107,16 +107,14 @@ aggrDistinct =
 
 -- * Top K
 data TopK a = TopK Int (H.Heap a)
-  deriving Typeable
+  deriving (Typeable)
 
 instance Semigroup (TopK a) where
-
   TopK c1 h1 <> TopK c2 h2 =
     let m = min c1 c2
      in TopK m (H.drop (H.size h1 + H.size h2 - m) $ H.union h1 h2)
 
 instance Monoid (TopK a) where
-
   mempty = TopK maxBound H.empty
 
 -- |
@@ -133,30 +131,30 @@ aggrTopK
 aggrTopK dict count fc =
   aggrFromFold
     ( static
-      ( \Dict c f ->
-        F.foldMap
-          (\a -> TopK c . H.singleton $ H.Entry (f a) a)
-          (\(TopK _ h) -> map H.payload . sortOn Down $ H.toUnsortedList h)
-      ) `cap`
-      dict `cap`
-      cpure (static Dict) count `cap`
-      fc
-    )
+        ( \Dict c f ->
+            F.foldMap
+              (\a -> TopK c . H.singleton $ H.Entry (f a) a)
+              (\(TopK _ h) -> map H.payload . sortOn Down $ H.toUnsortedList h)
+          )
+        `cap` dict
+        `cap` cpure (static Dict) count
+        `cap` fc
+      )
     ( static
-      ( \Dict c f ->
-        F.Fold (\a b -> take c $ merge f a b) [] id
-      ) `cap`
-      dict `cap`
-      cpure (static Dict) count `cap`
-      fc
-    )
+        ( \Dict c f ->
+            F.Fold (\a b -> take c $ merge f a b) [] id
+          )
+        `cap` dict
+        `cap` cpure (static Dict) count
+        `cap` fc
+      )
   where
     merge _ xs [] = xs
     merge _ [] ys = ys
     merge f xss@(x : xs) yss@(y : ys) =
       if f x > f y
-      then x : merge f xs yss
-      else y : merge f xss ys
+        then x : merge f xs yss
+        else y : merge f xss ys
 
 -- |
 -- Returns the 'n' least elements according to a key function. Similar to:

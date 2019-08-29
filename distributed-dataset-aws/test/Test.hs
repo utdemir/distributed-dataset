@@ -25,19 +25,20 @@ import System.Exit (exitFailure)
 --------------------------------------------------------------------------------
 prop_backendCreate :: Property
 prop_backendCreate =
-  withTests 1 . property $
-    liftIO .
-    withLambdaBackend opts $ \_ -> do
-    threadDelay $ 5 * 1000 * 1000
-    return ()
+  withTests 1 . property
+    $ liftIO
+    . withLambdaBackend opts
+    $ \_ -> do
+      threadDelay $ 5 * 1000 * 1000
+      return ()
 
 prop_backendFork :: Property
 prop_backendFork =
   withTests 1 . property $ do
     r <-
       liftIO . withLambdaBackend opts $ \backend ->
-        fork backend (static Dict) (static (return $ Just @Integer 42)) >>=
-          await
+        fork backend (static Dict) (static (return $ Just @Integer 42))
+          >>= await
     r === Just 42
 
 prop_backendLargeReturnValue :: Property
@@ -45,8 +46,8 @@ prop_backendLargeReturnValue =
   withTests 1 . property $ do
     r <-
       liftIO . withLambdaBackend opts $ \backend ->
-        fork backend (static Dict) (static (return $ T.replicate (pow 2 22) "h")) >>=
-          await
+        fork backend (static Dict) (static (return $ T.replicate (pow 2 22) "h"))
+          >>= await
     T.length r === pow 2 22
 
 prop_backendOOM :: Property
@@ -54,12 +55,12 @@ prop_backendOOM =
   withTests 1 . property $ do
     r <-
       liftIO . try $ withLambdaBackend opts $ \backend ->
-        fork backend (static Dict) (static (return $ T.replicate (pow 2 32) "h")) >>=
-          await
+        fork backend (static Dict) (static (return $ T.replicate (pow 2 32) "h"))
+          >>= await
     case r of
       Left (ExecutorFailedException t)
-        | "Backend threw an exception: InvokeException \"Lambda function failed" `T.isPrefixOf`
-            t ->
+        | "Backend threw an exception: InvokeException \"Lambda function failed"
+            `T.isPrefixOf` t ->
           return ()
       Left other -> do
         annotateShow other
@@ -71,34 +72,34 @@ prop_shuffleStorePut :: Property
 prop_shuffleStorePut =
   withTests 1 . property $ do
     let ss = s3ShuffleStore "distributed-dataset" "shuffle-store/"
-    liftIO . runConduitRes $
-      mapM_ yield ["foo", "bar", "baz"] .|
-      (unclosure $ ssPut ss) 42
+    liftIO . runConduitRes
+      $ mapM_ yield ["foo", "bar", "baz"]
+      .| (unclosure $ ssPut ss) 42
 
 prop_shuffleStoreGetAfterPut :: Property
 prop_shuffleStoreGetAfterPut =
   withTests 1 . property $ do
     let ss = s3ShuffleStore "distributed-dataset" "shuffle-store/"
-    liftIO . runConduitRes $
-      mapM_ yield ["foo", "bar", "baz"] .|
-      (unclosure $ ssPut ss) 42
+    liftIO . runConduitRes
+      $ mapM_ yield ["foo", "bar", "baz"]
+      .| (unclosure $ ssPut ss) 42
     r <-
-      liftIO . runConduitRes $
-        (unclosure $ ssGet ss) 42 RangeAll .|
-        C.foldMap id
+      liftIO . runConduitRes
+        $ (unclosure $ ssGet ss) 42 RangeAll
+        .| C.foldMap id
     r === "foobarbaz"
 
 prop_shuffleStoreGetRangeAfterPut :: Property
 prop_shuffleStoreGetRangeAfterPut =
   withTests 1 . property $ do
     let ss = s3ShuffleStore "distributed-dataset" "shuffle-store/"
-    liftIO . runConduitRes $
-      mapM_ yield ["foo", "bar", "baz"] .|
-      (unclosure $ ssPut ss) 42
+    liftIO . runConduitRes
+      $ mapM_ yield ["foo", "bar", "baz"]
+      .| (unclosure $ ssPut ss) 42
     r <-
-      liftIO . runConduitRes $
-        (unclosure $ ssGet ss) 42 (RangeOnly 3 5) .|
-        C.foldMap id
+      liftIO . runConduitRes
+        $ (unclosure $ ssGet ss) 42 (RangeOnly 3 5)
+        .| C.foldMap id
     r === "bar"
 
 pow :: Int -> Int -> Int

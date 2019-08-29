@@ -50,13 +50,13 @@ case "$mode" in
         ;;
     "format")
         [[ $# -gt 1 ]] && invalid_syntax
-        if [[ $# == 0 ]]; 
+        if [[ $# == 0 ]];
         then mode="inplace"
         else
             ! [[ $1 == "--check" ]] && invalid_syntax
             mode="check"
         fi
-        
+
         ensure_nix_shell
         trace find . -name '*.hs' \
             ! -path '*/dist-newstyle/*' \
@@ -72,12 +72,12 @@ case "$mode" in
     "nix-build")
         [[ $# -gt 0 ]] && invalid_syntax
         # If I'm running it, also push the derivations to cachix.
-        if [ "$USER" = "utdemir" ]; then 
+        if [ "$USER" = "utdemir" ]; then
           tmp="$(mktemp -d)"
           trap "rm -r '$tmp'" EXIT
           trace nix build -o $tmp/result
           echo $tmp/result | trace cachix push utdemir
-        else 
+        else
           trace nix build --no-link
         fi
         ;;

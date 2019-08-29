@@ -3,10 +3,10 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Control.Distributed.Fork.Utils
-  ( forkConcurrently
-  , Options (..)
-  , defaultOptions
-  )
+  ( forkConcurrently,
+    Options (..),
+    defaultOptions
+    )
 where
 
 --------------------------------------------------------------------------------
@@ -27,34 +27,31 @@ import qualified System.Console.Terminal.Size as TS
 --------------------------------------------------------------------------------
 data Options
   = Options
-      { oRetries :: Int
-      , oShowProgress :: Bool
-      }
+      { oRetries :: Int,
+        oShowProgress :: Bool
+        }
 
 defaultOptions :: Options
 defaultOptions = Options 2 True
 
 data Progress
   = Progress
-      { waiting :: Int
-      , submitted :: Int
-      , started :: Int
-      , finished :: Int
-      , retried :: Int
-      }
-  deriving Eq
+      { waiting :: Int,
+        submitted :: Int,
+        started :: Int,
+        finished :: Int,
+        retried :: Int
+        }
+  deriving (Eq)
 
 instance Semigroup Progress where
-
   Progress a1 b1 c1 d1 e1 <> Progress a2 b2 c2 d2 e2 =
     Progress (a1 + a2) (b1 + b2) (c1 + c2) (d1 + d2) (e1 + e2)
 
 instance Monoid Progress where
-
   mempty = Progress 0 0 0 0 0
 
 instance Group Progress where
-
   invert (Progress a b c d e) =
     Progress (negate a) (negate b) (negate c) (negate d) (negate e)
 
@@ -75,8 +72,8 @@ forkConcurrently options backend dict xs = do
   result <- async $ mapM wait asyncs
   pbar <-
     if oShowProgress options
-    then progressThread st (length xs)
-    else async $ return ()
+      then progressThread st (length xs)
+      else async $ return ()
   fst <$> waitBoth result pbar
   where
     updateThread st act =
@@ -109,22 +106,23 @@ forkConcurrently options backend dict xs = do
       let ratio = fromIntegral total / fromIntegral (termWidth - 2) :: Double
       async . fix $ \recurse -> do
         progress <-
-          atomically $
-            readTVar st >>= \case
-            (False, _) -> retry
-            (True, p) -> do
-              writeTVar st (False, p)
-              return p
+          atomically
+            $ readTVar st
+            >>= \case
+              (False, _) -> retry
+              (True, p) -> do
+                writeTVar st (False, p)
+                return p
         let p c n = replicate (truncate (fromIntegral n / ratio)) c
-        putStr . concat $
-          [ "\r"
-          , "["
-          , p '#' (finished progress)
-          , p ':' (started progress)
-          , p '.' (submitted progress)
-          , p ' ' (waiting progress)
-          , "]"
-          ]
+        putStr . concat
+          $ [ "\r",
+              "[",
+              p '#' (finished progress),
+              p ':' (started progress),
+              p '.' (submitted progress),
+              p ' ' (waiting progress),
+              "]"
+              ]
         if finished progress < total
-        then threadDelay 10000 >> recurse
-        else putStrLn ""
+          then threadDelay 10000 >> recurse
+          else putStrLn ""

@@ -23,26 +23,26 @@
 -- requires your host environment to be Linux. In future I plan to provide a set
 -- of scripts using Docker to overcome this limitation.
 module Control.Distributed.Fork
-  ( fork
-  , initDistributedFork
-  , Backend
-  , -- * Handle
-    Handle
-  , await
-  , -- * ExecutorStatus
-    pollHandle
-  , ExecutorStatus (..)
-  , ExecutorPendingStatus (..)
-  , ExecutorFinalStatus (..)
-  , -- * Exceptions
-    ExecutorFailedException (..)
-  , -- * Re-exports
-    Serializable
-  , Closure
-  , cap
-  , cpure
-  , Dict (Dict)
-  )
+  ( fork,
+    initDistributedFork,
+    Backend,
+    -- * Handle
+    Handle,
+    await,
+    -- * ExecutorStatus
+    pollHandle,
+    ExecutorStatus (..),
+    ExecutorPendingStatus (..),
+    ExecutorFinalStatus (..),
+    -- * Exceptions
+    ExecutorFailedException (..),
+    -- * Re-exports
+    Serializable,
+    Closure,
+    cap,
+    cpure,
+    Dict (Dict)
+    )
 where
 
 --------------------------------------------------------------------------------

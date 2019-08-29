@@ -1,4 +1,8 @@
-{ pkgs ? import ./pkgs.nix
+let
+sources = import ./nix/sources.nix;
+in
+
+{ pkgs ? import sources.nixpkgs { config.allowBroken = true; }
 }:
 
 let
@@ -43,18 +47,14 @@ overlays = se: su: {
           ];
     });
 
-  # Use newer version
-  stratosphere = se.stratosphere_0_40_0;
-
   # not on Hackage yet
-  ormolu =
-    se.callCabal2nix
-      "ormolu"
-      (builtins.fetchGit {
-        url = "https://github.com/tweag/ormolu";
-        rev = "28c35cc8dffca668e5472bec76a4f489b2b3198e";
-      })
-      {};
+  ormolu = se.callCabal2nix "ormolu" sources.ormolu {};
+
+  amazonka-core =
+    pkgs.haskell.lib.doJailbreak su.amazonka-core;
+
+  amazonka =
+    pkgs.haskell.lib.doJailbreak su.amazonka;
 };
 
 haskellPackages = pkgs.haskell.packages.ghc865.override {
@@ -67,6 +67,8 @@ in rec
   "distributed-dataset-aws" = haskellPackages.distributed-dataset-aws;
   "distributed-dataset-opendatasets" = haskellPackages.distributed-dataset-opendatasets;
   "example-gh" = haskellPackages.example-gh;
+
+  inherit haskellPackages;
 
   docs = pkgs.runCommand "distributed-dataset-docs" {
     buildInputs =

@@ -9,9 +9,9 @@ module Control.Distributed.Dataset.OpenDatasets.GHArchive.Types where
 --------------------------------------------------------------------------------
 import Codec.Serialise (Serialise)
 import Control.Distributed.Dataset
-  ( Dict (Dict)
-  , StaticSerialise (staticSerialise)
-  )
+  ( Dict (Dict),
+    StaticSerialise (staticSerialise)
+    )
 import Control.Lens.TH (makeLenses, makePrisms)
 import Data.Aeson ((.:), FromJSON (..), withObject)
 import Data.Text (Text)
@@ -22,21 +22,19 @@ data GHEvent = GHEvent {_gheActor :: GHActor, _gheRepo :: GHRepo, _gheType :: GH
   deriving (Eq, Show, Generic, Serialise)
 
 instance StaticSerialise GHEvent where
-
   staticSerialise = static Dict
 
 instance FromJSON GHEvent where
-
   parseJSON val =
     withObject "GHEvent"
       ( \obj ->
-        GHEvent <$>
-          obj .:
-          "actor" <*>
-          obj .:
-          "repo" <*>
-          parseJSON val
-      )
+          GHEvent
+            <$> obj
+            .: "actor"
+            <*> obj
+            .: "repo"
+            <*> parseJSON val
+        )
       val
 
 data GHEventType
@@ -45,105 +43,93 @@ data GHEventType
   deriving (Eq, Show, Generic, Serialise)
 
 instance StaticSerialise GHEventType where
-
   staticSerialise = static Dict
 
 instance FromJSON GHEventType where
-
   parseJSON =
     withObject "GHEventType"
       ( \obj -> do
-        ty <- obj .: "type"
-        payload <- obj .: "payload"
-        case ty of
-          "PushEvent" -> GHPushEvent <$> parseJSON payload
-          other -> return $ GHOtherEvent other
-      )
+          ty <- obj .: "type"
+          payload <- obj .: "payload"
+          case ty of
+            "PushEvent" -> GHPushEvent <$> parseJSON payload
+            other -> return $ GHOtherEvent other
+        )
 
 newtype GHPushEventPayload = GHPushEventPayload {_ghpepCommits :: [GHCommit]}
   deriving (Eq, Show, Generic, Serialise)
 
 instance StaticSerialise GHPushEventPayload where
-
   staticSerialise = static Dict
 
 instance FromJSON GHPushEventPayload where
-
   parseJSON =
     withObject "GHPushEventPayload" $ \obj ->
-      GHPushEventPayload <$>
-        obj .:
-        "commits"
+      GHPushEventPayload
+        <$> obj
+        .: "commits"
 
 data GHCommit = GHCommit {_ghcAuthor :: GHCommitAuthor, _ghcMessage :: Text, _ghcSha :: Text}
   deriving (Eq, Show, Generic, Serialise)
 
 instance StaticSerialise GHCommit where
-
   staticSerialise = static Dict
 
 instance FromJSON GHCommit where
-
   parseJSON =
     withObject "GHCommit" $ \obj ->
-      GHCommit <$>
-        obj .:
-        "author" <*>
-        obj .:
-        "message" <*>
-        obj .:
-        "sha"
+      GHCommit
+        <$> obj
+        .: "author"
+        <*> obj
+        .: "message"
+        <*> obj
+        .: "sha"
 
 data GHCommitAuthor = GHCommitAuthor {_ghcaEmail :: Text, _ghcaName :: Text}
   deriving (Eq, Show, Generic, Serialise)
 
 instance StaticSerialise GHCommitAuthor where
-
   staticSerialise = static Dict
 
 instance FromJSON GHCommitAuthor where
-
   parseJSON =
     withObject "GHCommitAuthor" $ \obj ->
-      GHCommitAuthor <$>
-        obj .:
-        "email" <*>
-        obj .:
-        "name"
+      GHCommitAuthor
+        <$> obj
+        .: "email"
+        <*> obj
+        .: "name"
 
 data GHActor = GHActor {_ghaId :: Integer, _ghaLogin :: Text}
   deriving (Eq, Show, Generic, Serialise)
 
 instance StaticSerialise GHActor where
-
   staticSerialise = static Dict
 
 instance FromJSON GHActor where
-
   parseJSON =
     withObject "GHActor" $ \obj ->
-      GHActor <$>
-        obj .:
-        "id" <*>
-        obj .:
-        "login"
+      GHActor
+        <$> obj
+        .: "id"
+        <*> obj
+        .: "login"
 
 data GHRepo = GHRepo {_ghrId :: Integer, _ghrName :: Text}
   deriving (Eq, Show, Generic, Serialise)
 
 instance StaticSerialise GHRepo where
-
   staticSerialise = static Dict
 
 instance FromJSON GHRepo where
-
   parseJSON =
     withObject "GHRepo" $ \obj ->
-      GHRepo <$>
-        obj .:
-        "id" <*>
-        obj .:
-        "name"
+      GHRepo
+        <$> obj
+        .: "id"
+        <*> obj
+        .: "name"
 
 makeLenses ''GHEvent
 

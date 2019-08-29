@@ -16,6 +16,6 @@ localProcessBackend =
   Backend $ \stdin' -> do
     executable <- liftIO getExecutablePath
     let conf =
-          setStdin (byteStringInput $ BL.fromStrict stdin') $
-            proc executable [argExecutorMode]
+          setStdin (byteStringInput $ BL.fromStrict stdin')
+            $ proc executable [argExecutorMode]
     liftIO . fmap BL.toStrict $ readProcessStdout_ conf

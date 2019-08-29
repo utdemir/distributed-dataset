@@ -2,10 +2,10 @@
 {-# LANGUAGE TypeApplications #-}
 
 module Control.Distributed.Dataset.AWS
-  ( s3ShuffleStore
-  , -- Re-exports
+  ( s3ShuffleStore,
+    -- Re-exports
     module Control.Distributed.Fork.AWS
-  )
+    )
 where
 
 --------------------------------------------------------------------------------
@@ -34,35 +34,37 @@ import System.IO.Unsafe
 s3ShuffleStore :: T.Text -> T.Text -> ShuffleStore
 s3ShuffleStore bucket' prefix' =
   ShuffleStore
-    { ssGet = static
-        ( \bucket prefix num range -> do
-          ret <-
-            runAWS globalAWSEnv $
-              send $
-              S3.getObject
-                (S3.BucketName bucket)
-                (S3.ObjectKey $ prefix <> T.pack (show num)) &
-              S3.goRange .~
-              ( case range of
-                RangeAll -> Nothing
-                RangeOnly lo hi ->
-                  Just . T.pack $ "bytes=" <> show lo <> "-" <> show hi
-              )
-          _streamBody $ ret ^. S3.gorsBody
-        ) `cap`
-        cpure (static Dict) bucket' `cap`
-        cpure (static Dict) prefix'
-    , ssPut = static
-      ( \bucket prefix num ->
-        void . transPipe @(AWST (ResourceT IO)) (runAWS globalAWSEnv) $
-          S3.streamUpload Nothing $
-          S3.createMultipartUpload
-            (S3.BucketName bucket)
-            (S3.ObjectKey $ prefix <> T.pack (show num))
-      ) `cap`
-      cpure (static Dict) bucket' `cap`
-      cpure (static Dict) prefix'
-    }
+    { ssGet =
+        static
+          ( \bucket prefix num range -> do
+              ret <-
+                runAWS globalAWSEnv
+                  $ send
+                  $ S3.getObject
+                      (S3.BucketName bucket)
+                      (S3.ObjectKey $ prefix <> T.pack (show num))
+                  & S3.goRange
+                  .~ ( case range of
+                         RangeAll -> Nothing
+                         RangeOnly lo hi ->
+                           Just . T.pack $ "bytes=" <> show lo <> "-" <> show hi
+                       )
+              _streamBody $ ret ^. S3.gorsBody
+            )
+          `cap` cpure (static Dict) bucket'
+          `cap` cpure (static Dict) prefix',
+      ssPut =
+        static
+          ( \bucket prefix num ->
+              void . transPipe @(AWST (ResourceT IO)) (runAWS globalAWSEnv)
+                $ S3.streamUpload Nothing
+                $ S3.createMultipartUpload
+                    (S3.BucketName bucket)
+                    (S3.ObjectKey $ prefix <> T.pack (show num))
+            )
+          `cap` cpure (static Dict) bucket'
+          `cap` cpure (static Dict) prefix'
+      }
 
 -- FIXME
 -- Currently ShuffleStore does not allow storing data between the 'ssGet's.

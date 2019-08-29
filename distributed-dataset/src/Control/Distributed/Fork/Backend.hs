@@ -5,25 +5,25 @@ See 'Control.Distributed.Fork.Local.localProcessBackend' for a minimal example.
 -}
 module Control.Distributed.Fork.Backend
   ( -- * Writing a 'Backend'.
-    Backend (..)
-  , BackendM
-  , argExecutorMode
-  , -- * Reporting status
-    ExecutorFinalStatus (..)
-  , ExecutorStatus (..)
-  , ExecutorPendingStatus (..)
-  , waiting
-  , waitingDesc
-  , submitted
-  , submittedDesc
-  , started
-  , startedDesc
-  , -- * Utils
-    throttledBackend
-  , -- * Re-exports
-    liftIO
-  , getExecutablePath
-  )
+    Backend (..),
+    BackendM,
+    argExecutorMode,
+    -- * Reporting status
+    ExecutorFinalStatus (..),
+    ExecutorStatus (..),
+    ExecutorPendingStatus (..),
+    waiting,
+    waitingDesc,
+    submitted,
+    submittedDesc,
+    started,
+    startedDesc,
+    -- * Utils
+    throttledBackend,
+    -- * Re-exports
+    liftIO,
+    getExecutablePath
+    )
 where
 
 --------------------------------------------------------------------------------

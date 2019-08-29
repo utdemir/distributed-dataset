@@ -3,12 +3,12 @@
 {-# LANGUAGE StaticPointers #-}
 
 module Control.Distributed.Dataset.Internal.Aggr
-  ( Aggr (..)
-  , aggrFromMonoid
-  , aggrFromReduce
-  , aggrFromFold
-  , aggrConst
-  )
+  ( Aggr (..),
+    aggrFromMonoid,
+    aggrFromReduce,
+    aggrFromFold,
+    aggrConst
+    )
 where
 
 -------------------------------------------------------------------------------
@@ -49,18 +49,15 @@ data Aggr a b
       (Closure (F.Fold t b))
 
 instance Typeable m => StaticFunctor (Aggr m) where
-
   staticMap f (Aggr f1c f2c) =
     Aggr f1c (static fmap `cap` f `cap` f2c)
 
 instance Typeable m => StaticApply (Aggr m) where
-
   staticApply (Aggr f1c f2c) (Aggr f1c' f2c') =
     Aggr (static (\f1 f1' -> (,) <$> f1 <*> f1') `cap` f1c `cap` f1c')
       (static (\f2 f2' -> ($) <$> lmap fst f2 <*> lmap snd f2') `cap` f2c `cap` f2c')
 
 instance StaticProfunctor Aggr where
-
   staticDimap l r (Aggr f1 f2) =
     Aggr (static lmap `cap` l `cap` f1)
       (static rmap `cap` r `cap` f2)

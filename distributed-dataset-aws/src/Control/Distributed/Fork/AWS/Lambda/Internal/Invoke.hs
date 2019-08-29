@@ -5,7 +5,7 @@
 
 module Control.Distributed.Fork.AWS.Lambda.Internal.Invoke
   ( withInvoke
-  )
+    )
 where
 
 --------------------------------------------------------------------------------
@@ -46,23 +46,23 @@ the responses.
 -}
 data LambdaState
   = LambdaState
-      { lsInvocations :: M.Map Int (IO ResponsePayload -> IO ())
-      , lsNextId :: Int
-      }
+      { lsInvocations :: M.Map Int (IO ResponsePayload -> IO ()),
+        lsNextId :: Int
+        }
 
 data LambdaEnv
   = LambdaEnv
-      { leState :: MVar LambdaState
-      , leStack :: StackInfo
-      , leEnv :: Env
-      }
+      { leState :: MVar LambdaState,
+        leStack :: StackInfo,
+        leEnv :: Env
+        }
 
 newLambdaEnv :: Env -> StackInfo -> IO LambdaEnv
 newLambdaEnv env st =
-  LambdaEnv <$>
-    newMVar (LambdaState M.empty 0) <*>
-    return st <*>
-    return env
+  LambdaEnv
+    <$> newMVar (LambdaState M.empty 0)
+    <*> return st
+    <*> return env
 
 {-
 When invoking a function, we insert a new id to the state and then call Lambda.
@@ -79,62 +79,63 @@ execute LambdaEnv {..} (invocationThrottle, executionThrottle, downloadThrottle)
     liftIO $ modifyMVar leState $ \LambdaState {..} ->
       return
         ( LambdaState
-            { lsNextId = lsNextId + 1
-            , lsInvocations = M.insert lsNextId (void . tryPutMVar mvar) lsInvocations
-            }
-        , lsNextId
-        )
+            { lsNextId = lsNextId + 1,
+              lsInvocations = M.insert lsNextId (void . tryPutMVar mvar) lsInvocations
+              },
+          lsNextId
+          )
   answer <-
     throttled executionThrottle $ do
       -- invoke the lambda function
       irs <-
-        throttled invocationThrottle $ runResourceT . runAWS leEnv $
-          send $
-          invoke
-            (siFunc leStack)
-            ( BL.toStrict . A.encode $
-              A.object
-                [ (T.pack "d", A.toJSON . T.decodeUtf8 $ B64.encode input)
-                , (T.pack "i", A.toJSON id')
-                ]
-            ) &
-          iInvocationType ?~
-          Event
+        throttled invocationThrottle $ runResourceT . runAWS leEnv
+          $ send
+          $ invoke
+              (siFunc leStack)
+              ( BL.toStrict . A.encode
+                  $ A.object
+                      [ (T.pack "d", A.toJSON . T.decodeUtf8 $ B64.encode input),
+                        (T.pack "i", A.toJSON id')
+                        ]
+                )
+          & iInvocationType
+          ?~ Event
       submitted
-      unless (irs ^. irsStatusCode `div` 100 == 2) $
-        throwIO .
-        InvokeException $
-        "Invoke failed. Status code: " <>
-        T.pack (show $ irs ^. irsStatusCode)
+      unless (irs ^. irsStatusCode `div` 100 == 2)
+        $ throwIO
+        . InvokeException
+        $ "Invoke failed. Status code: "
+        <> T.pack (show $ irs ^. irsStatusCode)
       -- wait fo the answer
       liftIO . join $ readMVar mvar
   case answer of
     ResponsePayloadInline p ->
       case B64.decode . T.encodeUtf8 $ p of
         Left err ->
-          throwIO . InvokeException $
-            "Error decoding answer: " <>
-            T.pack err
+          throwIO . InvokeException
+            $ "Error decoding answer: "
+            <> T.pack err
         Right x -> return x
     ResponsePayloadS3 p ->
-      throttled downloadThrottle $
-        runResourceT .
-        runAWS leEnv $ do
-        let bucketName = S3.BucketName $ siAnswerBucket leStack
-        gors <- send $ getObject bucketName (ObjectKey p)
-        unless (gors ^. gorsResponseStatus `div` 100 == 2) $
-          throwIO .
-          InvokeException $
-          "Downloading result failed. Status code: " <>
-          T.pack (show $ gors ^. gorsResponseStatus)
-        bs <- mconcat <$> sinkBody (gors ^. gorsBody) sinkList
-        dors <- send $ deleteObject bucketName (ObjectKey p)
-        unless (dors ^. dorsResponseStatus `div` 100 == 2) $
-          throwIO .
-          InvokeException $
-          "Deleting result failed. Status code: " <>
-          T.pack (show $ dors ^. dorsResponseStatus)
-        return bs
+      throttled downloadThrottle
+        $ runResourceT
+        . runAWS leEnv
+        $ do
+          let bucketName = S3.BucketName $ siAnswerBucket leStack
+          gors <- send $ getObject bucketName (ObjectKey p)
+          unless (gors ^. gorsResponseStatus `div` 100 == 2)
+            $ throwIO
+            . InvokeException
+            $ "Downloading result failed. Status code: "
+            <> T.pack (show $ gors ^. gorsResponseStatus)
+          bs <- mconcat <$> sinkBody (gors ^. gorsBody) sinkList
+          dors <- send $ deleteObject bucketName (ObjectKey p)
+          unless (dors ^. dorsResponseStatus `div` 100 == 2)
+            $ throwIO
+            . InvokeException
+            $ "Deleting result failed. Status code: "
+            <> T.pack (show $ dors ^. dorsResponseStatus)
+          return bs
 
 {-
 And then we listen from answerQueue for the responses
@@ -147,12 +148,12 @@ answerThread LambdaEnv {..} =
       Response id' payload <-
         case A.decodeStrict . T.encodeUtf8 <$> msg ^. mBody of
           Nothing ->
-            throwIO . InvokeException $
-              "Error decoding answer: no body."
+            throwIO . InvokeException
+              $ "Error decoding answer: no body."
           Just Nothing ->
-            throwIO . InvokeException $
-              "Error decoding answer: invalid json: " <>
-              T.pack (show msg)
+            throwIO . InvokeException
+              $ "Error decoding answer: invalid json: "
+              <> T.pack (show msg)
           Just (Just r) -> return r
       liftIO . modifyMVar_ leState $ \s ->
         case M.updateLookupWithKey (\_ _ -> Nothing) id' (lsInvocations s) of
@@ -173,22 +174,22 @@ deadLetterThread LambdaEnv {..} =
           (Nothing, _) -> return s
           (Just x, s') -> do
             let errMsg =
-                  msg ^.
-                    mMessageAttributes .
-                    at "ErrorMessage" .
-                    _Just .
-                    mavStringValue
-            x . throwIO . InvokeException $
-              "Lambda function failed: " <>
-              fromMaybe "error message not found." errMsg
+                  msg
+                    ^. mMessageAttributes
+                    . at "ErrorMessage"
+                    . _Just
+                    . mavStringValue
+            x . throwIO . InvokeException
+              $ "Lambda function failed: "
+              <> fromMaybe "error message not found." errMsg
             return $ s {lsInvocations = s'}
   where
     decodeId :: Message -> IO Int
     decodeId msg = case msg ^? mBody . _Just . key "i" . _Number of
       Nothing ->
-        throwIO . InvokeException $
-          "Can not find Id: " <>
-          T.pack (show msg)
+        throwIO . InvokeException
+          $ "Can not find Id: "
+          <> T.pack (show msg)
       Just x -> return $ truncate x
 
 {-
@@ -197,38 +198,38 @@ A helper function to read from SQS queues.
 sqsReceiveSome :: T.Text -> AWS [Message]
 sqsReceiveSome queue = do
   rmrs <-
-    send $
-      receiveMessage queue &
-      rmVisibilityTimeout ?~
-      10 &
-      rmWaitTimeSeconds ?~
-      10 &
-      rmMaxNumberOfMessages ?~
-      10 &
-      rmMessageAttributeNames .~
-      ["All"]
-  unless (rmrs ^. rmrsResponseStatus == 200) $
-    liftIO .
-    throwIO .
-    InvokeException $
-    "Error receiving messages: " <>
-    T.pack (show $ rmrs ^. rmrsResponseStatus)
+    send
+      $ receiveMessage queue
+      & rmVisibilityTimeout
+      ?~ 10
+      & rmWaitTimeSeconds
+      ?~ 10
+      & rmMaxNumberOfMessages
+      ?~ 10
+      & rmMessageAttributeNames
+      .~ ["All"]
+  unless (rmrs ^. rmrsResponseStatus == 200)
+    $ liftIO
+    . throwIO
+    . InvokeException
+    $ "Error receiving messages: "
+    <> T.pack (show $ rmrs ^. rmrsResponseStatus)
   let msgs = rmrs ^. rmrsMessages
   unless (null msgs) $ do
     dmbrs <-
-      send $ deleteMessageBatch queue &
-        dmbEntries .~
-        [ deleteMessageBatchRequestEntry
-          (T.pack $ show i)
-          (fromJust $ msg ^. mReceiptHandle)
-        | (i, msg) <- zip [(0 :: Integer)..] msgs
-        ]
-    unless (dmbrs ^. dmbrsResponseStatus == 200) $
-      liftIO .
-      throwIO .
-      InvokeException $
-      "Error deleting received messages: " <>
-      T.pack (show $ rmrs ^. rmrsResponseStatus)
+      send $ deleteMessageBatch queue
+        & dmbEntries
+        .~ [ deleteMessageBatchRequestEntry
+               (T.pack $ show i)
+               (fromJust $ msg ^. mReceiptHandle)
+             | (i, msg) <- zip [(0 :: Integer) ..] msgs
+             ]
+    unless (dmbrs ^. dmbrsResponseStatus == 200)
+      $ liftIO
+      . throwIO
+      . InvokeException
+      $ "Error deleting received messages: "
+      <> T.pack (show $ rmrs ^. rmrsResponseStatus)
   return msgs
 
 --------------------------------------------------------------------------------
@@ -248,6 +249,6 @@ withInvoke env throttles stack f = do
 --------------------------------------------------------------------------------
 newtype InvokeException
   = InvokeException T.Text
-  deriving Show
+  deriving (Show)
 
 instance Exception InvokeException

@@ -9,54 +9,54 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Control.Distributed.Dataset
-  ( Dataset
-  , -- * Transformations
-    dMap
-  , dFilter
-  , dConcatMap
-  , dGroupedAggr
-  , dDistinct
-  , dDistinctBy
-  , -- ** Low-level transformations
-    dCoalesce
-  , dPipe
-  , dPartition
-  , -- * Aggregations
-    module Control.Distributed.Dataset.Aggr
-  , -- * Execution
-    dAggr
-  , dFetch
-  , dToList
-  , DD
-  , runDD
-  , runDDWith
-  , Backend
-  , ShuffleStore
-  , -- * Creating datasets
-    Partition
-  , mkPartition
-  , dExternal
-  , -- * Class
-    StaticSerialise (..)
-  , StaticHashable (..)
-  , -- * Re-exports
-    initDistributedFork
-  , liftIO
-  , (&)
-  , -- ** Closure
-    Closure
-  , cap
-  , cpure
-  , Dict (Dict)
-  )
+  ( Dataset,
+    -- * Transformations
+    dMap,
+    dFilter,
+    dConcatMap,
+    dGroupedAggr,
+    dDistinct,
+    dDistinctBy,
+    -- ** Low-level transformations
+    dCoalesce,
+    dPipe,
+    dPartition,
+    -- * Aggregations
+    module Control.Distributed.Dataset.Aggr,
+    -- * Execution
+    dAggr,
+    dFetch,
+    dToList,
+    DD,
+    runDD,
+    runDDWith,
+    Backend,
+    ShuffleStore,
+    -- * Creating datasets
+    Partition,
+    mkPartition,
+    dExternal,
+    -- * Class
+    StaticSerialise (..),
+    StaticHashable (..),
+    -- * Re-exports
+    initDistributedFork,
+    liftIO,
+    (&),
+    -- ** Closure
+    Closure,
+    cap,
+    cpure,
+    Dict (Dict)
+    )
 where
 
 -------------------------------------------------------------------------------
 import Conduit hiding
-  ( Consumer
-  , Producer
-  , await
-  )
+  ( Consumer,
+    Producer,
+    await
+    )
 import qualified Conduit as C
 import Control.Distributed.Closure
 -------------------------------------------------------------------------------
@@ -132,9 +132,9 @@ dFilter f = dConcatMap $ static (\f_ a -> if f_ a then [a] else []) `cap` f
 dAggr :: (StaticSerialise a, StaticSerialise b) => Aggr a b -> Dataset a -> DD b
 dAggr aggr@(Aggr _ fc) ds = do
   c <-
-    ds &
-      dGroupedAggr 1 (static (const ())) aggr &
-      dFetch
+    ds
+      & dGroupedAggr 1 (static (const ())) aggr
+      & dFetch
   liftIO (runConduitRes $ c .| C.await) >>= return . \case
     Just ((), r) -> r
     Nothing -> F.fold (unclosure fc) []
@@ -155,10 +155,10 @@ dDistinctBy
 dDistinctBy partitionCount (key :: Closure (a -> b)) ds =
   case dStaticSerialise ds of
     Dict ->
-      ds &
-        dPipe (static (\Dict -> dedupe HS.empty) `cap` staticHashable @b `cap` key) &
-        dPartition partitionCount key &
-        dPipe (static (\Dict -> dedupe HS.empty) `cap` staticHashable @b `cap` key)
+      ds
+        & dPipe (static (\Dict -> dedupe HS.empty) `cap` staticHashable @b `cap` key)
+        & dPartition partitionCount key
+        & dPipe (static (\Dict -> dedupe HS.empty) `cap` staticHashable @b `cap` key)
   where
     dedupe acc f =
       C.await >>= \case
@@ -166,8 +166,8 @@ dDistinctBy partitionCount (key :: Closure (a -> b)) ds =
         Just a ->
           let b = f a
            in if b `HS.member` acc
-              then dedupe acc f
-              else yield a >> dedupe (b `HS.insert` acc) f
+                then dedupe acc f
+                else yield a >> dedupe (b `HS.insert` acc) f
 
 -- |
 -- Apply an aggregation to all rows sharing the same key.
@@ -184,37 +184,37 @@ dGroupedAggr
   ( Aggr
       (f1c :: Closure (F.Fold a t))
       (f2c :: Closure (F.Fold t b))
-  )
+    )
   ds =
     case dStaticSerialise ds of
       Dict ->
-        ds &
-          dMap (static (\k a -> (k a, a)) `cap` kc) &
-          dPipe
-            ( static (\Dict -> aggrC @a @t @k) `cap`
-              staticHashable @k `cap`
-              f1c
-            ) &
-          dPartition partitionCount (static (fst @k @t)) &
-          dPipe
-            ( static (\Dict -> aggrC @t @b @k) `cap`
-              staticHashable @k `cap`
-              f2c
-            )
+        ds
+          & dMap (static (\k a -> (k a, a)) `cap` kc)
+          & dPipe
+              ( static (\Dict -> aggrC @a @t @k)
+                  `cap` staticHashable @k
+                  `cap` f1c
+                )
+          & dPartition partitionCount (static (fst @k @t))
+          & dPipe
+              ( static (\Dict -> aggrC @t @b @k)
+                  `cap` staticHashable @k
+                  `cap` f2c
+                )
     where
       aggrC
         :: forall a' b' k'. (Eq k', Hashable k')
         => F.Fold a' b'
-        -> ConduitT (k', a') (k', b') (ResourceT IO) ()
+        -> ConduitT ( k', a') ( k', b') (ResourceT IO) ()
       aggrC (F.Fold step init extract) =
         go step init extract HM.empty
       go
         :: forall a' b' x' k'. (Eq k', Hashable k')
-        => (b' -> a' -> b')
+        => ( b' -> a' -> b')
         -> b'
-        -> (b' -> x')
+        -> ( b' -> x')
         -> HM.HashMap k' b'
-        -> ConduitT (k', a') (k', x') (ResourceT IO) ()
+        -> ConduitT ( k', a') ( k', x') (ResourceT IO) ()
       go step init extract hm =
         C.await >>= \case
           Nothing ->
@@ -222,11 +222,11 @@ dGroupedAggr
               (\(k, b) -> C.yield (k, extract b))
               (HM.toList hm)
           Just (k, a) ->
-            go step init extract $
-              HM.alter
-                ( Just . \case
-                  Nothing -> step init a
-                  Just st -> step st a
-                )
-                k
-                hm
+            go step init extract
+              $ HM.alter
+                  ( Just . \case
+                      Nothing -> step init a
+                      Just st -> step st a
+                    )
+                  k
+                  hm

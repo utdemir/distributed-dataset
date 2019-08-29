@@ -30,8 +30,8 @@ serialiseWithLocC =
             [] -> go [(k, (0, len -1))]
             (k', (beg, end)) : rest ->
               if k' == k
-              then go ((k', (beg, end + len)) : rest)
-              else go ((k, (end + 1, end + len)) : acc)
+                then go ((k', (beg, end + len)) : rest)
+                else go ((k, (end + 1, end + len)) : acc)
 
 deserialiseC :: forall a m. (Serialise a, MonadIO m) => ConduitM ByteString a m ()
 deserialiseC = filterC (not . BS.null) .| pipe
@@ -39,42 +39,41 @@ deserialiseC = filterC (not . BS.null) .| pipe
     pipe =
       fix
         ( \rec' -> \case
-          Nothing ->
-            await >>= \case
-              Nothing -> return ()
-              Just bs ->
-                liftIO (stToIO $ deserialiseIncremental @a) >>= \case
+            Nothing ->
+              await >>= \case
+                Nothing -> return ()
+                Just bs ->
+                  liftIO (stToIO $ deserialiseIncremental @a) >>= \case
+                    Fail {} ->
+                      error "couldn't init parser"
+                    Done {} ->
+                      error "couldn't init parser"
+                    Partial cont ->
+                      liftIO (stToIO $ cont (Just bs)) >>= rec' . Just
+            Just Fail {} ->
+              lift $ error "failed"
+            Just (Done leftover _ ret) -> do
+              yield ret
+              if BS.null leftover
+                then rec' Nothing
+                else liftIO (stToIO $ deserialiseIncremental @a) >>= \case
                   Fail {} ->
                     error "couldn't init parser"
                   Done {} ->
                     error "couldn't init parser"
                   Partial cont ->
-                    liftIO (stToIO $ cont (Just bs)) >>= rec' . Just
-          Just Fail {} ->
-            lift $ error "failed"
-          Just (Done leftover _ ret) -> do
-            yield ret
-            if BS.null leftover
-            then rec' Nothing
-            else
-              liftIO (stToIO $ deserialiseIncremental @a) >>= \case
-                Fail {} ->
-                  error "couldn't init parser"
-                Done {} ->
-                  error "couldn't init parser"
-                Partial cont ->
-                  liftIO (stToIO $ cont (Just leftover)) >>= rec' . Just
-          Just (Partial cont) ->
-            await >>= \case
-              Nothing ->
-                liftIO (stToIO $ cont Nothing) >>= \case
-                  Fail {} ->
-                    error "parse failed"
-                  Done _ _ ret ->
-                    yield ret
-                  Partial _ ->
-                    error "parse failed. abrubt message?"
-              Just bs ->
-                liftIO (stToIO $ cont (Just bs)) >>= rec' . Just
-        )
+                    liftIO (stToIO $ cont (Just leftover)) >>= rec' . Just
+            Just (Partial cont) ->
+              await >>= \case
+                Nothing ->
+                  liftIO (stToIO $ cont Nothing) >>= \case
+                    Fail {} ->
+                      error "parse failed"
+                    Done _ _ ret ->
+                      yield ret
+                    Partial _ ->
+                      error "parse failed. abrubt message?"
+                Just bs ->
+                  liftIO (stToIO $ cont (Just bs)) >>= rec' . Just
+          )
         Nothing

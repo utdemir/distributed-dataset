@@ -60,11 +60,11 @@ initDistributedFork =
 -- run it and exit.
 runExecutor :: IO Void
 runExecutor =
-  BL.hGetContents stdin >>=
-    unclosure .
-    unZlibWrapper .
-    decode @ExecutorClosure >>
-    exitSuccess
+  BL.hGetContents stdin
+    >>= unclosure
+    . unZlibWrapper
+    . decode @ExecutorClosure
+    >> exitSuccess
 
 -- |
 -- An ExecutorClosure is a serialisable IO action.
@@ -81,26 +81,26 @@ type ExecutorClosure = ZlibWrapper (Closure (IO ()))
 newtype Backend
   = Backend
       { bExecute :: BS.ByteString -> BackendM BS.ByteString
-      }
-
+        }
 -- ^ Should run the current binary in the target environment, put the given
 -- string as standard input and return the executables answer on the standard
 -- output.
 -- |
 -- BackendM is essentially `IO`, but also has the ability to report the status of the
 -- executor.
+
 newtype BackendM a
   = BackendM (ReaderT (ExecutorPendingStatus -> IO ()) IO a)
   deriving
-    ( Functor
-    , Applicative
-    , Monad
-    , MonadIO
-    , MonadCatch
-    , MonadThrow
-    , MonadMask
-    , MonadUnliftIO
-    )
+    ( Functor,
+      Applicative,
+      Monad,
+      MonadIO,
+      MonadCatch,
+      MonadThrow,
+      MonadMask,
+      MonadUnliftIO
+      )
 
 instance Binary a => Binary (ExecutorFinalStatus a)
 
@@ -125,10 +125,10 @@ runBackend dict cls (Backend backend) =
           let r =
                 either
                   ( \(err :: SomeException) ->
-                    ExecutorFailed $
-                      "Backend threw an exception: " <>
-                      T.pack (show err)
-                  )
+                      ExecutorFailed
+                        $ "Backend threw an exception: "
+                        <> T.pack (show err)
+                    )
                   parseAnswer
                   answer
           atomically $ writeTVar t (ExecutorFinished r)
@@ -142,12 +142,12 @@ toExecutorClosure dict cls =
   where
     run :: forall a. Dict (Serializable a) -> IO a -> IO ()
     run Dict a =
-      (a >>= BL.putStr . encode . ExecutorSucceeded) `catch`
-        ( \(ex :: SomeException) ->
-          BL.putStr . encode . ExecutorFailed @a $
-            "Exception from executor: " <>
-            T.pack (show ex)
-        )
+      (a >>= BL.putStr . encode . ExecutorSucceeded)
+        `catch` ( \(ex :: SomeException) ->
+                    BL.putStr . encode . ExecutorFailed @a
+                      $ "Exception from executor: "
+                      <> T.pack (show ex)
+                  )
 
 parseAnswer :: Binary a => BS.ByteString -> ExecutorFinalStatus a
 parseAnswer bs =
@@ -164,7 +164,7 @@ data ExecutorPendingStatus
   = ExecutorWaiting (Maybe Text)
   | ExecutorSubmitted (Maybe Text)
   | ExecutorStarted (Maybe Text)
-  deriving Eq
+  deriving (Eq)
 
 data ExecutorFinalStatus a
   = ExecutorFailed Text

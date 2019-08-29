@@ -1,0 +1,38 @@
+{
+    "niv": {
+        "branch": "master",
+        "description": "Easy dependency management for Nix projects",
+        "homepage": "https://github.com/nmattia/niv",
+        "owner": "nmattia",
+        "repo": "niv",
+        "rev": "213315b65807ceae979da902875efaad1c53dc1d",
+        "sha256": "1cczwqnmfs17i00gn8s9l7sf2s3h498gzlv7wrkdin4v31lydv08",
+        "type": "tarball",
+        "url": "https://github.com/nmattia/niv/archive/213315b65807ceae979da902875efaad1c53dc1d.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nixpkgs": {
+        "branch": "master",
+        "description": "Nix Packages collection",
+        "homepage": null,
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "484a541e7bb7ee8eea206be03f93957e0830ad99",
+        "sha256": "0zclb0s7hp55gm8484mm6b6nly7nf9sg98xp4xc8912md666jafa",
+        "type": "tarball",
+        "url": "https://github.com/nixos/nixpkgs/archive/484a541e7bb7ee8eea206be03f93957e0830ad99.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "ormolu": {
+        "branch": "master",
+        "description": "A formatter for Haskell source code",
+        "homepage": null,
+        "owner": "tweag",
+        "repo": "ormolu",
+        "rev": "d74b211f1ed4747f57b14a8d446b5828c64850f2",
+        "sha256": "10vk9jwy7mzb5jb7ylbv5ykyg2r7w6al72cf6xjraxx1012jkyz3",
+        "type": "tarball",
+        "url": "https://github.com/tweag/ormolu/archive/d74b211f1ed4747f57b14a8d446b5828c64850f2.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    }
+}

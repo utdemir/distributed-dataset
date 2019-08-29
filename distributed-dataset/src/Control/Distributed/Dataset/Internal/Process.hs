@@ -15,37 +15,35 @@ import System.Clock
 --------------------------------------------------------------------------------
 data ExecutorResponse a
   = ExecutorResponse
-      { erStats :: ExecutorStats
-      , erResponse :: a
-      }
+      { erStats :: ExecutorStats,
+        erResponse :: a
+        }
   deriving (Show, Generic, Binary)
 
 data ExecutorStats
   = ExecutorStats
-      { esDownloadBytes :: Integer
-      , esUploadBytes :: Integer
-      , esInputItems :: Integer
-      , esOutputItems :: Integer
-      , esElapsedMillis :: Integer
-      }
+      { esDownloadBytes :: Integer,
+        esUploadBytes :: Integer,
+        esInputItems :: Integer,
+        esOutputItems :: Integer,
+        esElapsedMillis :: Integer
+        }
   deriving (Show, Generic, Binary)
 
 instance Semigroup ExecutorStats where
-
   ExecutorStats a b c d e <> ExecutorStats a' b' c' d' e' =
     ExecutorStats (a + a') (b + b') (c + c') (d + d') (e + e')
 
 instance Monoid ExecutorStats where
-
   mempty = ExecutorStats 0 0 0 0 0
 
 data ExecutorStatsHooks
   = ExecutorStatsHooks
-      { eshDownload :: forall m. MonadIO m => ConduitT BS.ByteString BS.ByteString m ()
-      , eshUpload :: forall m. MonadIO m => ConduitT BS.ByteString BS.ByteString m ()
-      , eshInput :: forall a m. MonadIO m => ConduitT a a m ()
-      , eshOutput :: forall a m. MonadIO m => ConduitT a a m ()
-      }
+      { eshDownload :: forall m. MonadIO m => ConduitT BS.ByteString BS.ByteString m (),
+        eshUpload :: forall m. MonadIO m => ConduitT BS.ByteString BS.ByteString m (),
+        eshInput :: forall a m. MonadIO m => ConduitT a a m (),
+        eshOutput :: forall a m. MonadIO m => ConduitT a a m ()
+        }
 
 withExecutorStats :: (ExecutorStatsHooks -> IO a) -> IO (ExecutorResponse a)
 withExecutorStats act = do
@@ -60,11 +58,11 @@ withExecutorStats act = do
         iterMC $ \_ ->
           liftIO $ modifyIORef ref (+ 1)
       hooks = ExecutorStatsHooks
-        { eshDownload = countBs downloadRef
-        , eshUpload = countBs uploadRef
-        , eshInput = countIt inputRef
-        , eshOutput = countIt outputRef
-        }
+        { eshDownload = countBs downloadRef,
+          eshUpload = countBs uploadRef,
+          eshInput = countIt inputRef,
+          eshOutput = countIt outputRef
+          }
   start <- getTime Monotonic
   ret <- act hooks
   end <- getTime Monotonic
@@ -75,10 +73,10 @@ withExecutorStats act = do
   outputCount <- readIORef outputRef
   let stats =
         ExecutorStats
-          { esDownloadBytes = downloadBytes
-          , esUploadBytes = uploadBytes
-          , esInputItems = inputCount
-          , esOutputItems = outputCount
-          , esElapsedMillis = elapsed
-          }
+          { esDownloadBytes = downloadBytes,
+            esUploadBytes = uploadBytes,
+            esInputItems = inputCount,
+            esOutputItems = outputCount,
+            esElapsedMillis = elapsed
+            }
   return $ ExecutorResponse stats ret

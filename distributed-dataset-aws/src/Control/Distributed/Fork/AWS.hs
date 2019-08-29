@@ -1,6 +1,6 @@
 module Control.Distributed.Fork.AWS
   ( module Control.Distributed.Fork.AWS.Lambda
-  )
+    )
 where
 
 --------------------------------------------------------------------------------

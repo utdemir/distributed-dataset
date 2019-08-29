@@ -3,9 +3,9 @@
 {-# LANGUAGE ExistentialQuantification #-}
 
 module Control.Distributed.Dataset.ShuffleStore
-  ( ShuffleStore (..)
-  , Range (..)
-  )
+  ( ShuffleStore (..),
+    Range (..)
+    )
 where
 
 -------------------------------------------------------------------------------
@@ -28,9 +28,9 @@ import GHC.Generics
 --   * <http://hackage.haskell.org/package/distributed-dataset-aws distributed-dataset-aws>
 data ShuffleStore
   = ShuffleStore
-      { ssGet :: Closure (Int64 -> Range -> ConduitT () ByteString (ResourceT IO) ())
-      , ssPut :: Closure (Int64 -> ConduitT ByteString Void (ResourceT IO) ())
-      }
+      { ssGet :: Closure (Int64 -> Range -> ConduitT () ByteString (ResourceT IO) ()),
+        ssPut :: Closure (Int64 -> ConduitT ByteString Void (ResourceT IO) ())
+        }
 
 data Range
   = RangeAll

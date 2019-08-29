@@ -33,28 +33,28 @@ prop_groupedAggrCount =
   propTest
     (static Dict)
     (Gen.enum 'a' 'z')
-    ( sort >>>
-      group >>>
-      map (\xs@(x : _) -> (x, fromIntegral $ length xs))
-    )
-    ( dGroupedAggr 5 (static id) aggrCount >>>
-      dToList >>>
-      fmap sort
-    )
+    ( sort
+        >>> group
+        >>> map (\xs@(x : _) -> (x, fromIntegral $ length xs))
+      )
+    ( dGroupedAggr 5 (static id) aggrCount
+        >>> dToList
+        >>> fmap sort
+      )
 
 prop_distinct :: Property
 prop_distinct =
   propTest
     (static Dict)
     (Gen.enum 'a' 'z')
-    ( sort >>>
-      group >>>
-      map head
-    )
-    ( dDistinct 10 >>>
-      dToList >>>
-      fmap sort
-    )
+    ( sort
+        >>> group
+        >>> map head
+      )
+    ( dDistinct 10
+        >>> dToList
+        >>> fmap sort
+      )
 
 prop_groupedAggrBottomK :: Property
 prop_groupedAggrBottomK =
@@ -74,23 +74,23 @@ propTest
 propTest dict gen reference impl =
   property $ do
     input <-
-      forAll $ Gen.list (Range.linear 0 10) $
-        Gen.list (Range.constant 0 10)
-          gen
+      forAll $ Gen.list (Range.linear 0 10)
+        $ Gen.list (Range.constant 0 10)
+            gen
     let expected = reference $ concat input
     actual <-
-      liftIO . run $
-        dExternal
-          [ mkPartition
-            ( static (\Dict -> mapM_ yield) `cap`
-              dict `cap`
-              cpure
-                (static (\Dict -> Dict) `cap` dict)
-                p
-            )
-          | p <- input
-          ] &
-        impl
+      liftIO . run
+        $ dExternal
+            [ mkPartition
+                ( static (\Dict -> mapM_ yield)
+                    `cap` dict
+                    `cap` cpure
+                            (static (\Dict -> Dict) `cap` dict)
+                            p
+                  )
+              | p <- input
+              ]
+        & impl
     actual === expected
 
 run :: DD a -> IO a
