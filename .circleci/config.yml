@@ -59,7 +59,7 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Build the package
-          command: stack build
+          command: stack build --docker-set-user
       - save_cache:
           key: stack-work
           paths:
