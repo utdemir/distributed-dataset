@@ -1,0 +1,27 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: nixos/nix:2.1.3
+    steps:
+      - checkout
+      - run:
+          name: Add ca-certificates
+          command: |
+            apk --no-progress update
+            apk --no-progress add ca-certificates
+      - run:
+          name: Setup Cachix
+          command: |
+            nix-env -iA cachix -f https://cachix.org/api/v1/install
+            USER=dummy cachix use utdemir
+      - run:
+          name: Push Cachix
+          command: |
+            if [ -n "$CACHIX_SIGNING_KEY" ];
+              then nix-store -qR --include-outputs $(nix-instantiate default.nix) | cachix push utdemir
+            fi
+      - run:
+          name: Build the package
+          command: ./make.sh ci
