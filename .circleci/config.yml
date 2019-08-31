@@ -16,11 +16,10 @@ jobs:
           command: |
             apk --no-progress update
             apk --no-progress add ca-certificates
-            nix-channel --update
-            nix-env -i stack bash docker
       - run:
           name: Setup Cachix
           command: |
+            nix-channel --update
             nix-env -iA cachix -f https://cachix.org/api/v1/install
             USER=dummy cachix use utdemir
       - restore_cache:
@@ -43,23 +42,15 @@ jobs:
             - "~/.stack-work"
   build-stack:
     docker:
-      - image: docker:latest
+      - image: fpco/stack-build:lts-14.3
     steps:
       - checkout
       - restore_cache:
           keys:
             - /root/.stack-work
       - run:
-          name: Install stack
-          command: |
-            apk --no-progress update
-            apk --no-progress add curl
-            curl -sSL https://get.haskellstack.org/ | sh
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
           name: Build the package
-          command: stack build --docker-set-user
+          command: stack build --no-docker
       - save_cache:
           key: stack-work
           paths:
