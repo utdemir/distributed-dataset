@@ -1,10 +1,10 @@
 # distributed-dataset
 
-[![Documentation](https://img.shields.io/badge/-api%20documentation-informational.svg)](https://utdemir.github.io/distributed-dataset/)
-
 A distributed data processing framework in pure Haskell. Inspired by [Apache Spark](https://spark.apache.org/).
 
-[An example is worth a thousand words](/examples/gh/Main.hs).
+* **An example:** [/examples/gh/Main.hs]()
+* **API documentation:** [https://utdemir.github.io/distributed-dataset/]()
+* **Gitter channel:** [https://gitter.im/distributed-dataset/community]()
 
 ## Packages
 
