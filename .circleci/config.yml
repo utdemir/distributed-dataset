@@ -50,7 +50,7 @@ jobs:
             - /root/.stack-work
       - run:
           name: Build the package
-          command: stack build --no-docker
+          command: stack build --no-docker | cat
       - save_cache:
           key: stack-work
           paths:
