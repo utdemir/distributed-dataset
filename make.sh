@@ -63,29 +63,6 @@ case "$mode" in
             ! -path '*/.stack-work/*' \
             -execdir ormolu {} --mode "$mode" \;
         ;;
-    "ci")
-        [[ $# -gt 0 ]] && invalid_syntax
-        trace ./make.sh format --check
-        trace ./make.sh nix-build
-        trace ./make.sh stack-build
-        ;;
-    "nix-build")
-        [[ $# -gt 0 ]] && invalid_syntax
-        # If I'm running it, also push the derivations to cachix.
-        if [ "$USER" = "utdemir" ]; then
-          tmp="$(mktemp -d)"
-          trap "rm -r '$tmp'" EXIT
-          trace nix build -o $tmp/result
-          echo $tmp/result | trace cachix push utdemir
-        else
-          trace nix build --no-link
-        fi
-        ;;
-    "stack-build")
-        [[ $# -gt 0 ]] && invalid_syntax
-        trace stack --no-nix test
-        trace stack --stack-yaml nightly.yaml --no-nix test
-        ;;
     "help")
         [[ $# -gt 0 ]] && invalid_syntax
         usage

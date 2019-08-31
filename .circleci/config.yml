@@ -1,0 +1,57 @@
+workflows:
+  version: 2
+  build-all:
+    jobs:
+      - build-nix
+      - build-stack
+
+jobs:
+  build-nix:
+    docker:
+      - image: nixos/nix:2.1.3
+    steps:
+      - checkout
+      - run:
+          name: Add dependencies
+          command: |
+            apk --no-progress update
+            apk --no-progress add ca-certificates
+      - run:
+          name: Setup Cachix
+          command: |
+            nix-channel --update
+            nix-env -iA cachix -f https://cachix.org/api/v1/install
+            USER=dummy cachix use utdemir
+      - restore_cache:
+          keys:
+            - stack-work
+      - run:
+          name: Push Cachix
+          command: |
+            if [ -n "$CACHIX_SIGNING_KEY" ];
+              then nix-store -qR --include-outputs $(nix-instantiate default.nix) | cachix push utdemir
+            fi
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build the package
+          command: nix-build --keep-going -j 4
+      - save_cache:
+          key: stack-work
+          paths:
+            - "~/.stack-work"
+  build-stack:
+    docker:
+      - image: fpco/stack-build:lts-14.3
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - /root/.stack-work
+      - run:
+          name: Build the package
+          command: stack build --no-docker | cat
+      - save_cache:
+          key: stack-work
+          paths:
+            - "~/.stack-work"
