@@ -10,7 +10,7 @@ jobs:
           name: Add ca-certificates
           command: |
             apk --no-progress update
-            apk --no-progress add ca-certificates
+            apk --no-progress add ca-certificates bash
       - run:
           name: Setup Cachix
           command: |
