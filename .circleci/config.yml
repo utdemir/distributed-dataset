@@ -10,8 +10,9 @@ jobs:
           name: Add dependencies
           command: |
             apk --no-progress update
-            apk --no-progress add ca-certificates bash
-            nix-env -i stack
+            apk --no-progress add ca-certificates
+            nix-channel --update
+            nix-env -i stack bash docker
       - run:
           name: Setup Cachix
           command: |
