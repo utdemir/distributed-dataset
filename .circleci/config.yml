@@ -7,21 +7,31 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Add ca-certificates
+          name: Add dependencies
           command: |
             apk --no-progress update
             apk --no-progress add ca-certificates bash
+            nix-env -i stack
       - run:
           name: Setup Cachix
           command: |
             nix-env -iA cachix -f https://cachix.org/api/v1/install
             USER=dummy cachix use utdemir
+      - restore_cache:
+          keys:
+            - stack-work
       - run:
           name: Push Cachix
           command: |
             if [ -n "$CACHIX_SIGNING_KEY" ];
               then nix-store -qR --include-outputs $(nix-instantiate default.nix) | cachix push utdemir
             fi
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Build the package
           command: ./make.sh ci
+      - save_cache:
+          key: stack-work
+          paths:
+            - "~/.stack-work"
