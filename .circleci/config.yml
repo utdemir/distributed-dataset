@@ -17,9 +17,6 @@ jobs:
           command: |
             apk --no-progress update
             apk --no-progress add ca-certificates
-      - run:
-          name: Setup Cachix
-          command: |
             nix-channel --update
             nix-env -iA cachix -f https://cachix.org/api/v1/install
             USER=dummy cachix use utdemir
@@ -61,6 +58,8 @@ jobs:
             apk --no-progress update
             apk --no-progress add ca-certificates
             nix-channel --update
+            nix-env -iA cachix -f https://cachix.org/api/v1/install
+            USER=dummy cachix use utdemir
       - run:
          name: Update cabal cache
          command: nix-shell default.nix -A systemShell --run 'cabal new-update | cat'
