@@ -9,6 +9,12 @@ in
 let
 gitignore = pkgs.nix-gitignore.gitignoreSourcePure [ ./.gitignore ];
 
+systemLibraries = with pkgs; [
+  glibc glibc.static zlib.static
+  (libffi.override { stdenv = makeStaticLibraries stdenv; })
+  (gmp.override { withStatic = true; })
+];
+
 overlays = se: su: {
   "distributed-dataset" =
     se.callCabal2nix
@@ -22,11 +28,7 @@ overlays = se: su: {
                  (gitignore ./distributed-dataset-aws)
                  {};
     in  pkgs.haskell.lib.overrideCabal orig (_: {
-          extraLibraries = with pkgs; [
-            glibc glibc.static zlib.static
-            (libffi.override { stdenv = makeStaticLibraries stdenv; })
-            (gmp.override { withStatic = true; })
-          ];
+          extraLibraries = systemLibraries;
     });
 
   "distributed-dataset-opendatasets" =
@@ -41,11 +43,7 @@ overlays = se: su: {
                  (gitignore ./examples/gh)
                  {};
     in  pkgs.haskell.lib.overrideCabal orig (_: {
-          extraLibraries = with pkgs; [
-            glibc glibc.static zlib.static
-            (libffi.override { stdenv = makeStaticLibraries stdenv; })
-            (gmp.override { withStatic = true; })
-          ];
+          extraLibraries = systemLibraries;
     });
 
   # not on Hackage yet
@@ -101,4 +99,8 @@ in rec
     ];
     withHoogle = true;
   };
+
+  systemShell = pkgs.runCommand "systemShell" {
+    buildInputs = systemLibraries;
+  } "mkdir $out";
 }

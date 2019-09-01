@@ -4,6 +4,7 @@ workflows:
     jobs:
       - build-nix
       - build-stack
+      - build-cabal
 
 jobs:
   build-nix:
@@ -55,3 +56,18 @@ jobs:
           key: dot-stack
           paths:
             - "~/.stack-work"
+  build-cabal:
+    docker:
+      - image: haskell/8.6.5
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dot-cabal
+      - run:
+         name: Build the package
+         command: cabal new-build | cat
+      - save_cache:
+         key: dot-cabal
+         paths:
+           - "~/.cabal"
