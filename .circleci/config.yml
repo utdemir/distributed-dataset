@@ -41,7 +41,7 @@ jobs:
             - dot-stack
       - run:
           name: Build the package
-          command: stack build -j 1 --no-docker | cat
+          command: stack build -j1 --no-docker | cat
       - save_cache:
           key: dot-stack
           paths:
@@ -65,7 +65,7 @@ jobs:
          command: nix-shell default.nix -A systemShell --run 'cabal new-update | cat'
       - run:
          name: Build the package
-         command: nix-shell default.nix -A systemShell --run 'cabal new-build -j 1 all | cat'
+         command: nix-shell default.nix -A systemShell --run 'cabal new-build -j1 all | cat'
       - save_cache:
          key: dot-cabal
          paths:
