@@ -13,7 +13,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Add dependencies
+          name: Install dependencies
           command: |
             apk --no-progress update
             apk --no-progress add ca-certificates
@@ -58,18 +58,21 @@ jobs:
             - "~/.stack-work"
   build-cabal:
     docker:
-      - image: haskell:8.6.5
+      - image: nixos/nix:2.1.3
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - dot-cabal
+      - run:
+          name: Install dependencies
+          command: |
+            apk --no-progress update
+            apk --no-progress add ca-certificates
+            nix-env -i cabal-install ghc
       - run:
          name: Update cabal cache
          command: cabal new-update | cat
       - run:
          name: Build the package
-         command: cabal new-build all | cat
+         command: nix-shell default.nix -A systemShell --run 'cabal new-build all | cat'
       - save_cache:
          key: dot-cabal
          paths:
