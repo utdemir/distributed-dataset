@@ -101,6 +101,10 @@ in rec
   };
 
   systemShell = pkgs.runCommand "systemShell" {
-    buildInputs = systemLibraries;
+    buildInputs = systemLibraries ++ [
+      pkgs.stdenv
+      haskellPackages.ghc
+      haskellPackages.cabal-install
+    ];
   } "mkdir $out";
 }
