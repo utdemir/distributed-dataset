@@ -61,21 +61,21 @@ Provides `Dataset`'s reading from public open datasets. Currently it can fetch G
 
 * Build an run the example:
 
-  * If you use Nix on Linux: 
-     
+  * If you use Nix on Linux:
+
     * (Optional) Use my binary cache on Cachix to reduce compilation times:
 
     ```sh
     $(nix-build -A cachix https://cachix.org/api/v1/install)/bin/cachix use utdemir
     ```
- 
+
     * Then:
-    
+
       ```sh
       $ $(nix-build -A example-gh)/bin/example-gh my-s3-bucket
       ```
-    
-  * If you use stack (requires Docker, works on Linux and MacOS): 
+
+  * If you use stack (requires Docker, works on Linux and MacOS):
 
       ```sh
       $ stack run --docker-mount $HOME/.aws/ --docker-env HOME=$HOME example-gh my-s3-bucket
@@ -102,7 +102,7 @@ I am open to contributions; any issue, PR or opinion is more than welcome.
 * You can use [my binary cache on cachix](https://utdemir.cachix.org/)
   so that you don't recompile half of the Hackage.
 * `nix-shell` will drop you into a shell with `ormolu`, `cabal-install`,
-  `.ghcid` alongside with all required haskell and system dependencies. 
+  `.ghcid` alongside with all required haskell and system dependencies.
   You can use `cabal new-*` commands there.
 * There is a `./make.sh` at the root folder with some utilities like
   formatting the source code or running `ghcid`, run `./make.sh --help`
@@ -118,7 +118,7 @@ I am open to contributions; any issue, PR or opinion is more than welcome.
 
 ### Papers
 
-* [Towards Haskell in Cloud](https://www.microsoft.com/en-us/research/publication/towards-haskell-cloud/) by Jeff Epstein, Andrew P. Black, Simon L. Peyton Jones 
+* [Towards Haskell in Cloud](https://www.microsoft.com/en-us/research/publication/towards-haskell-cloud/) by Jeff Epstein, Andrew P. Black, Simon L. Peyton Jones
 * [Resilient Distributed Datasets: A Fault-Tolerant Abstraction for In-Memory Cluster Computing](https://cs.stanford.edu/~matei/papers/2012/nsdi_spark.pdf) by Matei Zaharia, et al.
 
 ### Projects
