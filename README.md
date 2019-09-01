@@ -1,5 +1,7 @@
 # distributed-dataset
 
+[![CircleCI](https://circleci.com/gh/utdemir/distributed-dataset/tree/master.svg?style=svg)](https://circleci.com/gh/utdemir/distributed-dataset/tree/master)
+
 A distributed data processing framework in pure Haskell. Inspired by [Apache Spark](https://spark.apache.org/).
 
 * **An example:** [/examples/gh/Main.hs]()
