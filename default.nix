@@ -10,9 +10,10 @@ let
 gitignore = pkgs.nix-gitignore.gitignoreSourcePure [ ./.gitignore ];
 
 systemLibraries = with pkgs; [
-  glibc glibc.static zlib.static
-  (libffi.override { stdenv = makeStaticLibraries stdenv; })
-  (gmp.override { withStatic = true; })
+  glibc glibc.static
+  zlib zlib.static
+  libffi (libffi.override { stdenv = makeStaticLibraries stdenv; })
+  gpm (gmp.override { withStatic = true; })
 ];
 
 overlays = se: su: {
