@@ -58,7 +58,7 @@ jobs:
             - "~/.stack-work"
   build-cabal:
     docker:
-      - image: haskell/8.6.5
+      - image: haskell:8.6.5
     steps:
       - checkout
       - restore_cache:
