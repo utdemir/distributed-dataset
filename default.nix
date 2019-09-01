@@ -3,6 +3,7 @@ sources = import ./nix/sources.nix;
 in
 
 { pkgs ? import sources.nixpkgs { config.allowBroken = true; }
+, compiler ? "ghc865"
 }:
 
 let
@@ -57,7 +58,7 @@ overlays = se: su: {
     pkgs.haskell.lib.doJailbreak su.amazonka;
 };
 
-haskellPackages = pkgs.haskell.packages.ghc865.override {
+haskellPackages = pkgs.haskell.packages.${compiler}.override {
   overrides = overlays;
 };
 

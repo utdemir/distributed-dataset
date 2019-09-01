@@ -12,9 +12,6 @@ cat << EOF
 Usage:
   ./make.sh format [--check]             Formats the Haskell sources with 'ormolu'. Requires Nix.
   ./make.sh dev <target> [ghcid-args...] Runs 'ghcid' on the given 'target'. Requires Nix.
-  ./make.sh nix-build                    Builds & tests all subprojects using Nix.
-  ./make.sh stack-build                  Builds & tests all subprojects using Stack.
-  ./make.sh ci                           Builds & tests all subprojects using Stack & Nix. Also checks formatting.
   ./make.sh help                         Shows this message.
 EOF
 }
