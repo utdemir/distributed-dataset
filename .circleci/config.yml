@@ -47,11 +47,11 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - /root/.stack-work
+            - dot-stack
       - run:
           name: Build the package
           command: stack build --no-docker | cat
       - save_cache:
-          key: stack-work
+          key: dot-stack
           paths:
             - "~/.stack-work"
