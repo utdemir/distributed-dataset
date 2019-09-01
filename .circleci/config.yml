@@ -65,8 +65,11 @@ jobs:
           keys:
             - dot-cabal
       - run:
+         name: Update cabal cache
+         command: cabal new-update | cat
+      - run:
          name: Build the package
-         command: cabal new-build | cat
+         command: cabal new-build all | cat
       - save_cache:
          key: dot-cabal
          paths:
