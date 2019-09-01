@@ -67,10 +67,9 @@ jobs:
             apk --no-progress update
             apk --no-progress add ca-certificates
             nix-channel --update
-            nix-env -i cabal-install ghc wget
       - run:
          name: Update cabal cache
-         command: cabal new-update | cat
+         command: nix-shell default.nix -A systemShell --run 'cabal new-update | cat'
       - run:
          name: Build the package
          command: nix-shell default.nix -A systemShell --run 'cabal new-build all | cat'

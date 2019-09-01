@@ -102,7 +102,7 @@ in rec
 
   systemShell = pkgs.runCommand "systemShell" {
     buildInputs = systemLibraries ++ [
-      pkgs.stdenv
+      pkgs.stdenv pkgs.wget
       haskellPackages.ghc
       haskellPackages.cabal-install
     ];
