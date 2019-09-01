@@ -23,9 +23,6 @@ jobs:
             nix-channel --update
             nix-env -iA cachix -f https://cachix.org/api/v1/install
             USER=dummy cachix use utdemir
-      - restore_cache:
-          keys:
-            - stack-work
       - run:
           name: Push Cachix
           command: |
@@ -37,10 +34,6 @@ jobs:
       - run:
           name: Build the package
           command: nix-build --keep-going -j 4
-      - save_cache:
-          key: stack-work
-          paths:
-            - "~/.stack-work"
   build-stack:
     docker:
       - image: fpco/stack-build:lts-14.3
@@ -55,7 +48,8 @@ jobs:
       - save_cache:
           key: dot-stack
           paths:
-            - "~/.stack-work"
+            - "~/.stack"
+            - ".stack-work"
   build-cabal:
     docker:
       - image: nixos/nix:2.1.3
@@ -77,3 +71,4 @@ jobs:
          key: dot-cabal
          paths:
            - "~/.cabal"
+           - ".dist-newbuild"
