@@ -14,5 +14,6 @@ jobs:
         env:
           CACHIX_SIGNING_KEY: ${{ secrets.CACHIX_SIGNING_KEY }}
       - uses: actions/checkout@v1
-      - name: |
+      - name: Build
+        run: |
           nix-build --keep-going -j 2
