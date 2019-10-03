@@ -1,8 +1,6 @@
-let
-sources = import ./nix/sources.nix;
 in
 
-{ pkgs ? import sources.nixpkgs { config.allowBroken = true; }
+{ pkgs ? import ./vendor/nixpkgs { config.allowBroken = true; }
 , compiler ? "ghc865"
 }:
 
@@ -49,7 +47,7 @@ overlays = se: su: {
     });
 
   # not on Hackage yet
-  ormolu = se.callCabal2nix "ormolu" sources.ormolu {};
+  ormolu = se.callCabal2nix "ormolu" ./vendor/ormolu {};
 
   amazonka-core =
     pkgs.haskell.lib.doJailbreak su.amazonka-core;

@@ -1,0 +1,6 @@
+[submodule "vendor/ormolu"]
+	path = vendor/ormolu
+	url = https://github.com/tweag/ormolu
+[submodule "vendor/nixpkgs"]
+	path = vendor/nixpkgs
+	url = https://github.com/nixos/nixpkgs
