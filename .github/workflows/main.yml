@@ -6,15 +6,9 @@ jobs:
   nix-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: cachix/install-nix-action@v2
-      - name: Set-up cachix
-        run: |
-          nix-env -iA cachix -f https://cachix.org/api/v1/install
-          cachix use utdemir
-          cachix push utdemir --watch-store &
-        env:
-          CACHIX_SIGNING_KEY: ${{ secrets.CACHIX_SIGNING_KEY }}
       - uses: actions/checkout@v1
-      - name: Build
-        run: |
-          nix-build --keep-going -j 2
+      - uses: cachix/install-nix-action@v2
+      - uses: cachix/cachix-action@v2
+        with:
+          name: utdemir
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
