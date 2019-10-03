@@ -9,6 +9,7 @@ jobs:
       - uses: cachix/install-nix-action@v2
       - name: Set-up cachix
         run: |
+          nix-env -iA cachix -f https://cachix.org/api/v1/install
           cachix use utdemir
           cachix push utdemir --watch-store || true
         env:
