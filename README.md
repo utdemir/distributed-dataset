@@ -1,5 +1,7 @@
 # distributed-dataset
 
+[![CI Status](https://github.com/utdemir/distributed-dataset/workflows/ci/badge.svg)](https://github.com/utdemir/distributed-dataset/actions)
+
 A distributed data processing framework in pure Haskell. Inspired by [Apache Spark](https://spark.apache.org/).
 
 * **An example:** [/examples/gh/Main.hs](/examples/gh/Main.hs)

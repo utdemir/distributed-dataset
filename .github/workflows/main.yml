@@ -1,4 +1,4 @@
-name: "nix build"
+name: "ci"
 on:
   pull_request:
   push:
