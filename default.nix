@@ -47,15 +47,6 @@ overlays = se: su: {
             (gmp.override { withStatic = true; })
           ];
     });
-
-  # not on Hackage yet
-  ormolu = se.callCabal2nix "ormolu" sources.ormolu {};
-
-  amazonka-core =
-    pkgs.haskell.lib.doJailbreak su.amazonka-core;
-
-  amazonka =
-    pkgs.haskell.lib.doJailbreak su.amazonka;
 };
 
 haskellPackages = pkgs.haskell.packages.${compiler}.override {
@@ -98,6 +89,8 @@ in rec
       cabal-install
       ghcid
       ormolu
+    ] ++ [
+      pkgs.niv
     ];
     withHoogle = true;
   };

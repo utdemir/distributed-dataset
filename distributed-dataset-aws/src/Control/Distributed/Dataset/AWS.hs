@@ -1,5 +1,8 @@
 {-# LANGUAGE StaticPointers #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Control.Distributed.Dataset.AWS
   ( s3ShuffleStore,
@@ -19,6 +22,7 @@ import Control.Monad
 import Control.Monad.Trans.AWS (AWST)
 import qualified Data.Text as T
 import Network.AWS
+import Control.Monad.Fail
 import Network.AWS.Data.Body (RsBody (_streamBody))
 import qualified Network.AWS.S3 as S3
 import qualified Network.AWS.S3.StreamingUpload as S3
@@ -65,6 +69,9 @@ s3ShuffleStore bucket' prefix' =
           `cap` cpure (static Dict) bucket'
           `cap` cpure (static Dict) prefix'
       }
+
+instance MonadIO m => MonadFail (AWST m) where
+  fail = lift . Prelude.fail
 
 -- FIXME
 -- Currently ShuffleStore does not allow storing data between the 'ssGet's.

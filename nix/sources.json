@@ -1,38 +1,14 @@
 {
-    "niv": {
-        "branch": "master",
-        "description": "Easy dependency management for Nix projects",
-        "homepage": "https://github.com/nmattia/niv",
-        "owner": "nmattia",
-        "repo": "niv",
-        "rev": "1dd094156b249586b66c16200ecfd365c7428dc0",
-        "sha256": "1b2vjnn8iac5iiqszjc2v1s1ygh0yri998c0k3s4x4kn0dsqik21",
-        "type": "tarball",
-        "url": "https://github.com/nmattia/niv/archive/1dd094156b249586b66c16200ecfd365c7428dc0.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "nixpkgs": {
         "branch": "master",
         "description": "Nix Packages collection",
         "homepage": null,
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "962195d9777bd249c53742772dfe6ad98b837d4b",
-        "sha256": "1kkpgn90kq8g0ia2b88l1h2n33nw00b6c55w1fyra78bq00n6924",
+        "rev": "51751e1ac4c15483903c12a8128721d3b98237f7",
+        "sha256": "1ilv31zaa4x751vjkcwjrdjlb4izw2asqps28zz8fnmlp27z65fz",
         "type": "tarball",
-        "url": "https://github.com/nixos/nixpkgs/archive/962195d9777bd249c53742772dfe6ad98b837d4b.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "ormolu": {
-        "branch": "master",
-        "description": "A formatter for Haskell source code",
-        "homepage": null,
-        "owner": "tweag",
-        "repo": "ormolu",
-        "rev": "3abadaefa5e190ff346f9aeb309465ac890495c2",
-        "sha256": "0vqrb12bsp1dczff3i5pajzhjwz035rxg8vznrgj5p6j7mb2vcnd",
-        "type": "tarball",
-        "url": "https://github.com/tweag/ormolu/archive/3abadaefa5e190ff346f9aeb309465ac890495c2.tar.gz",
+        "url": "https://github.com/nixos/nixpkgs/archive/51751e1ac4c15483903c12a8128721d3b98237f7.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
