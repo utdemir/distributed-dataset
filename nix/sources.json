@@ -1,4 +1,16 @@
 {
+    "cborg": {
+        "branch": "master",
+        "description": "Binary serialisation in the CBOR format",
+        "homepage": "https://hackage.haskell.org/package/cborg",
+        "owner": "well-typed",
+        "repo": "cborg",
+        "rev": "26815d8e717cc5773ebbbe711bfed0e22d6f302c",
+        "sha256": "0672j2g4kmbfabh3k79ncb20qwhl17vl0nwcz49vk1zqbqncq7w1",
+        "type": "tarball",
+        "url": "https://github.com/well-typed/cborg/archive/26815d8e717cc5773ebbbe711bfed0e22d6f302c.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "nixpkgs": {
         "branch": "master",
         "description": "Nix Packages collection",
@@ -9,6 +21,18 @@
         "sha256": "1ilv31zaa4x751vjkcwjrdjlb4izw2asqps28zz8fnmlp27z65fz",
         "type": "tarball",
         "url": "https://github.com/nixos/nixpkgs/archive/51751e1ac4c15483903c12a8128721d3b98237f7.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "ormolu": {
+        "branch": "master",
+        "description": "A formatter for Haskell source code",
+        "homepage": null,
+        "owner": "tweag",
+        "repo": "ormolu",
+        "rev": "39592b2e881e367e3bdf030c4bd03a797929e679",
+        "sha256": "1flkvw10cddrpsm0311mwdcrqss7y9pl52hzc09mygblbx4fj8i9",
+        "type": "tarball",
+        "url": "https://github.com/tweag/ormolu/archive/39592b2e881e367e3bdf030c4bd03a797929e679.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

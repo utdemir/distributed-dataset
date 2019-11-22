@@ -70,7 +70,7 @@ s3ShuffleStore bucket' prefix' =
           `cap` cpure (static Dict) prefix'
       }
 
-instance MonadIO m => MonadFail (AWST m) where
+instance (MonadIO m, MonadFail m) => MonadFail (AWST m) where
   fail = lift . Prelude.fail
 
 -- FIXME

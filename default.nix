@@ -3,7 +3,7 @@ sources = import ./nix/sources.nix;
 in
 
 { pkgs ? import sources.nixpkgs { config.allowBroken = true; }
-, compiler ? "ghc865"
+, compiler ? "ghc881"
 }:
 
 let
@@ -47,6 +47,13 @@ overlays = se: su: {
             (gmp.override { withStatic = true; })
           ];
     });
+
+  # Hackage release does not support GHC 8.8 yet
+  ormolu = se.callCabal2nix "ormolu" sources.ormolu {};
+  cborg = se.callCabal2nix "cborg" "${sources.cborg}/cborg" {};
+  serialise = se.callCabal2nix "serialise" "${sources.cborg}/serialise" {};
+
+  standalone-haddock = pkgs.haskell.lib.doJailbreak su.standalone-haddock;
 };
 
 haskellPackages = pkgs.haskell.packages.${compiler}.override {
