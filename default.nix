@@ -12,6 +12,10 @@ haskell = pkgsMusl.haskell;
 
 gitignore = pkgsMusl.nix-gitignore.gitignoreSourcePure [ ./.gitignore ];
 
+fixLocale = pkg: pkgsMusl.lib.overrideDerivation pkg (_: {
+  LANG="C.UTF-8";
+});
+
 overlays = se: su: {
   # `cabal2nix` from `pkgsOrig` instead of `pkgsMusl`.
   callCabal2nix = name: src:
@@ -62,24 +66,24 @@ overlays = se: su: {
   # Most (all?) of them are property-based tests, and musl
   # does not handle some non-standard UTF-8 encodings; so
   # they probably all share the same underlying issue.
-  "blaze-builder" = haskell.lib.dontCheck su.blaze-builder;
-  "bsb-http-chunked" = haskell.lib.dontCheck su.bsb-http-chunked;
-  "code-page" = haskell.lib.dontCheck su.code-page;
-  "conduit" = haskell.lib.dontCheck su.conduit;
-  "foundation" = haskell.lib.dontCheck su.foundation;
-  "hedgehog" = haskell.lib.dontCheck su.hedgehog;
-  "memory" = haskell.lib.dontCheck su.memory;
-  "retry" = haskell.lib.dontCheck su.retry;
-  "shelly" = haskell.lib.dontCheck su.shelly;
-  "tasty-hedgehog" = haskell.lib.dontCheck su.tasty-hedgehog;
-  "yaml" = haskell.lib.dontCheck su.yaml;
+  "blaze-builder" = fixLocale su.blaze-builder;
+  "bsb-http-chunked" = fixLocale su.bsb-http-chunked;
+  "code-page" = fixLocale su.code-page;
+  "conduit" = fixLocale su.conduit;
+  "foundation" = fixLocale su.foundation;
+  "hedgehog" = fixLocale su.hedgehog;
+  "memory" = fixLocale su.memory;
+  "retry" = fixLocale su.retry;
+  "shelly" = fixLocale su.shelly;
+  "tasty-hedgehog" = fixLocale su.tasty-hedgehog;
+  "yaml" = fixLocale su.yaml;
 
   # Haddock does not work with musl:
   #   haddock: internal error: <stdout>: \
   #     commitBuffer: invalid argument (invalid character)
   #     hGetContents: invalid argument (invalid byte sequence)
-  "basement" = haskell.lib.dontHaddock su.basement;
-  "path-io" = haskell.lib.dontHaddock su.path-io;
+  "basement" = fixLocale su.basement;
+  "path-io" = fixLocale su.path-io;
 };
 
 haskellPackages = haskell.packages.${compiler}.override {
