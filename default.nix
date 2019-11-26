@@ -63,9 +63,6 @@ overlays = se: su: {
   # Tests don't compile with musl:
   #   hGetContents: invalid argument (invalid byte sequence)
   #   commitBuffer: invalid argument (invalid character)
-  # Most (all?) of them are property-based tests, and musl
-  # does not handle some non-standard UTF-8 encodings; so
-  # they probably all share the same underlying issue.
   "blaze-builder" = fixLocale su.blaze-builder;
   "bsb-http-chunked" = fixLocale su.bsb-http-chunked;
   "code-page" = fixLocale su.code-page;
