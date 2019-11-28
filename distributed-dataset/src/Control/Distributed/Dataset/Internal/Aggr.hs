@@ -7,8 +7,8 @@ module Control.Distributed.Dataset.Internal.Aggr
     aggrFromMonoid,
     aggrFromReduce,
     aggrFromFold,
-    aggrConst
-    )
+    aggrConst,
+  )
 where
 
 -------------------------------------------------------------------------------
@@ -43,8 +43,9 @@ import Data.Typeable
 --
 -- Alternatively, you can use aggrFrom* functions to create 'Aggr's.
 data Aggr a b
-  = forall t. (StaticSerialise t, Typeable a, Typeable b)
-    => Aggr
+  = forall t.
+    (StaticSerialise t, Typeable a, Typeable b) =>
+    Aggr
       (Closure (F.Fold a t))
       (Closure (F.Fold t b))
 
@@ -54,20 +55,22 @@ instance Typeable m => StaticFunctor (Aggr m) where
 
 instance Typeable m => StaticApply (Aggr m) where
   staticApply (Aggr f1c f2c) (Aggr f1c' f2c') =
-    Aggr (static (\f1 f1' -> (,) <$> f1 <*> f1') `cap` f1c `cap` f1c')
+    Aggr
+      (static (\f1 f1' -> (,) <$> f1 <*> f1') `cap` f1c `cap` f1c')
       (static (\f2 f2' -> ($) <$> lmap fst f2 <*> lmap snd f2') `cap` f2c `cap` f2c')
 
 instance StaticProfunctor Aggr where
   staticDimap l r (Aggr f1 f2) =
-    Aggr (static lmap `cap` l `cap` f1)
+    Aggr
+      (static lmap `cap` l `cap` f1)
       (static rmap `cap` r `cap` f2)
 
 -- |
 -- Create an aggregation given a 'Monoid' instance.
-aggrFromMonoid
-  :: StaticSerialise a
-  => Closure (Dict (Monoid a))
-  -> Aggr a a
+aggrFromMonoid ::
+  StaticSerialise a =>
+  Closure (Dict (Monoid a)) ->
+  Aggr a a
 aggrFromMonoid d =
   aggrFromFold go go
   where
@@ -77,10 +80,10 @@ aggrFromMonoid d =
 -- Create an aggregation given a reduce function.
 --
 -- Returns 'Nothing' on empty 'Dataset's.
-aggrFromReduce
-  :: StaticSerialise a
-  => Closure (a -> a -> a)
-  -> Aggr a (Maybe a)
+aggrFromReduce ::
+  StaticSerialise a =>
+  Closure (a -> a -> a) ->
+  Aggr a (Maybe a)
 aggrFromReduce dc =
   aggrFromFold
     (static F._Fold1 `cap` dc)
@@ -94,11 +97,13 @@ aggrFromReduce dc =
 --
 -- The first 'Fold' will be applied on each partition, and the results will
 -- be shuffled and fed to the second 'Fold'.
-aggrFromFold
-  :: (StaticSerialise t, Typeable a, Typeable b)
-  => Closure (F.Fold a t) -- ^ Fold to run before the shuffle
-  -> Closure (F.Fold t b) -- ^ Fold to run after the shuffle
-  -> Aggr a b
+aggrFromFold ::
+  (StaticSerialise t, Typeable a, Typeable b) =>
+  -- | Fold to run before the shuffle
+  Closure (F.Fold a t) ->
+  -- | Fold to run after the shuffle
+  Closure (F.Fold t b) ->
+  Aggr a b
 aggrFromFold = Aggr
 
 -- |

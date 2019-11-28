@@ -4,8 +4,8 @@
 
 module Control.Distributed.Dataset.ShuffleStore
   ( ShuffleStore (..),
-    Range (..)
-    )
+    Range (..),
+  )
 where
 
 -------------------------------------------------------------------------------
@@ -30,7 +30,7 @@ data ShuffleStore
   = ShuffleStore
       { ssGet :: Closure (Int64 -> Range -> ConduitT () ByteString (ResourceT IO) ()),
         ssPut :: Closure (Int64 -> ConduitT ByteString Void (ResourceT IO) ())
-        }
+      }
 
 data Range
   = RangeAll

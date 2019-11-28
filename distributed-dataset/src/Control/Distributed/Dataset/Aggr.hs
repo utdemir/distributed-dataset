@@ -16,11 +16,12 @@ module Control.Distributed.Dataset.Aggr
     aggrTopK,
     aggrBottomK,
     aggrFiltered,
+
     -- * Creating Aggr's
     aggrFromMonoid,
     aggrFromReduce,
-    aggrFromFold
-    )
+    aggrFromFold,
+  )
 where
 
 -------------------------------------------------------------------------------
@@ -106,6 +107,7 @@ aggrDistinct =
     (static (\Dict -> mconcat <$> F.list) `cap` staticHashable @a)
 
 -- * Top K
+
 data TopK a = TopK Int (H.Heap a)
   deriving (Typeable)
 
@@ -122,12 +124,14 @@ instance Monoid (TopK a) where
 -- @take n . sortOn (Down . f)@
 --
 -- Warning: Ordering of the repeated elements is non-deterministic.
-aggrTopK
-  :: (StaticSerialise a, Typeable k)
-  => Closure (Dict (Ord k))
-  -> Int -- ^ Number of rows to return
-  -> Closure (a -> k) -- ^ Sorting key
-  -> Aggr a [a]
+aggrTopK ::
+  (StaticSerialise a, Typeable k) =>
+  Closure (Dict (Ord k)) ->
+  -- | Number of rows to return
+  Int ->
+  -- | Sorting key
+  Closure (a -> k) ->
+  Aggr a [a]
 aggrTopK dict count fc =
   aggrFromFold
     ( static
@@ -135,19 +139,19 @@ aggrTopK dict count fc =
             F.foldMap
               (\a -> TopK c . H.singleton $ H.Entry (f a) a)
               (\(TopK _ h) -> map H.payload . sortOn Down $ H.toUnsortedList h)
-          )
+        )
         `cap` dict
         `cap` cpure (static Dict) count
         `cap` fc
-      )
+    )
     ( static
         ( \Dict c f ->
             F.Fold (\a b -> take c $ merge f a b) [] id
-          )
+        )
         `cap` dict
         `cap` cpure (static Dict) count
         `cap` fc
-      )
+    )
   where
     merge _ xs [] = xs
     merge _ [] ys = ys
@@ -161,12 +165,14 @@ aggrTopK dict count fc =
 -- @take n . sortOn (Down . f)@
 --
 -- Warning: Ordering of the repeated elements is non-deterministic.
-aggrBottomK
-  :: (StaticSerialise a, Typeable k)
-  => Closure (Dict (Ord k))
-  -> Int -- ^ Number of rows to return
-  -> Closure (a -> k) -- ^ Sorting key
-  -> Aggr a [a]
+aggrBottomK ::
+  (StaticSerialise a, Typeable k) =>
+  Closure (Dict (Ord k)) ->
+  -- | Number of rows to return
+  Int ->
+  -- | Sorting key
+  Closure (a -> k) ->
+  Aggr a [a]
 aggrBottomK d count fc =
   aggrTopK
     (static (\Dict -> Dict) `cap` d)

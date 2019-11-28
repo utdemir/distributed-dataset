@@ -17,7 +17,7 @@ data ExecutorResponse a
   = ExecutorResponse
       { erStats :: ExecutorStats,
         erResponse :: a
-        }
+      }
   deriving (Show, Generic, Binary)
 
 data ExecutorStats
@@ -27,7 +27,7 @@ data ExecutorStats
         esInputItems :: Integer,
         esOutputItems :: Integer,
         esElapsedMillis :: Integer
-        }
+      }
   deriving (Show, Generic, Binary)
 
 instance Semigroup ExecutorStats where
@@ -43,7 +43,7 @@ data ExecutorStatsHooks
         eshUpload :: forall m. MonadIO m => ConduitT BS.ByteString BS.ByteString m (),
         eshInput :: forall a m. MonadIO m => ConduitT a a m (),
         eshOutput :: forall a m. MonadIO m => ConduitT a a m ()
-        }
+      }
 
 withExecutorStats :: (ExecutorStatsHooks -> IO a) -> IO (ExecutorResponse a)
 withExecutorStats act = do
@@ -62,7 +62,7 @@ withExecutorStats act = do
           eshUpload = countBs uploadRef,
           eshInput = countIt inputRef,
           eshOutput = countIt outputRef
-          }
+        }
   start <- getTime Monotonic
   ret <- act hooks
   end <- getTime Monotonic
@@ -78,5 +78,5 @@ withExecutorStats act = do
             esInputItems = inputCount,
             esOutputItems = outputCount,
             esElapsedMillis = elapsed
-            }
+          }
   return $ ExecutorResponse stats ret

@@ -27,22 +27,22 @@ app =
   -- Fetch events from GitHub between given dates
   ghArchive (fromGregorian 2018 1 1, fromGregorian 2018 12 31)
     & dConcatMap -- Extract every commit
-        ( static
-            ( \e ->
-                let author = e ^. gheActor . ghaLogin
-                    commits =
-                      e ^.. gheType . _GHPushEvent . ghpepCommits
-                        . traverse
-                        . ghcMessage
-                 in map (author,) commits
-              )
-          ) -- Filter commits containing the word 'cabal'
+      ( static
+          ( \e ->
+              let author = e ^. gheActor . ghaLogin
+                  commits =
+                    e ^.. gheType . _GHPushEvent . ghpepCommits
+                      . traverse
+                      . ghcMessage
+               in map (author,) commits
+          )
+      ) -- Filter commits containing the word 'cabal'
     & dFilter
-        ( static
-            ( \(_, commit) ->
-                "cabal" `T.isInfixOf` T.toLower commit
-              )
-          ) -- Count the authors
+      ( static
+          ( \(_, commit) ->
+              "cabal" `T.isInfixOf` T.toLower commit
+          )
+      ) -- Count the authors
     & dGroupedAggr 50 (static fst) aggrCount
     & dAggr (aggrTopK (static Dict) 20 (static snd)) -- Fetch the top 20 to driver as a list
     >>= mapM_ (liftIO . print) -- Print them

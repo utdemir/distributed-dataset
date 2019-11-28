@@ -27,7 +27,7 @@ prop_backendCreate :: Property
 prop_backendCreate =
   withTests 1 . property
     $ liftIO
-    . withLambdaBackend opts
+      . withLambdaBackend opts
     $ \_ -> do
       threadDelay $ 5 * 1000 * 1000
       return ()
@@ -72,34 +72,34 @@ prop_shuffleStorePut :: Property
 prop_shuffleStorePut =
   withTests 1 . property $ do
     let ss = s3ShuffleStore "distributed-dataset" "shuffle-store/"
-    liftIO . runConduitRes
-      $ mapM_ yield ["foo", "bar", "baz"]
-      .| (unclosure $ ssPut ss) 42
+    liftIO . runConduitRes $
+      mapM_ yield ["foo", "bar", "baz"]
+        .| (unclosure $ ssPut ss) 42
 
 prop_shuffleStoreGetAfterPut :: Property
 prop_shuffleStoreGetAfterPut =
   withTests 1 . property $ do
     let ss = s3ShuffleStore "distributed-dataset" "shuffle-store/"
-    liftIO . runConduitRes
-      $ mapM_ yield ["foo", "bar", "baz"]
-      .| (unclosure $ ssPut ss) 42
+    liftIO . runConduitRes $
+      mapM_ yield ["foo", "bar", "baz"]
+        .| (unclosure $ ssPut ss) 42
     r <-
-      liftIO . runConduitRes
-        $ (unclosure $ ssGet ss) 42 RangeAll
-        .| C.foldMap id
+      liftIO . runConduitRes $
+        (unclosure $ ssGet ss) 42 RangeAll
+          .| C.foldMap id
     r === "foobarbaz"
 
 prop_shuffleStoreGetRangeAfterPut :: Property
 prop_shuffleStoreGetRangeAfterPut =
   withTests 1 . property $ do
     let ss = s3ShuffleStore "distributed-dataset" "shuffle-store/"
-    liftIO . runConduitRes
-      $ mapM_ yield ["foo", "bar", "baz"]
-      .| (unclosure $ ssPut ss) 42
+    liftIO . runConduitRes $
+      mapM_ yield ["foo", "bar", "baz"]
+        .| (unclosure $ ssPut ss) 42
     r <-
-      liftIO . runConduitRes
-        $ (unclosure $ ssGet ss) 42 (RangeOnly 3 5)
-        .| C.foldMap id
+      liftIO . runConduitRes $
+        (unclosure $ ssGet ss) 42 (RangeOnly 3 5)
+          .| C.foldMap id
     r === "bar"
 
 pow :: Int -> Int -> Int

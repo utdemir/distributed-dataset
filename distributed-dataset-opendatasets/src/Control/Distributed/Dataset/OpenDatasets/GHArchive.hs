@@ -5,9 +5,10 @@
 module Control.Distributed.Dataset.OpenDatasets.GHArchive
   ( ghArchive,
     module Control.Distributed.Dataset.OpenDatasets.GHArchive.Types,
+
     -- * Re-exports
-    fromGregorian
-    )
+    fromGregorian,
+  )
 where
 
 --------------------------------------------------------------------------------
@@ -16,8 +17,8 @@ import Conduit
     ConduitT,
     ResourceT,
     handleC,
-    throwM
-    )
+    throwM,
+  )
 --------------------------------------------------------------------------------
 import Control.Distributed.Dataset
 import Control.Distributed.Dataset.OpenDatasets.GHArchive.Types
@@ -29,24 +30,25 @@ import qualified Data.Text as T
 import Data.Time.Calendar
   ( Day,
     fromGregorian,
-    showGregorian
-    )
+    showGregorian,
+  )
 import Data.Typeable
 import Network.HTTP.Simple
   ( getResponseBody,
     getResponseStatusCode,
     httpSource,
-    parseRequest
-    )
+    parseRequest,
+  )
 import Text.Printf
 
 --------------------------------------------------------------------------------
 ghArchive :: (Day, Day) -> Dataset GHEvent
 ghArchive (start, end) =
   dExternal
-    ( map (\str -> mkPartition (static processUrl `cap` cpure (static Dict) str))
+    ( map
+        (\str -> mkPartition (static processUrl `cap` cpure (static Dict) str))
         (allUrls start end)
-      )
+    )
     & dCoalesce ((fromEnum end - fromEnum start + 1) * 6)
 
 allUrls :: Day -> Day -> [T.Text]

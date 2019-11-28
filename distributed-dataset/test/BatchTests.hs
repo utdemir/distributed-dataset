@@ -36,11 +36,11 @@ prop_groupedAggrCount =
     ( sort
         >>> group
         >>> map (\xs@(x : _) -> (x, fromIntegral $ length xs))
-      )
+    )
     ( dGroupedAggr 5 (static id) aggrCount
         >>> dToList
         >>> fmap sort
-      )
+    )
 
 prop_distinct :: Property
 prop_distinct =
@@ -50,11 +50,11 @@ prop_distinct =
     ( sort
         >>> group
         >>> map head
-      )
+    )
     ( dDistinct 10
         >>> dToList
         >>> fmap sort
-      )
+    )
 
 prop_groupedAggrBottomK :: Property
 prop_groupedAggrBottomK =
@@ -64,33 +64,34 @@ prop_groupedAggrBottomK =
     (take 5 . sort)
     (dAggr (aggrBottomK (static Dict) 5 (static id)))
 
-propTest
-  :: (Show a, Typeable a, StaticSerialise a, Eq b, Show b)
-  => Closure (Dict (Binary a, Typeable a))
-  -> GenT Identity a
-  -> ([a] -> b)
-  -> (Dataset a -> DD b)
-  -> Property
+propTest ::
+  (Show a, Typeable a, StaticSerialise a, Eq b, Show b) =>
+  Closure (Dict (Binary a, Typeable a)) ->
+  GenT Identity a ->
+  ([a] -> b) ->
+  (Dataset a -> DD b) ->
+  Property
 propTest dict gen reference impl =
   property $ do
     input <-
-      forAll $ Gen.list (Range.linear 0 10)
-        $ Gen.list (Range.constant 0 10)
-            gen
+      forAll $ Gen.list (Range.linear 0 10) $
+        Gen.list
+          (Range.constant 0 10)
+          gen
     let expected = reference $ concat input
     actual <-
-      liftIO . run
-        $ dExternal
-            [ mkPartition
-                ( static (\Dict -> mapM_ yield)
-                    `cap` dict
-                    `cap` cpure
-                            (static (\Dict -> Dict) `cap` dict)
-                            p
-                  )
-              | p <- input
-              ]
-        & impl
+      liftIO . run $
+        dExternal
+          [ mkPartition
+              ( static (\Dict -> mapM_ yield)
+                  `cap` dict
+                  `cap` cpure
+                    (static (\Dict -> Dict) `cap` dict)
+                    p
+              )
+            | p <- input
+          ]
+          & impl
     actual === expected
 
 run :: DD a -> IO a

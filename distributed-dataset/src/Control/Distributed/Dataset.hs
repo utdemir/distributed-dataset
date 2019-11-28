@@ -10,6 +10,7 @@
 
 module Control.Distributed.Dataset
   ( Dataset,
+
     -- * Transformations
     dMap,
     dFilter,
@@ -17,12 +18,15 @@ module Control.Distributed.Dataset
     dGroupedAggr,
     dDistinct,
     dDistinctBy,
+
     -- ** Low-level transformations
     dCoalesce,
     dPipe,
     dPartition,
+
     -- * Aggregations
     module Control.Distributed.Dataset.Aggr,
+
     -- * Execution
     dAggr,
     dFetch,
@@ -32,31 +36,35 @@ module Control.Distributed.Dataset
     runDDWith,
     Backend,
     ShuffleStore,
+
     -- * Creating datasets
     Partition,
     mkPartition,
     dExternal,
+
     -- * Class
     StaticSerialise (..),
     StaticHashable (..),
+
     -- * Re-exports
     initDistributedFork,
     liftIO,
     (&),
+
     -- ** Closure
     Closure,
     cap,
     cpure,
-    Dict (Dict)
-    )
+    Dict (Dict),
+  )
 where
 
 -------------------------------------------------------------------------------
 import Conduit hiding
   ( Consumer,
     Producer,
-    await
-    )
+    await,
+  )
 import qualified Conduit as C
 import Control.Distributed.Closure
 -------------------------------------------------------------------------------
@@ -84,11 +92,11 @@ mkPartition = PSimple
 
 -- |
 -- Transforms a 'Dataset' by passing every partition through the given Conduit.
-dPipe
-  :: (StaticSerialise a, StaticSerialise b)
-  => Closure (ConduitT a b (ResourceT IO) ())
-  -> Dataset a
-  -> Dataset b
+dPipe ::
+  (StaticSerialise a, StaticSerialise b) =>
+  Closure (ConduitT a b (ResourceT IO) ()) ->
+  Dataset a ->
+  Dataset b
 dPipe = DPipe
 
 -- |
@@ -146,12 +154,13 @@ dDistinct partitionCount = dDistinctBy partitionCount (static id)
 
 -- |
 -- Removes a new dataset with rows with the duplicate keys removed.
-dDistinctBy
-  :: StaticHashable b
-  => Int -- ^ Target number of partitions
-  -> Closure (a -> b)
-  -> Dataset a
-  -> Dataset a
+dDistinctBy ::
+  StaticHashable b =>
+  -- | Target number of partitions
+  Int ->
+  Closure (a -> b) ->
+  Dataset a ->
+  Dataset a
 dDistinctBy partitionCount (key :: Closure (a -> b)) ds =
   case dStaticSerialise ds of
     Dict ->
@@ -171,13 +180,15 @@ dDistinctBy partitionCount (key :: Closure (a -> b)) ds =
 
 -- |
 -- Apply an aggregation to all rows sharing the same key.
-dGroupedAggr
-  :: (StaticHashable k, StaticSerialise k, StaticSerialise b)
-  => Int -- ^ Target number of partitions
-  -> Closure (a -> k) -- ^ Grouping key
-  -> Aggr a b
-  -> Dataset a
-  -> Dataset (k, b)
+dGroupedAggr ::
+  (StaticHashable k, StaticSerialise k, StaticSerialise b) =>
+  -- | Target number of partitions
+  Int ->
+  -- | Grouping key
+  Closure (a -> k) ->
+  Aggr a b ->
+  Dataset a ->
+  Dataset (k, b)
 dGroupedAggr
   partitionCount
   (kc :: Closure (a -> k))
@@ -191,30 +202,32 @@ dGroupedAggr
         ds
           & dMap (static (\k a -> (k a, a)) `cap` kc)
           & dPipe
-              ( static (\Dict -> aggrC @a @t @k)
-                  `cap` staticHashable @k
-                  `cap` f1c
-                )
+            ( static (\Dict -> aggrC @a @t @k)
+                `cap` staticHashable @k
+                `cap` f1c
+            )
           & dPartition partitionCount (static (fst @k @t))
           & dPipe
-              ( static (\Dict -> aggrC @t @b @k)
-                  `cap` staticHashable @k
-                  `cap` f2c
-                )
+            ( static (\Dict -> aggrC @t @b @k)
+                `cap` staticHashable @k
+                `cap` f2c
+            )
     where
-      aggrC
-        :: forall a' b' k'. (Eq k', Hashable k')
-        => F.Fold a' b'
-        -> ConduitT ( k', a') ( k', b') (ResourceT IO) ()
+      aggrC ::
+        forall a' b' k'.
+        (Eq k', Hashable k') =>
+        F.Fold a' b' ->
+        ConduitT (k', a') (k', b') (ResourceT IO) ()
       aggrC (F.Fold step init extract) =
         go step init extract HM.empty
-      go
-        :: forall a' b' x' k'. (Eq k', Hashable k')
-        => ( b' -> a' -> b')
-        -> b'
-        -> ( b' -> x')
-        -> HM.HashMap k' b'
-        -> ConduitT ( k', a') ( k', x') (ResourceT IO) ()
+      go ::
+        forall a' b' x' k'.
+        (Eq k', Hashable k') =>
+        (b' -> a' -> b') ->
+        b' ->
+        (b' -> x') ->
+        HM.HashMap k' b' ->
+        ConduitT (k', a') (k', x') (ResourceT IO) ()
       go step init extract hm =
         C.await >>= \case
           Nothing ->
@@ -222,11 +235,11 @@ dGroupedAggr
               (\(k, b) -> C.yield (k, extract b))
               (HM.toList hm)
           Just (k, a) ->
-            go step init extract
-              $ HM.alter
-                  ( Just . \case
-                      Nothing -> step init a
-                      Just st -> step st a
-                    )
-                  k
-                  hm
+            go step init extract $
+              HM.alter
+                ( Just . \case
+                    Nothing -> step init a
+                    Just st -> step st a
+                )
+                k
+                hm

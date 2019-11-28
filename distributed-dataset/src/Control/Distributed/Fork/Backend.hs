@@ -1,13 +1,13 @@
-{-|
-You only need this module if you want to create a new backend for distributed-dataset.
-
-See 'Control.Distributed.Fork.Local.localProcessBackend' for a minimal example.
--}
+-- |
+-- You only need this module if you want to create a new backend for distributed-dataset.
+--
+-- See 'Control.Distributed.Fork.Local.localProcessBackend' for a minimal example.
 module Control.Distributed.Fork.Backend
   ( -- * Writing a 'Backend'.
     Backend (..),
     BackendM,
     argExecutorMode,
+
     -- * Reporting status
     ExecutorFinalStatus (..),
     ExecutorStatus (..),
@@ -18,12 +18,14 @@ module Control.Distributed.Fork.Backend
     submittedDesc,
     started,
     startedDesc,
+
     -- * Utils
     throttledBackend,
+
     -- * Re-exports
     liftIO,
-    getExecutablePath
-    )
+    getExecutablePath,
+  )
 where
 
 --------------------------------------------------------------------------------

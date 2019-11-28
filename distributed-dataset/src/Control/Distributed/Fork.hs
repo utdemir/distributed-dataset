@@ -26,23 +26,27 @@ module Control.Distributed.Fork
   ( fork,
     initDistributedFork,
     Backend,
+
     -- * Handle
     Handle,
     await,
+
     -- * ExecutorStatus
     pollHandle,
     ExecutorStatus (..),
     ExecutorPendingStatus (..),
     ExecutorFinalStatus (..),
+
     -- * Exceptions
     ExecutorFailedException (..),
+
     -- * Re-exports
     Serializable,
     Closure,
     cap,
     cpure,
-    Dict (Dict)
-    )
+    Dict (Dict),
+  )
 where
 
 --------------------------------------------------------------------------------
@@ -72,12 +76,12 @@ import Data.Text (Text)
 --   handle <- 'fork' 'Control.Distributed.Fork.Local.localProcessBackend' (static 'Dict') (static (return "Hello World!"))
 --   await handle >>= putStrLn
 -- @
-fork
-  :: MonadIO m
-  => Backend
-  -> Closure (Dict (Serializable a))
-  -> Closure (IO a)
-  -> m (Handle a)
+fork ::
+  MonadIO m =>
+  Backend ->
+  Closure (Dict (Serializable a)) ->
+  Closure (IO a) ->
+  m (Handle a)
 fork b d c = liftIO $ runBackend d c b
 
 -- |

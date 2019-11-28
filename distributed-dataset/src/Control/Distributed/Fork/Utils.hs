@@ -5,8 +5,8 @@
 module Control.Distributed.Fork.Utils
   ( forkConcurrently,
     Options (..),
-    defaultOptions
-    )
+    defaultOptions,
+  )
 where
 
 --------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ data Options
   = Options
       { oRetries :: Int,
         oShowProgress :: Bool
-        }
+      }
 
 defaultOptions :: Options
 defaultOptions = Options 2 True
@@ -41,7 +41,7 @@ data Progress
         started :: Int,
         finished :: Int,
         retried :: Int
-        }
+      }
   deriving (Eq)
 
 instance Semigroup Progress where
@@ -60,12 +60,12 @@ instance Group Progress where
 -- progress bar.
 --
 -- Throws 'Execut orFailedException' if something fails.
-forkConcurrently
-  :: Options
-  -> Backend
-  -> Closure (Dict (Serializable a))
-  -> [Closure (IO a)]
-  -> IO [a]
+forkConcurrently ::
+  Options ->
+  Backend ->
+  Closure (Dict (Serializable a)) ->
+  [Closure (IO a)] ->
+  IO [a]
 forkConcurrently options backend dict xs = do
   st <- atomically $ newTVar (True, mempty)
   asyncs <- forM xs $ updateThread st
@@ -106,23 +106,23 @@ forkConcurrently options backend dict xs = do
       let ratio = fromIntegral total / fromIntegral (termWidth - 2) :: Double
       async . fix $ \recurse -> do
         progress <-
-          atomically
-            $ readTVar st
-            >>= \case
-              (False, _) -> retry
-              (True, p) -> do
-                writeTVar st (False, p)
-                return p
+          atomically $
+            readTVar st
+              >>= \case
+                (False, _) -> retry
+                (True, p) -> do
+                  writeTVar st (False, p)
+                  return p
         let p c n = replicate (truncate (fromIntegral n / ratio)) c
-        putStr . concat
-          $ [ "\r",
-              "[",
-              p '#' (finished progress),
-              p ':' (started progress),
-              p '.' (submitted progress),
-              p ' ' (waiting progress),
-              "]"
-              ]
+        putStr . concat $
+          [ "\r",
+            "[",
+            p '#' (finished progress),
+            p ':' (started progress),
+            p '.' (submitted progress),
+            p ' ' (waiting progress),
+            "]"
+          ]
         if finished progress < total
           then threadDelay 10000 >> recurse
           else putStrLn ""

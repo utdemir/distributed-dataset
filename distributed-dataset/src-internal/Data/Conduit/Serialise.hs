@@ -75,5 +75,5 @@ deserialiseC = filterC (not . BS.null) .| pipe
                       error "parse failed. abrubt message?"
                 Just bs ->
                   liftIO (stToIO $ cont (Just bs)) >>= rec' . Just
-          )
+        )
         Nothing

@@ -37,12 +37,12 @@ prop_serialiseRoundtrip =
         return (m :: Maybe Int, t :: BS.ByteString)
     ch <- forAll $ Gen.integral (Range.constant 1 100)
     r <-
-      liftIO . runConduitRes
-        $ mapM_ yield xs
-        .| serialiseC
-        .| chunker ch
-        .| deserialiseC
-        .| sinkList
+      liftIO . runConduitRes $
+        mapM_ yield xs
+          .| serialiseC
+          .| chunker ch
+          .| deserialiseC
+          .| sinkList
     r === xs
 
 prop_serialiseWithLocRoundtrip :: Property
@@ -56,19 +56,19 @@ prop_serialiseWithLocRoundtrip =
         return (k :: Int, (m :: Maybe Int, t :: BS.ByteString))
     ref <- liftIO $ newIORef []
     bs <-
-      fmap BL.toStrict . liftIO . runConduitRes
-        $ mapM_ yield xs
-        .| (serialiseWithLocC >>= liftIO . writeIORef ref)
-        .| sinkLazy
+      fmap BL.toStrict . liftIO . runConduitRes $
+        mapM_ yield xs
+          .| (serialiseWithLocC >>= liftIO . writeIORef ref)
+          .| sinkLazy
     ref' <- liftIO $ readIORef ref
     r <-
       fmap concat . forM ref' $ \(k, (from, to)) -> do
         assert $ from < to
         let slice = BS.take (fromIntegral $ to - from + 1) . BS.drop (fromIntegral from) $ bs
-        fmap (map (k,)) . liftIO . runConduitRes
-          $ yield slice
-          .| deserialiseC
-          .| sinkList
+        fmap (map (k,)) . liftIO . runConduitRes $
+          yield slice
+            .| deserialiseC
+            .| sinkList
     r === xs
 
 chunker :: Monad m => Int -> ConduitT BS.ByteString BS.ByteString m ()

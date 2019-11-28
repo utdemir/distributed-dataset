@@ -4,6 +4,7 @@
 module Control.Distributed.Fork.AWS.Lambda
   ( -- * Usage
     withLambdaBackend,
+
     -- * Options
     LambdaBackendOptions,
     lambdaBackendOptions,
@@ -12,8 +13,8 @@ module Control.Distributed.Fork.AWS.Lambda
     lboMaxConcurrentInvocations,
     lboMaxConcurrentExecutions,
     lboMaxConcurrentDownloads,
-    lboKeepStack
-    )
+    lboKeepStack,
+  )
 where
 
 --------------------------------------------------------------------------------
@@ -26,23 +27,23 @@ import Control.Distributed.Fork.Backend
 import Control.Lens
   ( Lens',
     (^.),
-    lens
-    )
+    lens,
+  )
 import Data.Bool (bool)
 import Data.Monoid ((<>))
 import qualified Data.Text as T
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Format
   ( defaultTimeLocale,
-    formatTime
-    )
+    formatTime,
+  )
 import Network.AWS
   ( Credentials (Discover),
     envRegion,
     newEnv,
     runAWS,
-    runResourceT
-    )
+    runResourceT,
+  )
 
 --------------------------------------------------------------------------------
 
@@ -112,13 +113,13 @@ withLambdaBackend LambdaBackendOptions {..} f = do
       s3loc =
         S3Loc (BucketName _lboBucket) (_lboPrefix <> "-" <> cksum <> ".zip")
   putStrLn $ "Checking if deployment archive exists (" <> show s3loc <> ")."
-  runResourceT . runAWS env
-    $ awsObjectExists s3loc
-    >>= bool
-          ( liftIO (putStrLn $ "Uploading the deployment archive. (" <> show size <> " MB)")
-              >> awsUploadObject s3loc (archiveToByteString archive)
-            )
-          (liftIO $ putStrLn "Found archive, skipping upload.")
+  runResourceT . runAWS env $
+    awsObjectExists s3loc
+      >>= bool
+        ( liftIO (putStrLn $ "Uploading the deployment archive. (" <> show size <> " MB)")
+            >> awsUploadObject s3loc (archiveToByteString archive)
+        )
+        (liftIO $ putStrLn "Found archive, skipping upload.")
   time <-
     T.pack . formatTime defaultTimeLocale "%Y%m%d%H%M%S" <$> getCurrentTime
   let stackOptions =
@@ -127,7 +128,7 @@ withLambdaBackend LambdaBackendOptions {..} f = do
             soLambdaMemory = _lboMemory,
             soLambdaCode = s3loc,
             soKeep = _lboKeepStack
-            }
+          }
   putStrLn "Creating stack."
   withStack stackOptions env $ \si -> do
     putStrLn $ "Stack created: " <> T.unpack (siId si)
@@ -154,11 +155,12 @@ data LambdaBackendOptions
         _lboMaxConcurrentExecutions :: Int,
         _lboMaxConcurrentDownloads :: Int,
         _lboKeepStack :: Bool
-        }
+      }
 
-lambdaBackendOptions
-  :: T.Text -- ^ Name of the S3 bucket to store the deployment archive in.
-  -> LambdaBackendOptions
+lambdaBackendOptions ::
+  -- | Name of the S3 bucket to store the deployment archive in.
+  T.Text ->
+  LambdaBackendOptions
 lambdaBackendOptions bucket =
   LambdaBackendOptions
     { _lboBucket = bucket,
@@ -168,7 +170,7 @@ lambdaBackendOptions bucket =
       _lboMaxConcurrentExecutions = 0,
       _lboMaxConcurrentDownloads = 16,
       _lboKeepStack = False
-      }
+    }
 
 -- |
 -- Desired memory for the Lambda functions.

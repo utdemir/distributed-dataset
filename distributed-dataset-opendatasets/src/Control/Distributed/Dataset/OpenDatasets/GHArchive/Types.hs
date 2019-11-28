@@ -10,8 +10,8 @@ module Control.Distributed.Dataset.OpenDatasets.GHArchive.Types where
 import Codec.Serialise (Serialise)
 import Control.Distributed.Dataset
   ( Dict (Dict),
-    StaticSerialise (staticSerialise)
-    )
+    StaticSerialise (staticSerialise),
+  )
 import Control.Lens.TH (makeLenses, makePrisms)
 import Data.Aeson ((.:), FromJSON (..), withObject)
 import Data.Text (Text)
@@ -26,7 +26,8 @@ instance StaticSerialise GHEvent where
 
 instance FromJSON GHEvent where
   parseJSON val =
-    withObject "GHEvent"
+    withObject
+      "GHEvent"
       ( \obj ->
           GHEvent
             <$> obj
@@ -34,7 +35,7 @@ instance FromJSON GHEvent where
             <*> obj
             .: "repo"
             <*> parseJSON val
-        )
+      )
       val
 
 data GHEventType
@@ -47,14 +48,15 @@ instance StaticSerialise GHEventType where
 
 instance FromJSON GHEventType where
   parseJSON =
-    withObject "GHEventType"
+    withObject
+      "GHEventType"
       ( \obj -> do
           ty <- obj .: "type"
           payload <- obj .: "payload"
           case ty of
             "PushEvent" -> GHPushEvent <$> parseJSON payload
             other -> return $ GHOtherEvent other
-        )
+      )
 
 newtype GHPushEventPayload = GHPushEventPayload {_ghpepCommits :: [GHCommit]}
   deriving (Eq, Show, Generic, Serialise)

@@ -33,7 +33,7 @@ data DDEnv
       { _ddBackend :: Backend,
         _ddShuffleStore :: ShuffleStore,
         _ddLogLevel :: LogLevel
-        }
+      }
 
 makeLenses ''DDEnv
 
@@ -48,7 +48,7 @@ newtype DD a = DDT (ReaderT DDEnv (LoggingT IO) a)
       MonadCatch,
       MonadLogger,
       MonadUnliftIO
-      )
+    )
 
 runDD :: Backend -> ShuffleStore -> DD a -> IO a
 runDD = runDDWith LevelInfo

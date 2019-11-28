@@ -28,7 +28,7 @@ data StackOptions
         soLambdaMemory :: Int,
         soLambdaCode :: S3Loc,
         soKeep :: Bool
-        }
+      }
 
 data Response
   = Response Int ResponsePayload
