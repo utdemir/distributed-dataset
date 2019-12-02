@@ -70,6 +70,7 @@ overlays = se: su: {
   "foundation" = fixLocale su.foundation;
   "hedgehog" = fixLocale su.hedgehog;
   "memory" = fixLocale su.memory;
+  "ormolu" = fixLocale su.ormolu;
   "retry" = fixLocale su.retry;
   "shelly" = fixLocale su.shelly;
   "tasty-hedgehog" = fixLocale su.tasty-hedgehog;
@@ -120,9 +121,9 @@ in rec
       example-gh
     ];
     buildInputs = with haskellPackages; [
-      pkgsOrig.haskellPackages.cabal-install
-      pkgsOrig.haskellPackages.ghcid
-      pkgsOrig.haskellPackages.ormolu
+      haskellPackages.cabal-install
+      haskellPackages.ghcid
+      haskellPackages.ormolu
       pkgsOrig.niv
     ];
     withHoogle = true;

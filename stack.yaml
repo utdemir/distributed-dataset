@@ -19,4 +19,5 @@ allow-newer: true
 
 docker:
   enable: true
-  stack-exe: download
+  image: utdemir/ghc-musl:v1-ghc865
+  set-user: false

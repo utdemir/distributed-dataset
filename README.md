@@ -63,7 +63,7 @@ Provides `Dataset`'s reading from public open datasets. Currently it can fetch G
 
   * If you use Nix on Linux:
 
-    * (Optional) Use my binary cache on Cachix to reduce compilation times:
+    * (Recommended) Use my binary cache on Cachix to reduce compilation times:
 
     ```sh
     $(nix-build -A cachix https://cachix.org/api/v1/install)/bin/cachix use utdemir
