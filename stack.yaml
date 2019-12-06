@@ -19,5 +19,4 @@ allow-newer: true
 
 docker:
   enable: true
-  image: utdemir/ghc-musl:v1-ghc865
-  set-user: false
+  image: utdemir/ghc-musl:v2-ghc865
