@@ -2,4 +2,5 @@ packages: distributed-dataset/
           distributed-dataset-aws/
           distributed-dataset-opendatasets/
           examples/gh/
-
+          examples/parquet/
+          distributed-dataset-parquet/
