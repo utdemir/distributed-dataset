@@ -38,7 +38,8 @@ app = do
         "https://yigitozkavci-dd-test-bucket.s3.amazonaws.com/test.parquet"
   C.runResourceT (runExceptT (P.readMetadata (P.remoteParquetFile filename)))
     >>= \case
-          Left  _        -> fail "wow"
+          Left err ->
+            fail $ "Could not read the Parquet metadata: " <> T.unpack err
           Right metadata -> do
             liftIO $ print metadata
             readParquet filename metadata & dToList >>= mapM_ (liftIO . print) -- Print them

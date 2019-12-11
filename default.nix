@@ -83,10 +83,6 @@ overlays = se: su: {
   "yaml" = fixLocale su.yaml;
 
   # not on Hackage yet
-  pinch = se.callCabal2nix
-    "pinch"
-    (gitignore ../pinch)
-    {};
   parquet-hs = se.callCabal2nix
     "parquet-hs"
     (gitignore ../parquet-hs)
