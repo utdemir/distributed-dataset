@@ -28,7 +28,7 @@ cd "$( dirname "${BASH_SOURCE[0]}" )"
 
 _orig_args="$*"
 function ensure_nix_shell() {
-    if [[ ! "$IN_NIX_SHELL" == "pure" ]]; then
+    if [[ -z "$IN_NIX_SHELL" ]]; then
         cmd="./make.sh $_orig_args"
         echo "Entering nix-shell..."
         nix-shell --pure --run "$cmd"
