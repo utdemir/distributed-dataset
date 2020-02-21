@@ -22,6 +22,9 @@ library
                      , Control.Distributed.Dataset.Local
                      , Control.Distributed.Dataset.Aggr
                      , Control.Distributed.Dataset.ShuffleStore
+                     , Data.FileSystem
+                     , Path.Extra
+                     , Data.FileSystem.InMemory
                      , Control.Concurrent.Throttled
   other-modules:       Control.Distributed.Fork.Internal
                      , Control.Distributed.Dataset.Internal.Dataset
@@ -38,6 +41,7 @@ library
                      , clock
                      , conduit
                      , conduit-extra
+                     , path
                      , containers
                      , directory
                      , distributed-closure
@@ -77,6 +81,7 @@ test-suite distributed-dataset-tests
   ghc-options:      -Wall -threaded
   build-depends:    base >=4.11 && < 5
                   , distributed-dataset
+                  , hello
                   , binary
                   , bytestring
                   , conduit
