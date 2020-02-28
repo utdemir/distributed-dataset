@@ -57,12 +57,13 @@ withExecutorStats act = do
       countIt ref =
         iterMC $ \_ ->
           liftIO $ modifyIORef ref (+ 1)
-      hooks = ExecutorStatsHooks
-        { eshDownload = countBs downloadRef,
-          eshUpload = countBs uploadRef,
-          eshInput = countIt inputRef,
-          eshOutput = countIt outputRef
-        }
+      hooks =
+        ExecutorStatsHooks
+          { eshDownload = countBs downloadRef,
+            eshUpload = countBs uploadRef,
+            eshInput = countIt inputRef,
+            eshOutput = countIt outputRef
+          }
   start <- getTime Monotonic
   ret <- act hooks
   end <- getTime Monotonic

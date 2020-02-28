@@ -294,13 +294,14 @@ seCreateStack options@StackOptions {soName = StackName stackName} = do
                    (envAnswerBucketUrl, answerBucket)
                  ]
            )
-  return $ StackInfo
-    { siId = stackId,
-      siFunc = func,
-      siAnswerQueue = answerQueue,
-      siDeadLetterQueue = deadLetterQueue,
-      siAnswerBucket = answerBucket
-    }
+  return $
+    StackInfo
+      { siId = stackId,
+        siFunc = func,
+        siAnswerQueue = answerQueue,
+        siDeadLetterQueue = deadLetterQueue,
+        siAnswerBucket = answerBucket
+      }
   where
     lookupOutput :: Stack -> T.Text -> Maybe T.Text
     lookupOutput st key =

@@ -39,10 +39,11 @@ withLocalTmpShuffleStore act =
     (act . mk)
   where
     mk :: String -> ShuffleStore
-    mk tmp' = ShuffleStore
-      { ssGet = static (\tmp int range -> streamFile range (tmp </> show int)) `cap` cpure (static Dict) tmp',
-        ssPut = static (\tmp int -> C.sinkFile (tmp </> show int)) `cap` cpure (static Dict) tmp'
-      }
+    mk tmp' =
+      ShuffleStore
+        { ssGet = static (\tmp int range -> streamFile range (tmp </> show int)) `cap` cpure (static Dict) tmp',
+          ssPut = static (\tmp int -> C.sinkFile (tmp </> show int)) `cap` cpure (static Dict) tmp'
+        }
 
 streamFile :: Range -> FilePath -> ConduitT t BS.ByteString (ResourceT IO) ()
 streamFile RangeAll fp = C.sourceFile fp
