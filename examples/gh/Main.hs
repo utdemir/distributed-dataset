@@ -25,7 +25,7 @@ import System.Environment (getArgs)
 app :: DD ()
 app =
   -- Fetch events from GitHub between given dates
-  ghArchive (fromGregorian 2018 1 1, fromGregorian 2018 12 31)
+  ghArchive (fromGregorian 2019 1 1, fromGregorian 2019 12 31)
     -- Extract every commit
     & dConcatMap
       ( static
