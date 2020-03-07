@@ -60,6 +60,15 @@ overlays = se: su: {
           ];
     });
 
+  # kernmantle deps
+  "kernmantle" =
+    se.callCabal2nix
+      "kernmantle"
+      "${sources.kernmantle}/kernmantle"
+      {};
+  "vinyl" =
+    haskell.lib.dontCheck su.vinyl;
+
   # Tests don't compile with musl:
   #   hGetContents: invalid argument (invalid byte sequence)
   #   commitBuffer: invalid argument (invalid character)

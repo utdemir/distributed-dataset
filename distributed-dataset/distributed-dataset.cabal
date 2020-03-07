@@ -45,6 +45,7 @@ library
                      , filepath
                      , foldl
                      , groups
+                     , kernmantle
                      , hashable
                      , heaps
                      , lens
