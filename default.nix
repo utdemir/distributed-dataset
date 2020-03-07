@@ -2,12 +2,22 @@ let
 sources = import ./nix/sources.nix;
 in
 
-{ pkgsOrig ? import sources.nixpkgs { config.allowBroken = true; }
+{ nixpkgs ? sources.nixpkgs
 , compiler ? "ghc865"
 }:
 
 let
+pkgsOrig = import nixpkgs {
+  config.allowBroken = true;
+  overlays = [
+    (se: su: {
+      curl = su.curl.override { gssSupport = false; ldapSupport = false; };
+    })
+  ];
+};
+
 pkgsMusl = pkgsOrig.pkgsMusl;
+
 haskell = pkgsMusl.haskell;
 
 gitignore = pkgsMusl.nix-gitignore.gitignoreSourcePure [ ./.gitignore ];
