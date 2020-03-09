@@ -3,7 +3,7 @@ sources = import ./nix/sources.nix;
 in
 
 { nixpkgs ? sources.nixpkgs
-, compiler ? "ghc865"
+, compiler ? "ghc882"
 }:
 
 let
