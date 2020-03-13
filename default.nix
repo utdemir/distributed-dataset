@@ -16,6 +16,12 @@ fixLocale = pkg: pkgsMusl.lib.overrideDerivation pkg (_: {
   LANG="C.UTF-8";
 });
 
+staticLibs = with pkgsMusl; [
+  zlib.static
+  (libffi.override { stdenv = makeStaticLibraries stdenv; })
+  (gmp.override { withStatic = true; })
+];
+
 overlays = se: su: {
   # `cabal2nix` from `pkgsOrig` instead of `pkgsMusl`.
   callCabal2nix = name: src:
@@ -34,11 +40,7 @@ overlays = se: su: {
                  (gitignore ./distributed-dataset-aws)
                  {};
     in  haskell.lib.overrideCabal orig (_: {
-          extraLibraries = with pkgsMusl; [
-            zlib.static
-            (libffi.override { stdenv = makeStaticLibraries stdenv; })
-            (gmp.override { withStatic = true; })
-          ];
+          extraLibraries = staticLibs;
     });
 
   "distributed-dataset-opendatasets" =
@@ -53,11 +55,7 @@ overlays = se: su: {
                  (gitignore ./examples/gh)
                  {};
     in  haskell.lib.overrideCabal orig (_: {
-          extraLibraries = with pkgsMusl; [
-            musl zlib.static
-            (libffi.override { stdenv = makeStaticLibraries stdenv; })
-            (gmp.override { withStatic = true; })
-          ];
+          extraLibraries = staticLibs;
     });
 
   # Tests don't compile with musl:
