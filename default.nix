@@ -125,5 +125,8 @@ in rec
       pkgsOrig.niv
     ];
     withHoogle = true;
+    shellHook = ''
+      export LOCALE_ARCHIVE="${pkgsOrig.glibcLocales}/lib/locale/locale-archive"
+    '';
   };
 }
