@@ -1,5 +1,6 @@
 packages: distributed-dataset/
           distributed-dataset-aws/
           distributed-dataset-opendatasets/
+          distributed-dataset-ssh/
           examples/gh/
 

@@ -1,0 +1,51 @@
+name:                distributed-dataset-ssh
+version:             0.0.1.0
+synopsis:            SSH backends for distributed-dataset.
+homepage:            https://github.com/utdemir/distributed-dataset
+license:             BSD3
+license-file:        LICENSE
+author:              Utku Demir
+maintainer:          Utku Demir <me@utdemir.com>
+copyright:           Utku Demir
+category:            Control
+build-type:          Simple
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  exposed-modules:     Control.Distributed.Fork.SSH
+  ghc-options:         -Wall
+  build-depends:       base >= 4.7 && < 5
+                     , distributed-dataset
+                     , async
+                     , bytestring
+                     , conduit
+                     , containers
+                     , interpolate
+                     , stm
+                     , typed-process
+                     , base64-bytestring
+
+flag enable-ssh-tests
+    Description: Enable tests which require an SSH host
+    Manual: True
+    Default: False
+
+test-suite distributed-dataset-ssh-tests
+    if !flag(enable-ssh-tests)
+      buildable: False
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Test.hs
+    default-language: Haskell2010
+    ghc-options:      -Wall -static -optl-static -optl-pthread -fPIC
+    build-depends:  base >=4.7 && < 5
+                  , distributed-dataset
+                  , distributed-dataset-ssh
+                  , distributed-closure
+                  , conduit
+                  , hedgehog
+                  , template-haskell
+                  , text
+

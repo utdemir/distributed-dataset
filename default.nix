@@ -43,6 +43,16 @@ overlays = se: su: {
           extraLibraries = staticLibs;
     });
 
+   "distributed-dataset-ssh" =
+    let orig = se.callCabal2nix
+                 "distributed-dataset-ssh"
+                 (gitignore ./distributed-dataset-ssh)
+                 {};
+    in  haskell.lib.overrideCabal orig (_: {
+          extraLibraries = staticLibs;
+    });
+
+
   "distributed-dataset-opendatasets" =
     se.callCabal2nix
       "distributed-dataset-opendatasets"
@@ -90,6 +100,7 @@ in rec
 {
   "distributed-dataset" = haskellPackages.distributed-dataset;
   "distributed-dataset-aws" = haskellPackages.distributed-dataset-aws;
+  "distributed-dataset-ssh" = haskellPackages.distributed-dataset-ssh;
   "distributed-dataset-opendatasets" = haskellPackages.distributed-dataset-opendatasets;
   "example-gh" = haskellPackages.example-gh;
 
@@ -108,6 +119,7 @@ in rec
       -o "$out" \
       ${distributed-dataset.src} \
       ${distributed-dataset-aws.src} \
+      ${distributed-dataset-ssh.src} \
       ${distributed-dataset-opendatasets.src}
   '';
 
@@ -115,6 +127,7 @@ in rec
     packages = p: with p; [
       distributed-dataset
       distributed-dataset-aws
+      distributed-dataset-ssh
       distributed-dataset-opendatasets
       example-gh
     ];
