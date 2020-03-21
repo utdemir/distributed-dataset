@@ -125,6 +125,8 @@ in rec
       pkgsOrig.niv
     ];
     withHoogle = true;
+    # shellFor unsets LOCALE_ARCHIVE when GHC is compiled with musl, which breaks
+    # glibc-linked programs in nix-shell in weird ways.
     shellHook = ''
       export LOCALE_ARCHIVE="${pkgsOrig.glibcLocales}/lib/locale/locale-archive"
     '';
