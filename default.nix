@@ -26,6 +26,12 @@ fixLocale = pkg: pkgsMusl.lib.overrideDerivation pkg (_: {
   LANG="C.UTF-8";
 });
 
+staticLibs = with pkgsMusl; [
+  zlib.static
+  (libffi.override { stdenv = makeStaticLibraries stdenv; })
+  (gmp.override { withStatic = true; })
+];
+
 overlays = se: su: {
   # `cabal2nix` from `pkgsOrig` instead of `pkgsMusl`.
   callCabal2nix = name: src:
@@ -44,11 +50,7 @@ overlays = se: su: {
                  (gitignore ./distributed-dataset-aws)
                  {};
     in  haskell.lib.overrideCabal orig (_: {
-          extraLibraries = with pkgsMusl; [
-            zlib.static
-            (libffi.override { stdenv = makeStaticLibraries stdenv; })
-            (gmp.override { withStatic = true; })
-          ];
+          extraLibraries = staticLibs;
     });
 
   "distributed-dataset-opendatasets" =
@@ -63,11 +65,7 @@ overlays = se: su: {
                  (gitignore ./examples/gh)
                  {};
     in  haskell.lib.overrideCabal orig (_: {
-          extraLibraries = with pkgsMusl; [
-            musl zlib.static
-            (libffi.override { stdenv = makeStaticLibraries stdenv; })
-            (gmp.override { withStatic = true; })
-          ];
+          extraLibraries = staticLibs;
     });
 
   # kernmantle deps
@@ -146,5 +144,10 @@ in rec
       pkgsOrig.niv
     ];
     withHoogle = true;
+    # shellFor unsets LOCALE_ARCHIVE when GHC is compiled with musl, which breaks
+    # glibc-linked programs in nix-shell in weird ways.
+    shellHook = ''
+      export LOCALE_ARCHIVE="${pkgsOrig.glibcLocales}/lib/locale/locale-archive"
+    '';
   };
 }

@@ -21,6 +21,9 @@ module Control.Distributed.Fork.Backend
 
     -- * Utils
     throttledBackend,
+    runBackend,
+    toBackendStdin,
+    fromBackendStdout,
 
     -- * Re-exports
     liftIO,

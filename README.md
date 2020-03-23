@@ -5,7 +5,8 @@
 A distributed data processing framework in pure Haskell. Inspired by [Apache Spark](https://spark.apache.org/).
 
 * **An example:** [/examples/gh/Main.hs](/examples/gh/Main.hs)
-* **API documentation:** [https://utdemir.github.io/distributed-dataset/](https://utdemir.github.io/distributed-dataset/)
+* **API documentation:** <https://utdemir.github.io/distributed-dataset/>
+* **Introduction blogpost:** <https://utdemir.com/posts/ann-distributed-dataset.html>
 
 ## Packages
 
