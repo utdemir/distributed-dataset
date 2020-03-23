@@ -117,7 +117,7 @@ runBackend dict cls (Backend backend) =
   case unclosure dict of
     Dict -> do
       let BackendM m =
-            backend . BL.toStrict . encode $ toExecutorClosure dict cls
+            backend $ toBackendStdin dict cls
       t <- atomically (newTVar $ ExecutorPending (ExecutorWaiting Nothing))
       _ <-
         forkIO $ do
@@ -129,16 +129,16 @@ runBackend dict cls (Backend backend) =
                         "Backend threw an exception: "
                           <> T.pack (show err)
                   )
-                  parseAnswer
+                  fromBackendStdout
                   answer
           atomically $ writeTVar t (ExecutorFinished r)
           return ()
       return $ Handle t
 
-toExecutorClosure :: Closure (Dict (Serializable a)) -> Closure (IO a) -> ExecutorClosure
-toExecutorClosure dict cls =
+toBackendStdin :: Closure (Dict (Serializable a)) -> Closure (IO a) -> BS.ByteString
+toBackendStdin dict cls =
   case unclosure dict of
-    Dict -> ZlibWrapper $ static run `cap` dict `cap` cls
+    Dict -> BL.toStrict . encode . ZlibWrapper $ static run `cap` dict `cap` cls
   where
     run :: forall a. Dict (Serializable a) -> IO a -> IO ()
     run Dict a =
@@ -149,8 +149,8 @@ toExecutorClosure dict cls =
                         <> T.pack (show ex)
                 )
 
-parseAnswer :: Binary a => BS.ByteString -> ExecutorFinalStatus a
-parseAnswer bs =
+fromBackendStdout :: Binary a => BS.ByteString -> ExecutorFinalStatus a
+fromBackendStdout bs =
   case decodeOrFail (BL.fromStrict bs) of
     Left (_, _, err) -> ExecutorFailed $ "Error decoding answer: " <> T.pack err
     Right (_, _, a) -> a
