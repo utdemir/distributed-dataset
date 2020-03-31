@@ -22,6 +22,7 @@ library
                      , Control.Distributed.Dataset.Local
                      , Control.Distributed.Dataset.Aggr
                      , Control.Distributed.Dataset.ShuffleStore
+                     , Control.Distributed.Dataset.Internal.Arrow
                      , Control.Concurrent.Throttled
   other-modules:       Control.Distributed.Fork.Internal
                      , Control.Distributed.Dataset.Internal.Dataset
@@ -44,6 +45,7 @@ library
                      , exceptions
                      , filepath
                      , foldl
+                     , free
                      , groups
                      , hashable
                      , heaps
