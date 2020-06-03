@@ -11,7 +11,6 @@ module Control.Distributed.Dataset.OpenDatasets.GHArchive
   )
 where
 
---------------------------------------------------------------------------------
 import Conduit
   ( (.|),
     ConduitT,
@@ -19,7 +18,6 @@ import Conduit
     handleC,
     throwM,
   )
---------------------------------------------------------------------------------
 import Control.Distributed.Dataset
 import Control.Distributed.Dataset.OpenDatasets.GHArchive.Types
 import Control.Exception

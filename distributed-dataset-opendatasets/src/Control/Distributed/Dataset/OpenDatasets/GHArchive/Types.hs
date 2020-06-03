@@ -68,10 +68,15 @@ instance FromJSON GHPushEventPayload where
   parseJSON =
     withObject "GHPushEventPayload" $ \obj ->
       GHPushEventPayload
-        <$> obj
-        .: "commits"
+        <$> obj .: "commits"
 
-data GHCommit = GHCommit {_ghcAuthor :: GHCommitAuthor, _ghcMessage :: Text, _ghcSha :: Text}
+data GHCommit
+  = GHCommit
+      { _ghcAuthor :: GHCommitAuthor,
+        _ghcMessage :: Text,
+        _ghcSha :: Text,
+        _ghcDistinct :: Bool
+      }
   deriving (Eq, Show, Generic, Serialise)
 
 instance StaticSerialise GHCommit where
@@ -81,12 +86,10 @@ instance FromJSON GHCommit where
   parseJSON =
     withObject "GHCommit" $ \obj ->
       GHCommit
-        <$> obj
-        .: "author"
-        <*> obj
-        .: "message"
-        <*> obj
-        .: "sha"
+        <$> obj .: "author"
+        <*> obj .: "message"
+        <*> obj .: "sha"
+        <*> obj .:? "distinct" .!= True
 
 data GHCommitAuthor = GHCommitAuthor {_ghcaEmail :: Text, _ghcaName :: Text}
   deriving (Eq, Show, Generic, Serialise)
@@ -98,10 +101,8 @@ instance FromJSON GHCommitAuthor where
   parseJSON =
     withObject "GHCommitAuthor" $ \obj ->
       GHCommitAuthor
-        <$> obj
-        .: "email"
-        <*> obj
-        .: "name"
+        <$> obj .: "email"
+        <*> obj .: "name"
 
 data GHActor = GHActor {_ghaId :: Integer, _ghaLogin :: Text}
   deriving (Eq, Show, Generic, Serialise)
@@ -113,10 +114,8 @@ instance FromJSON GHActor where
   parseJSON =
     withObject "GHActor" $ \obj ->
       GHActor
-        <$> obj
-        .: "id"
-        <*> obj
-        .: "login"
+        <$> obj .: "id"
+        <*> obj .: "login"
 
 data GHRepo = GHRepo {_ghrId :: Integer, _ghrName :: Text}
   deriving (Eq, Show, Generic, Serialise)
@@ -128,10 +127,8 @@ instance FromJSON GHRepo where
   parseJSON =
     withObject "GHRepo" $ \obj ->
       GHRepo
-        <$> obj
-        .: "id"
-        <*> obj
-        .: "name"
+        <$> obj .: "id"
+        <*> obj .: "name"
 
 makeLenses ''GHEvent
 

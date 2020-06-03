@@ -102,10 +102,8 @@ execute LambdaEnv {..} (invocationThrottle, executionThrottle, downloadThrottle)
             ?~ Event
       submitted
       unless (irs ^. irsStatusCode `div` 100 == 2)
-        $ throwIO
-          . InvokeException
-        $ "Invoke failed. Status code: "
-          <> T.pack (show $ irs ^. irsStatusCode)
+        $ throwIO . InvokeException
+        $ "Invoke failed. Status code: " <> T.pack (show $ irs ^. irsStatusCode)
       -- wait fo the answer
       liftIO . join $ readMVar mvar
   case answer of
