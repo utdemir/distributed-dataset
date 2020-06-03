@@ -21,13 +21,16 @@ module Control.Distributed.Dataset.Aggr
     aggrFromMonoid,
     aggrFromReduce,
     aggrFromFold,
+
+    -- * Re-exports
+    module Data.Functor.Static,
+    module Control.Applicative.Static,
+    module Data.Profunctor.Static,
   )
 where
 
--------------------------------------------------------------------------------
 import Control.Applicative.Static
 import Control.Distributed.Closure
--------------------------------------------------------------------------------
 import Control.Distributed.Dataset.Internal.Aggr
 import Control.Distributed.Dataset.Internal.Class
 import qualified Control.Foldl as F
@@ -39,8 +42,6 @@ import Data.Monoid
 import Data.Ord
 import Data.Profunctor.Static
 import Data.Typeable
-
--------------------------------------------------------------------------------
 
 -- |
 -- Returns the sum of the inputs.

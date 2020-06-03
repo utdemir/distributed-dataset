@@ -39,15 +39,14 @@ import Network.HTTP.Simple
   )
 import Text.Printf
 
---------------------------------------------------------------------------------
-ghArchive :: (Day, Day) -> Dataset GHEvent
-ghArchive (start, end) =
+ghArchive :: Int -> (Day, Day) -> Dataset GHEvent
+ghArchive partitions (start, end) =
   dExternal
     ( map
         (\str -> mkPartition (static processUrl `cap` cpure (static Dict) str))
         (allUrls start end)
     )
-    & dCoalesce ((fromEnum end - fromEnum start + 1) * 6)
+    & dCoalesce partitions
 
 allUrls :: Day -> Day -> [T.Text]
 allUrls start end = do

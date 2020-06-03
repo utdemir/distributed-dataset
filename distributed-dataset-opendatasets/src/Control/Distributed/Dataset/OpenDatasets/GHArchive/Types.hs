@@ -6,19 +6,25 @@
 
 module Control.Distributed.Dataset.OpenDatasets.GHArchive.Types where
 
---------------------------------------------------------------------------------
 import Codec.Serialise (Serialise)
 import Control.Distributed.Dataset
   ( Dict (Dict),
     StaticSerialise (staticSerialise),
   )
 import Control.Lens.TH (makeLenses, makePrisms)
-import Data.Aeson ((.:), FromJSON (..), withObject)
+import Data.Aeson ((.!=), (.:), (.:?), FromJSON (..), withObject)
 import Data.Text (Text)
+import Data.Time
 import GHC.Generics (Generic)
 
---------------------------------------------------------------------------------
-data GHEvent = GHEvent {_gheActor :: GHActor, _gheRepo :: GHRepo, _gheType :: GHEventType}
+data GHEvent
+  = GHEvent
+      { _gheId :: Text,
+        _gheCreatedAt :: UTCTime,
+        _gheActor :: GHActor,
+        _gheRepo :: GHRepo,
+        _gheType :: GHEventType
+      }
   deriving (Eq, Show, Generic, Serialise)
 
 instance StaticSerialise GHEvent where
@@ -30,13 +36,19 @@ instance FromJSON GHEvent where
       "GHEvent"
       ( \obj ->
           GHEvent
-            <$> obj
-            .: "actor"
-            <*> obj
-            .: "repo"
+            <$> obj .: "id"
+            <*> (obj .: "created_at" >>= tp)
+            <*> obj .: "actor"
+            <*> obj .: "repo"
             <*> parseJSON val
       )
       val
+    where
+      tp =
+        parseTimeM
+          False
+          defaultTimeLocale
+          "%Y-%m-%dT%H:%M:%S%Z" -- Ex: 2019-05-15T15:20:53Z
 
 data GHEventType
   = GHPushEvent GHPushEventPayload

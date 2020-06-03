@@ -11,46 +11,31 @@ data; and it'll set you back a few dollars on your AWS bill.
 -}
 module Main where
 
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
 import Control.Distributed.Dataset
 import Control.Distributed.Dataset.AWS
 import Control.Distributed.Dataset.OpenDatasets.GHArchive
 import Control.Lens
 import qualified Data.Text as T
+import Data.Time.Clock
 import System.Environment (getArgs)
 
---------------------------------------------------------------------------------
 app :: DD ()
 app =
-  -- Fetch events from GitHub between given dates
-  ghArchive (fromGregorian 2019 1 1, fromGregorian 2019 12 31)
-    -- Extract every commit
-    & dConcatMap
+  ghArchive 10000 (fromGregorian 2019 01 25, fromGregorian 2020 04 01)
+    & dMap
       ( static
           ( \e ->
-              let author = e ^. gheActor . ghaLogin
-                  commits =
-                    e ^.. gheType . _GHPushEvent . ghpepCommits
-                      . traverse
-                      . ghcMessage
-               in map (author,) commits
+              let time = e ^. gheCreatedAt
+                  commits = e ^.. gheType . _GHPushEvent . ghpepCommits
+               in (show $ utctDay time, length commits)
           )
       )
-    -- Filter commits containing the word 'cabal'
-    & dFilter
-      ( static
-          ( \(_, commit) ->
-              "cabal" `T.isInfixOf` T.toLower commit
-          )
-      )
-    -- Count the authors
-    & dGroupedAggr 50 (static fst) aggrCount
-    -- Fetch the top 20 to driver as a list
-    & dAggr (aggrTopK (static Dict) 20 (static snd))
-    -- Print them
-    >>= mapM_ (liftIO . print)
+    & dGroupedAggr
+      1
+      (static fst)
+      (static snd `staticLmap` aggrSum (static Dict))
+    & dToList
+    >>= mapM_ (\(d, n) -> liftIO . putStrLn $ d ++ " " ++ show n)
 
 main :: IO ()
 main = do

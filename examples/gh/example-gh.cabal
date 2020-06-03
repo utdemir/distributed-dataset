@@ -19,3 +19,4 @@ executable example-gh
                      , distributed-dataset-opendatasets
                      , lens
                      , text
+                     , time
