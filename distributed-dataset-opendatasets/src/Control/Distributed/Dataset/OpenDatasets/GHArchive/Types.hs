@@ -13,7 +13,7 @@ import Control.Distributed.Dataset
     StaticSerialise (staticSerialise),
   )
 import Control.Lens.TH (makeLenses, makePrisms)
-import Data.Aeson ((.:), FromJSON (..), withObject)
+import Data.Aeson ((.:), (.:?), (.!=), FromJSON (..), withObject)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
