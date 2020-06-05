@@ -1,15 +1,25 @@
 let
+compiler = "ghc8101";
 sources = import ./nix/sources.nix;
-in
 
-{ pkgsOrig ? import sources.nixpkgs { config.allowBroken = true; }
-, compiler ? "ghc865"
-}:
+pkgsOrig =
+  let
+    basePkgs = import sources.nixpkgs {};
+    patched = basePkgs.applyPatches {
+      name = "nixpkgs-patched";
+      src = sources.nixpkgs;
+      patches = [
+        ./nix/patches/0001-Revert-ghc-8.6.3-binary-8.6.5-binary.patch
+      ];
+    };
+  in
+    import patched { config.allowBroken = true; };
 
-let
-pkgsMusl = pkgsOrig.pkgsMusl;
+pkgsMusl = pkgsOrig.extend (se: su: {
+  fetchgit = pkgsOrig.fetchgit;
+});
+
 haskell = pkgsMusl.haskell;
-
 gitignore = pkgsMusl.nix-gitignore.gitignoreSourcePure [ ./.gitignore ];
 
 fixLocale = pkg: pkgsMusl.lib.overrideDerivation pkg (_: {
@@ -95,21 +105,24 @@ in rec
 
   inherit haskellPackages;
 
-  docs = pkgsMusl.runCommand "distributed-dataset-docs" {
-    buildInputs =
-      [ (haskellPackages.ghcWithPackages (hp: with hp;
-          [ distributed-dataset distributed-dataset-aws distributed-dataset-opendatasets ]))
-        haskellPackages.standalone-haddock
-      ];
-  } ''
-    mkdir "$out"
-    standalone-haddock \
-      --dist-dir "$(mktemp -d)" \
-      -o "$out" \
-      ${distributed-dataset.src} \
-      ${distributed-dataset-aws.src} \
-      ${distributed-dataset-opendatasets.src}
-  '';
+  # standalone-haddock does not compile with cabal3 yet.
+  # See: https://github.com/ktvoelker/standalone-haddock/issues/30
+  #
+  # docs = pkgsMusl.runCommand "distributed-dataset-docs" {
+  #   buildInputs =
+  #     [ (haskellPackages.ghcWithPackages (hp: with hp;
+  #         [ distributed-dataset distributed-dataset-aws distributed-dataset-opendatasets ]))
+  #       haskellPackages.standalone-haddock
+  #     ];
+  # } ''
+  #   mkdir "$out"
+  #   standalone-haddock \
+  #     --dist-dir "$(mktemp -d)" \
+  #     -o "$out" \
+  #     ${distributed-dataset.src} \
+  #     ${distributed-dataset-aws.src} \
+  #     ${distributed-dataset-opendatasets.src}
+  # '';
 
   shell = haskellPackages.shellFor {
     packages = p: with p; [

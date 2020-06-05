@@ -19,7 +19,6 @@ import Control.Distributed.Dataset.ShuffleStore
 import Control.Distributed.Fork.AWS
 import Control.Lens
 import Control.Monad
-import Control.Monad.Fail
 import Control.Monad.Trans.AWS (AWST)
 import qualified Data.Text as T
 import Network.AWS
@@ -70,8 +69,8 @@ s3ShuffleStore bucket' prefix' =
           `cap` cpure (static Dict) prefix'
     }
 
-instance MonadIO m => MonadFail (AWST m) where
-  fail = lift . Prelude.fail
+instance (MonadFail m, MonadIO m) => MonadFail (AWST m) where
+  fail = lift . fail
 
 -- FIXME
 -- Currently ShuffleStore does not allow storing data between the 'ssGet's.
