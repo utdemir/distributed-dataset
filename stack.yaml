@@ -1,4 +1,4 @@
-resolver: lts-14.3
+resolver: lts-15.15
 
 packages:
   - distributed-dataset
@@ -7,16 +7,10 @@ packages:
   - examples/gh
 
 extra-deps:
-  - amazonka-1.6.1
-  - amazonka-cloudformation-1.6.1
-  - amazonka-core-1.6.1
-  - amazonka-lambda-1.6.1
-  - amazonka-s3-1.6.1
-  - amazonka-sqs-1.6.1
-  - amazonka-s3-streaming-1.0.0.2
+  - amazonka-s3-streaming-1.1.0.0
 
 allow-newer: true
 
 docker:
   enable: true
-  image: utdemir/ghc-musl:v2-ghc865
+  image: utdemir/ghc-musl:v7-libgmp-ghc883
