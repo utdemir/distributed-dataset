@@ -12,7 +12,6 @@
 
 module Control.Distributed.Dataset.Internal.Dataset where
 
--------------------------------------------------------------------------------
 import Conduit hiding
   ( Consumer,
     Producer,
@@ -20,7 +19,6 @@ import Conduit hiding
   )
 import qualified Conduit as C
 import Control.Distributed.Closure
--------------------------------------------------------------------------------
 import Control.Distributed.Dataset.Internal.Class
 import Control.Distributed.Dataset.Internal.Process
 import Control.Distributed.Dataset.ShuffleStore
@@ -42,8 +40,6 @@ import Data.List.Split
 import qualified Data.Text as T
 import Data.Typeable
 import System.Random
-
--------------------------------------------------------------------------------
 
 -- * Partition
 

@@ -11,10 +11,8 @@ module Control.Distributed.Dataset.Internal.Aggr
   )
 where
 
--------------------------------------------------------------------------------
 import Control.Applicative.Static
 import Control.Distributed.Closure
--------------------------------------------------------------------------------
 import Control.Distributed.Dataset.Internal.Class
 import qualified Control.Foldl as F
 import Control.Lens
@@ -22,17 +20,15 @@ import Data.Functor.Static
 import Data.Profunctor.Static
 import Data.Typeable
 
--------------------------------------------------------------------------------
-
 -- |
 -- Represent an aggregation which takes many 'a's and returns a single 'b'.
---
+
 -- Use 'Control.Distributed.Fork.dAggr' and 'Control.Distributed.Fork.dGroupedAggr'
 -- functions to use them on 'Dataset's.
---
+
 -- You can use the 'StaticApply' and 'StaticProfunctor' instances to compose
 -- 'Aggr's together. Example:
---
+
 -- @
 -- dAvg :: Aggr Double Double
 -- dAvg =
@@ -40,7 +36,7 @@ import Data.Typeable
 --     \`staticApply\` aggrSum (static Dict)
 --     \`staticApply\` staticMap (static realToFrac) aggrCount
 -- @
---
+
 -- Alternatively, you can use aggrFrom* functions to create 'Aggr's.
 data Aggr a b
   = forall t.
@@ -78,7 +74,7 @@ aggrFromMonoid d =
 
 -- |
 -- Create an aggregation given a reduce function.
---
+
 -- Returns 'Nothing' on empty 'Dataset's.
 aggrFromReduce ::
   StaticSerialise a =>
@@ -91,10 +87,10 @@ aggrFromReduce dc =
 
 -- |
 -- Create an aggregation given two 'Fold's.
---
+
 -- This is the most primitive way to create an aggregation, use other
 -- methods if possible.
---
+
 -- The first 'Fold' will be applied on each partition, and the results will
 -- be shuffled and fed to the second 'Fold'.
 aggrFromFold ::

@@ -11,9 +11,6 @@ data; and it'll set you back a few dollars on your AWS bill.
 -}
 module Main where
 
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
 import Control.Distributed.Dataset
 import Control.Distributed.Dataset.AWS
 import Control.Distributed.Dataset.OpenDatasets.GHArchive
@@ -21,7 +18,6 @@ import Control.Lens
 import qualified Data.Text as T
 import System.Environment (getArgs)
 
---------------------------------------------------------------------------------
 app :: DD ()
 app =
   -- Fetch events from GitHub between given dates

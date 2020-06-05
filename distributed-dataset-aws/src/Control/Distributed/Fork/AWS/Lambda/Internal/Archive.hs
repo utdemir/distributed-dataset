@@ -13,9 +13,7 @@ module Control.Distributed.Fork.AWS.Lambda.Internal.Archive
   )
 where
 
---------------------------------------------------------------------------------
 import Codec.Archive.Zip hiding (Archive)
---------------------------------------------------------------------------------
 import Control.Distributed.Fork.AWS.Lambda.Internal.Constants
 import Control.Distributed.Fork.Backend
 import Control.Exception
@@ -28,8 +26,6 @@ import Data.Function
 import Data.String.Interpolate
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
-
---------------------------------------------------------------------------------
 
 {-
 Since AWS Lambda does not support binary execution by default, our entry point

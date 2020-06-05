@@ -9,7 +9,6 @@
 
 module Control.Distributed.Fork.Internal where
 
---------------------------------------------------------------------------------
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Distributed.Closure
@@ -21,7 +20,6 @@ import Data.Binary
 import Data.Binary.Zlib
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Void
@@ -29,8 +27,6 @@ import GHC.Generics
 import System.Environment
 import System.Exit
 import System.IO (stdin)
-
---------------------------------------------------------------------------------
 
 -- |
 -- We switch to executor mode only when  @argv[1] == argExecutorMode@.
@@ -42,7 +38,7 @@ argExecutorMode = "DISTRIBUTED_FORK_EXECUTOR_MODE"
 -- "driver") and in the remote environment (called "executor"). In order for the
 -- program to act according to where it is, you should call this function as the
 -- first thing in your @main@:
---
+
 -- @
 -- main = do
 --   initDistributedFork
@@ -72,11 +68,11 @@ type ExecutorClosure = ZlibWrapper (Closure (IO ()))
 
 -- |
 -- 'Backend' is responsible for running your functions in a remote environment.
---
+
 -- See:
---
+
 --   * 'Control.Distributed.Fork.Local.localProcessBackend'
---
+
 --   * <http://hackage.haskell.org/package/distributed-dataset-aws distributed-dataset-aws>
 newtype Backend
   = Backend

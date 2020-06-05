@@ -9,11 +9,9 @@ module Control.Distributed.Fork.Utils
   )
 where
 
---------------------------------------------------------------------------------
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, wait, waitBoth)
 import Control.Concurrent.STM
---------------------------------------------------------------------------------
 import Control.Distributed.Fork
 import Control.Exception (throwIO)
 import Control.Monad (forM, when)
@@ -24,7 +22,6 @@ import Data.Functor
 import Data.Group
 import qualified System.Console.Terminal.Size as TS
 
---------------------------------------------------------------------------------
 data Options
   = Options
       { oRetries :: Int,
@@ -58,7 +55,7 @@ instance Group Progress where
 -- |
 -- Runs given closures concurrently using the 'Backend', showing a
 -- progress bar.
---
+
 -- Throws 'Execut orFailedException' if something fails.
 forkConcurrently ::
   Options ->

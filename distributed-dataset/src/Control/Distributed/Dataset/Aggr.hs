@@ -24,10 +24,8 @@ module Control.Distributed.Dataset.Aggr
   )
 where
 
--------------------------------------------------------------------------------
 import Control.Applicative.Static
 import Control.Distributed.Closure
--------------------------------------------------------------------------------
 import Control.Distributed.Dataset.Internal.Aggr
 import Control.Distributed.Dataset.Internal.Class
 import qualified Control.Foldl as F
@@ -39,8 +37,6 @@ import Data.Monoid
 import Data.Ord
 import Data.Profunctor.Static
 import Data.Typeable
-
--------------------------------------------------------------------------------
 
 -- |
 -- Returns the sum of the inputs.
@@ -67,14 +63,14 @@ aggrMean =
 
 -- |
 -- Return the maximum of the inputs.
---
+
 -- Returns 'Nothing' on empty 'Dataset's.
 aggrMax :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
 aggrMax dict = aggrFromReduce $ static (\Dict -> max) `cap` dict
 
 -- |
 -- Return the minimum of the inputs.
---
+
 -- Returns 'Nothing' on empty 'Dataset's.
 aggrMin :: StaticSerialise a => Closure (Dict (Ord a)) -> Aggr a (Maybe a)
 aggrMin dict = aggrFromReduce $ static (\Dict -> min) `cap` dict
@@ -90,7 +86,7 @@ aggrFiltered predc (Aggr f1 f2) =
 
 -- |
 -- Collects the inputs as a list.
---
+
 -- Warning: Ordering of the resulting list is non-deterministic.
 aggrCollect :: StaticSerialise a => Aggr a [a]
 aggrCollect =
@@ -122,7 +118,7 @@ instance Monoid (TopK a) where
 -- |
 -- Returns the 'n' greatest elements according to a key function. Similar to:
 -- @take n . sortOn (Down . f)@
---
+
 -- Warning: Ordering of the repeated elements is non-deterministic.
 aggrTopK ::
   (StaticSerialise a, Typeable k) =>
@@ -163,7 +159,7 @@ aggrTopK dict count fc =
 -- |
 -- Returns the 'n' least elements according to a key function. Similar to:
 -- @take n . sortOn (Down . f)@
---
+
 -- Warning: Ordering of the repeated elements is non-deterministic.
 aggrBottomK ::
   (StaticSerialise a, Typeable k) =>

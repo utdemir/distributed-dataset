@@ -1,13 +1,8 @@
 module Control.Distributed.Fork.Local where
 
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
 import Control.Distributed.Fork.Backend
 import qualified Data.ByteString.Lazy as BL
 import System.Process.Typed
-
---------------------------------------------------------------------------------
 
 -- |
 -- A 'Backend' which uses local processes as executors. Useful for testing.

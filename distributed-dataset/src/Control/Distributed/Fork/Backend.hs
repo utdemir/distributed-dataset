@@ -1,7 +1,7 @@
+-- See 'Control.Distributed.Fork.Local.localProcessBackend' for a minimal example.
+
 -- |
 -- You only need this module if you want to create a new backend for distributed-dataset.
---
--- See 'Control.Distributed.Fork.Local.localProcessBackend' for a minimal example.
 module Control.Distributed.Fork.Backend
   ( -- * Writing a 'Backend'.
     Backend (..),
@@ -31,16 +31,13 @@ module Control.Distributed.Fork.Backend
   )
 where
 
---------------------------------------------------------------------------------
 import Control.Concurrent.Throttled
---------------------------------------------------------------------------------
 import Control.Distributed.Fork.Internal
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader
 import Data.Text (Text)
 import System.Environment
 
---------------------------------------------------------------------------------
 pendingStatus :: ExecutorPendingStatus -> BackendM ()
 pendingStatus s = BackendM ask >>= liftIO . ($ s)
 

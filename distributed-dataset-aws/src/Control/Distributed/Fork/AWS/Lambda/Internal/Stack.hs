@@ -15,9 +15,6 @@ module Control.Distributed.Fork.AWS.Lambda.Internal.Stack
   )
 where
 
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
 import Control.Distributed.Fork.AWS.Lambda.Internal.Constants
 import Control.Distributed.Fork.AWS.Lambda.Internal.Types
 import Control.Exception.Safe
@@ -38,8 +35,6 @@ import Network.AWS.Lambda
 import qualified Network.AWS.S3 as S3
 import Network.AWS.Waiter
 import qualified Stratosphere as S
-
---------------------------------------------------------------------------------
 
 {-
 Our infrastructure in AWS Lambda looks like this.
@@ -180,8 +175,6 @@ templateOutputDeadLetterQueue = "deadLetterQueue"
 templateOutputAnswerBucket :: T.Text
 templateOutputAnswerBucket = "answerBucket"
 
---------------------------------------------------------------------------------
-
 {-
 Before creating a stack, we need to upload the artifact to S3.
 -}
@@ -213,8 +206,6 @@ awsObjectExists (S3Loc (BucketName bucket) path) = do
       <> T.pack (show lors)
   let files = map (view S3.oKey) (lors ^. S3.lorsContents)
   return $ any (\(S3.ObjectKey k) -> k == path) files
-
---------------------------------------------------------------------------------
 
 {-
 Here we are actually creating the stack.
@@ -313,14 +304,12 @@ seCreateStack options@StackOptions {soName = StackName stackName} = do
 seDeleteStack :: StackInfo -> AWS ()
 seDeleteStack = void . send . deleteStack . siId
 
---------------------------------------------------------------------------------
 newtype StackException
   = StackException T.Text
   deriving (Show)
 
 instance Exception StackException
 
---------------------------------------------------------------------------------
 withStack :: StackOptions -> Env -> (StackInfo -> IO a) -> IO a
 withStack opts env = bracket create destroy
   where

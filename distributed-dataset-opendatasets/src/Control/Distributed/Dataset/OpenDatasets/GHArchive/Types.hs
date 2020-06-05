@@ -6,18 +6,16 @@
 
 module Control.Distributed.Dataset.OpenDatasets.GHArchive.Types where
 
---------------------------------------------------------------------------------
 import Codec.Serialise (Serialise)
 import Control.Distributed.Dataset
   ( Dict (Dict),
     StaticSerialise (staticSerialise),
   )
 import Control.Lens.TH (makeLenses, makePrisms)
-import Data.Aeson ((.:), (.:?), (.!=), FromJSON (..), withObject)
+import Data.Aeson ((.!=), (.:), (.:?), FromJSON (..), withObject)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
---------------------------------------------------------------------------------
 data GHEvent = GHEvent {_gheActor :: GHActor, _gheRepo :: GHRepo, _gheType :: GHEventType}
   deriving (Eq, Show, Generic, Serialise)
 

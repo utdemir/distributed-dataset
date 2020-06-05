@@ -8,11 +8,9 @@ module Control.Distributed.Fork.AWS.Lambda.Internal.Invoke
   )
 where
 
---------------------------------------------------------------------------------
 import Conduit
 import Control.Concurrent.Async
 import Control.Concurrent.MVar
---------------------------------------------------------------------------------
 import Control.Concurrent.Throttled
 import Control.Distributed.Fork.AWS.Lambda.Internal.Stack (StackInfo (..))
 import Control.Distributed.Fork.AWS.Lambda.Internal.Types
@@ -34,8 +32,6 @@ import Network.AWS
 import Network.AWS.Lambda
 import Network.AWS.S3 as S3
 import Network.AWS.SQS
-
---------------------------------------------------------------------------------
 
 {-
 Since we're going to get our answers asynchronously, we maintain a state with
@@ -231,7 +227,6 @@ sqsReceiveSome queue = do
         <> T.pack (show $ rmrs ^. rmrsResponseStatus)
   return msgs
 
---------------------------------------------------------------------------------
 withInvoke ::
   Env ->
   (Throttle, Throttle, Throttle) ->
@@ -245,7 +240,6 @@ withInvoke env throttles stack f = do
   threads <- (++) <$> replicateM 4 answerT <*> replicateM 2 deadLetterT
   f (execute le throttles) `finally` mapM_ cancel threads
 
---------------------------------------------------------------------------------
 newtype InvokeException
   = InvokeException T.Text
   deriving (Show)

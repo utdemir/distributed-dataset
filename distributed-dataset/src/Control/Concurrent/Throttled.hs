@@ -9,12 +9,10 @@ module Control.Concurrent.Throttled
   )
 where
 
---------------------------------------------------------------------------------
 import Control.Concurrent.QSem
 import Control.Monad.Catch
 import Control.Monad.IO.Unlift
 
---------------------------------------------------------------------------------
 data Throttle
   = Throttle
       { throttled :: forall m a. (MonadIO m, MonadMask m) => m a -> m a

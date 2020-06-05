@@ -59,7 +59,6 @@ module Control.Distributed.Dataset
   )
 where
 
--------------------------------------------------------------------------------
 import Conduit hiding
   ( Consumer,
     Producer,
@@ -67,7 +66,6 @@ import Conduit hiding
   )
 import qualified Conduit as C
 import Control.Distributed.Closure
--------------------------------------------------------------------------------
 import Control.Distributed.Dataset.Aggr
 import Control.Distributed.Dataset.Internal.Aggr
 import Control.Distributed.Dataset.Internal.Class
@@ -80,8 +78,6 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.HashSet as HS
 import Data.Hashable
 import Data.Typeable
-
--------------------------------------------------------------------------------
 
 -- |
 -- Create a 'Partition' given a Source conduit.
@@ -101,7 +97,7 @@ dPipe = DPipe
 
 -- |
 -- Create a dataset from given `Partition`'s.
---
+
 -- This is how every 'Dataset' is created initially.
 dExternal :: StaticSerialise a => [Partition a] -> Dataset a
 dExternal = DExternal

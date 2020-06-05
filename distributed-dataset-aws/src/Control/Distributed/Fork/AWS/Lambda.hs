@@ -17,7 +17,6 @@ module Control.Distributed.Fork.AWS.Lambda
   )
 where
 
---------------------------------------------------------------------------------
 import Control.Concurrent.Throttled
 import Control.Distributed.Fork.AWS.Lambda.Internal.Archive
 import Control.Distributed.Fork.AWS.Lambda.Internal.Invoke
@@ -45,13 +44,11 @@ import Network.AWS
     runResourceT,
   )
 
---------------------------------------------------------------------------------
-
 -- |
 -- Provides a 'Backend' using AWS Lambda functions.
---
+
 -- In order to do that, roughly:
---
+
 --     * It creates a deployment archive containing the program binary and
 --     a tiny wrapper written in Python and uploads it to the given S3 bucket.
 --     * Creates a CloudFormation stack containing the Lambda function; and both
@@ -65,16 +62,16 @@ import Network.AWS
 --     * A separate thread on the driver continously polls the queue for answers
 --     and parses and returns it to the caller.
 --     * On exit, it deletes the CloudFormation stack.
---
+
 -- Some warts:
---
+
 --     * The same binary should run on AWS Lambda. In practice, this means:
---
+
 --         * You have to build and use this library on a Linux machine.
---
+
 --         * You have to statically link everything. You can use GHC's
 --         '@-static -optl-static -optl-pthread -fPIC@' parameters for that.
---
+
 --     * On AWS Lambda, more memory you assign to a function, more CPU you
 --     get. So it might make your function run faster if you overallocate
 --     memory.
@@ -82,20 +79,20 @@ import Network.AWS
 --     2 more times waiting a minute between every retry. This means when
 --     something fails, it will take at least a few minutes to until you
 --     get an exception.
---
+
 -- Example:
---
+
 -- @
 -- {-\# LANGUAGE StaticPointers #-}
---
+
 -- import Control.Lens
 -- import Control.Distributed.Fork
 -- import Control.Distributed.Fork.Lambda
---
+
 -- opts :: LambdaBackendOptions
 -- opts = lambdaBackendOptions "my-s3-bucket"
 --          & lboMemory .~ 1024
---
+
 -- main :: IO ()
 -- main = do
 --   'initDistributedFork'
@@ -139,11 +136,9 @@ withLambdaBackend LambdaBackendOptions {..} f = do
     withInvoke env throttles si $ \invoke ->
       f $ Backend invoke
 
---------------------------------------------------------------------------------
-
 -- |
 -- Options required for creating a Lambda backend.
---
+
 -- Use 'lambdaBackendOptions' smart constructor to create and lenses below for
 -- setting optional fields.
 data LambdaBackendOptions
@@ -174,25 +169,25 @@ lambdaBackendOptions bucket =
 
 -- |
 -- Desired memory for the Lambda functions.
---
+
 -- See <https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-function.html#cfn-lambda-function-memorysize CloudFormation's AWS::Lambda::Function::MemorySize page> for allowed values.
---
+
 --   Default: 1024
 lboMemory :: Lens' LambdaBackendOptions Int
 lboMemory = lens _lboMemory (\s t -> s {_lboMemory = t})
 
 -- |
 -- Prefix to the deployment archive and the CloudFormation stack.
---
+
 -- Default: "distributed-dataset"
 lboPrefix :: Lens' LambdaBackendOptions T.Text
 lboPrefix = lens _lboPrefix (\s t -> s {_lboPrefix = t})
 
 -- |
 -- Maximum number of concurrent "invoke" calls to AWS API to trigger executions.
---
+
 -- Non-positive values disable the throttling.
---
+
 -- Default: 64
 lboMaxConcurrentInvocations :: Lens' LambdaBackendOptions Int
 lboMaxConcurrentInvocations =
@@ -200,9 +195,9 @@ lboMaxConcurrentInvocations =
 
 -- |
 -- Maximum number of concurrently executing Lambda functions.
---
+
 -- Non-positive values disable the throttling.
---
+
 -- Default: 0
 lboMaxConcurrentExecutions :: Lens' LambdaBackendOptions Int
 lboMaxConcurrentExecutions =
@@ -212,9 +207,9 @@ lboMaxConcurrentExecutions =
 -- If the size of the return value from your function is larger than 200 kilobytes,
 -- we fetch the results via S3. This parameter sets the maximum number of concurrent
 -- downloads from S3.
---
+
 -- Non-positive values disable the throttling.
---
+
 -- Default: 16
 lboMaxConcurrentDownloads :: Lens' LambdaBackendOptions Int
 lboMaxConcurrentDownloads =
@@ -223,7 +218,7 @@ lboMaxConcurrentDownloads =
 -- |
 -- Whether to keep the CloudFormation stack after the 'withLambdaBackend' call.
 -- Useful for debugging.
---
+
 -- Default: Fales
 lboKeepStack :: Lens' LambdaBackendOptions Bool
 lboKeepStack = lens _lboKeepStack (\s t -> s {_lboKeepStack = t})

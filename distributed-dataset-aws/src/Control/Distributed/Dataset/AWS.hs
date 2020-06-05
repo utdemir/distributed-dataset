@@ -11,10 +11,8 @@ module Control.Distributed.Dataset.AWS
   )
 where
 
---------------------------------------------------------------------------------
 import Conduit
 import Control.Distributed.Closure
---------------------------------------------------------------------------------
 import Control.Distributed.Dataset.ShuffleStore
 import Control.Distributed.Fork.AWS
 import Control.Lens
@@ -27,11 +25,9 @@ import qualified Network.AWS.S3 as S3
 import qualified Network.AWS.S3.StreamingUpload as S3
 import System.IO.Unsafe
 
---------------------------------------------------------------------------------
-
 -- |
 -- A shuffle store which uses given S3 bucket and the prefix as a shuffle store.
---
+
 -- TODO: Cleanup
 -- TODO: Use a temporary bucket created by CloudFormation
 s3ShuffleStore :: T.Text -> T.Text -> ShuffleStore
@@ -75,7 +71,7 @@ instance (MonadFail m, MonadIO m) => MonadFail (AWST m) where
 -- FIXME
 -- Currently ShuffleStore does not allow storing data between the 'ssGet's.
 -- Since this function is quite costly, we're using this horrible hack.
---
+
 -- Since using a state on 'get's is pretty common (having a database connection,
 -- authentication etc.) we should figure out a way to fix this.
 globalAWSEnv :: Env

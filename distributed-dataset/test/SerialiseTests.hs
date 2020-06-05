@@ -6,12 +6,10 @@
 
 module SerialiseTests where
 
---------------------------------------------------------------------------------
 import Conduit
 import Control.Monad
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
---------------------------------------------------------------------------------
 import Data.Conduit.Serialise
 import Data.IORef
 import Data.List (sort)
@@ -20,7 +18,6 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Language.Haskell.TH (unType)
 
---------------------------------------------------------------------------------
 prop_serialiseEmpty :: Property
 prop_serialiseEmpty =
   property $ do

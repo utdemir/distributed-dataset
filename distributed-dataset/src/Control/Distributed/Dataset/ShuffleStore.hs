@@ -8,7 +8,6 @@ module Control.Distributed.Dataset.ShuffleStore
   )
 where
 
--------------------------------------------------------------------------------
 import Conduit hiding (Consumer, Producer, await)
 import Control.Distributed.Closure
 import Data.Binary (Binary)
@@ -16,15 +15,13 @@ import Data.ByteString (ByteString)
 import Data.Int
 import GHC.Generics
 
--------------------------------------------------------------------------------
-
 -- |
 -- Provides a way to store intermediate temporary data.
---
+
 -- See:
---
+
 --   * 'Control.Distributed.Dataset.Local.withLocalTmpShuffleStore'
---
+
 --   * <http://hackage.haskell.org/package/distributed-dataset-aws distributed-dataset-aws>
 data ShuffleStore
   = ShuffleStore

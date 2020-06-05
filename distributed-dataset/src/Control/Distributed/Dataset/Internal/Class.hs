@@ -8,10 +8,8 @@
 
 module Control.Distributed.Dataset.Internal.Class where
 
--------------------------------------------------------------------------------
 import Codec.Serialise
 import Control.Distributed.Closure
--------------------------------------------------------------------------------
 import Control.Distributed.Dataset.ShuffleStore
 import Control.Distributed.Fork (Backend)
 import Control.Lens
@@ -27,7 +25,6 @@ import Data.Semigroup
 import Data.Text
 import Data.Typeable
 
--------------------------------------------------------------------------------
 data DDEnv
   = DDEnv
       { _ddBackend :: Backend,
@@ -59,7 +56,6 @@ runDDWith level backend shuffleStore (DDT act) = do
       logFilter = filterLogger $ \_ l -> l >= level
   runStderrLoggingT $ logFilter $ runReaderT act env
 
--------------------------------------------------------------------------------
 class (Typeable a, Serialise a) => StaticSerialise a where
   staticSerialise :: Closure (Dict (Typeable a, Serialise a))
 

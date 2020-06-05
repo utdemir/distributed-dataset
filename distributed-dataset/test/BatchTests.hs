@@ -3,10 +3,8 @@
 
 module BatchTests where
 
---------------------------------------------------------------------------------
 import Conduit
 import Control.Arrow
---------------------------------------------------------------------------------
 import Control.Distributed.Dataset
 import Control.Distributed.Dataset.Local
 import Control.Monad.Logger
@@ -19,7 +17,6 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Language.Haskell.TH (unType)
 
---------------------------------------------------------------------------------
 prop_aggrSum :: Property
 prop_aggrSum =
   propTest

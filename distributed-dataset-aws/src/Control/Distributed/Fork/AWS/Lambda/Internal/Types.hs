@@ -2,14 +2,12 @@
 
 module Control.Distributed.Fork.AWS.Lambda.Internal.Types where
 
---------------------------------------------------------------------------------
 import Control.Applicative
 import Control.Monad
 import Data.Aeson
 import Data.Text (Text)
 import qualified Data.Text as T
 
---------------------------------------------------------------------------------
 newtype BucketName = BucketName Text
   deriving (Eq, Show)
 

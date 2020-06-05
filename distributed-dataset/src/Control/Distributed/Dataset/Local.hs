@@ -10,10 +10,8 @@ module Control.Distributed.Dataset.Local
   )
 where
 
---------------------------------------------------------------------------------
 import Conduit
 import Control.Distributed.Closure
---------------------------------------------------------------------------------
 import Control.Distributed.Dataset.ShuffleStore
 import Control.Distributed.Fork.Local
 import Control.Exception (bracket)
@@ -25,11 +23,9 @@ import System.FilePath
 import System.Posix.Temp
 import Prelude hiding (rem)
 
---------------------------------------------------------------------------------
-
 -- |
 -- Uses a temporary directory in the local disk as a 'ShuffleStore'.
---
+
 -- Useful for testing purposes.
 withLocalTmpShuffleStore :: (ShuffleStore -> IO a) -> IO a
 withLocalTmpShuffleStore act =

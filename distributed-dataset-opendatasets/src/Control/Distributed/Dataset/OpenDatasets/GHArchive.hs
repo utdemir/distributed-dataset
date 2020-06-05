@@ -39,7 +39,6 @@ import Network.HTTP.Simple
   )
 import Text.Printf
 
---------------------------------------------------------------------------------
 ghArchive :: (Day, Day) -> Dataset GHEvent
 ghArchive (start, end) =
   dExternal

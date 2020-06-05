@@ -4,7 +4,6 @@
 
 module Control.Distributed.Dataset.Internal.Process where
 
---------------------------------------------------------------------------------
 import Conduit
 import Data.Binary
 import qualified Data.ByteString as BS
@@ -12,7 +11,6 @@ import Data.IORef
 import GHC.Generics
 import System.Clock
 
---------------------------------------------------------------------------------
 data ExecutorResponse a
   = ExecutorResponse
       { erStats :: ExecutorStats,

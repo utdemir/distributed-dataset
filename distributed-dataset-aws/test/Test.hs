@@ -5,10 +5,8 @@
 
 module Main where
 
---------------------------------------------------------------------------------
 import Control.Concurrent (threadDelay)
 import Control.Distributed.Closure (unclosure)
---------------------------------------------------------------------------------
 import Control.Distributed.Dataset.AWS
 import Control.Distributed.Dataset.ShuffleStore
 import Control.Distributed.Fork
@@ -22,7 +20,6 @@ import Hedgehog
 import Language.Haskell.TH (unType)
 import System.Exit (exitFailure)
 
---------------------------------------------------------------------------------
 prop_backendCreate :: Property
 prop_backendCreate =
   withTests 1 . property

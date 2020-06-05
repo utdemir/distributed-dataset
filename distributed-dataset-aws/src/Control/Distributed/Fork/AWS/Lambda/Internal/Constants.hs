@@ -2,10 +2,8 @@
 
 module Control.Distributed.Fork.AWS.Lambda.Internal.Constants where
 
---------------------------------------------------------------------------------
 import Data.Text (Text)
 
---------------------------------------------------------------------------------
 hsMainName :: String
 hsMainName = "hs-main"
 
