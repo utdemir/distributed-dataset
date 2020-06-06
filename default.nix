@@ -15,7 +15,7 @@ pkgsOrig =
   in
     import patched { config.allowBroken = true; };
 
-pkgsMusl = pkgsOrig.extend (se: su: {
+pkgsMusl = pkgsOrig.pkgsMusl.extend (se: su: {
   fetchgit = pkgsOrig.fetchgit;
 });
 
