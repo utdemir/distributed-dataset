@@ -103,8 +103,6 @@ in rec
   "distributed-dataset-opendatasets" = haskellPackages.distributed-dataset-opendatasets;
   "example-gh" = haskellPackages.example-gh;
 
-  inherit haskellPackages;
-
   # standalone-haddock does not compile with cabal3 yet.
   # See: https://github.com/ktvoelker/standalone-haddock/issues/30
   #
