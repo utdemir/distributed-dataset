@@ -54,6 +54,12 @@ overlays = se: su: {
       (gitignore ./distributed-dataset-opendatasets)
       {};
 
+  "distributed-dataset-parquet" =
+    se.callCabal2nix
+      "distributed-dataset-parquet"
+      (gitignore ./distributed-dataset-parquet)
+      {};
+
   "example-gh" =
     let orig = se.callCabal2nix
                  "example-gh"
@@ -79,6 +85,12 @@ overlays = se: su: {
   "tasty-hedgehog" = fixLocale su.tasty-hedgehog;
   "yaml" = fixLocale su.yaml;
 
+  # not on Hackage yet
+  parquet-hs = se.callCabal2nix
+    "parquet-hs"
+    (gitignore ../parquet-hs)
+    {};
+
   # Haddock does not work with musl:
   #   haddock: internal error: <stdout>: \
   #     commitBuffer: invalid argument (invalid character)
@@ -96,6 +108,7 @@ in rec
   "distributed-dataset" = haskellPackages.distributed-dataset;
   "distributed-dataset-aws" = haskellPackages.distributed-dataset-aws;
   "distributed-dataset-opendatasets" = haskellPackages.distributed-dataset-opendatasets;
+  "distributed-dataset-parquet" = haskellPackages.distributed-dataset-parquet;
   "example-gh" = haskellPackages.example-gh;
 
   # standalone-haddock does not compile with cabal3 yet.
@@ -122,6 +135,7 @@ in rec
       distributed-dataset
       distributed-dataset-aws
       distributed-dataset-opendatasets
+      distributed-dataset-parquet
       example-gh
     ];
     buildInputs = with haskellPackages; [
