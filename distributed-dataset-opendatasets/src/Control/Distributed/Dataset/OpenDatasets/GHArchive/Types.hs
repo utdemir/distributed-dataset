@@ -102,7 +102,7 @@ instance FromJSON GHCommitAuthor where
         <$> obj .: "email"
         <*> obj .: "name"
 
-data GHActor = GHActor {_ghaId :: Integer, _ghaLogin :: Text}
+data GHActor = GHActor {_ghaId :: Maybe Integer, _ghaLogin :: Maybe Text, _ghaUrl :: Text}
   deriving (Eq, Show, Generic, Serialise)
 
 instance StaticSerialise GHActor where
@@ -112,8 +112,9 @@ instance FromJSON GHActor where
   parseJSON =
     withObject "GHActor" $ \obj ->
       GHActor
-        <$> obj .: "id"
-        <*> obj .: "login"
+        <$> obj .:? "id"
+        <*> obj .:? "login"
+        <*> obj .: "url"
 
 data GHRepo = GHRepo {_ghrId :: Integer, _ghrName :: Text}
   deriving (Eq, Show, Generic, Serialise)

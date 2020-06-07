@@ -31,7 +31,7 @@ app =
                     e ^.. gheType . _GHPushEvent . ghpepCommits
                       . traverse
                       . ghcMessage
-               in map (author,) commits
+               in maybe [] (\a -> map (a,) commits) author
           )
       )
     -- Filter commits containing the word 'cabal'
