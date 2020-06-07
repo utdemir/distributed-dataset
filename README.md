@@ -66,13 +66,14 @@ Provides `Dataset`'s reading from public open datasets. Currently it can fetch G
     * (Recommended) Use my binary cache on Cachix to reduce compilation times:
 
     ```sh
-    $(nix-build -A cachix https://cachix.org/api/v1/install)/bin/cachix use utdemir
+    nix-env -i cachix # or your preferred installation method
+    cachix use utdemir
     ```
 
     * Then:
 
       ```sh
-      $ $(nix-build -A example-gh)/bin/example-gh my-s3-bucket
+      $ nix run -f ./default.nix example-gh -c example-gh my-s3-bucket
       ```
 
   * If you use stack (requires Docker, works on Linux and MacOS):
