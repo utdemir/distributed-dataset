@@ -33,11 +33,6 @@ staticLibs = with pkgsMusl; [
 ];
 
 overlays = se: su: {
-  # `cabal2nix` from `pkgsOrig` instead of `pkgsMusl`.
-  callCabal2nix = name: src:
-    let nix = pkgsOrig.haskellPackages.haskellSrc2nix { inherit name src; };
-    in  se.callPackage "${nix}/default.nix";
-
   "distributed-dataset" =
     se.callCabal2nix
       "distributed-dataset"
