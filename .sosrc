@@ -4,7 +4,7 @@
   excludes:
     - dist-newstyle/
   commands:
-    - cabal new-build all -O0
+    - cabal new-build all --disable-optimization
 
 - patterns:
     - .*\.hs
