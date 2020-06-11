@@ -1,5 +1,4 @@
-packages: distributed-dataset/
-          distributed-dataset-aws/
-          distributed-dataset-opendatasets/
-          examples/gh/
+packages:
+  */*.cabal
+  examples/*/*.cabal
 
