@@ -214,8 +214,8 @@ dGroupedAggr
         (Eq k', Hashable k') =>
         F.Fold a' b' ->
         ConduitT (k', a') (k', b') (ResourceT IO) ()
-      aggrC (F.Fold step init extract) =
-        go step init extract HM.empty
+      aggrC (F.Fold step init' extract) =
+        go step init' extract HM.empty
       go ::
         forall a' b' x' k'.
         (Eq k', Hashable k') =>
@@ -224,17 +224,17 @@ dGroupedAggr
         (b' -> x') ->
         HM.HashMap k' b' ->
         ConduitT (k', a') (k', x') (ResourceT IO) ()
-      go step init extract hm =
+      go step init' extract hm =
         C.await >>= \case
           Nothing ->
             mapM_
               (\(k, b) -> C.yield (k, extract b))
               (HM.toList hm)
           Just (k, a) ->
-            go step init extract $
+            go step init' extract $
               HM.alter
                 ( Just . \case
-                    Nothing -> step init a
+                    Nothing -> step init' a
                     Just st -> step st a
                 )
                 k

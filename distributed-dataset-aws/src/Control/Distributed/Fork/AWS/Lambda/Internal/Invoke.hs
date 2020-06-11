@@ -18,7 +18,6 @@ import Control.Distributed.Fork.Backend
 import Control.Exception.Safe
 import Control.Lens
 import Control.Monad
-import Control.Monad.Trans.AWS (sinkBody)
 import qualified Data.Aeson as A
 import Data.Aeson.Lens
 import qualified Data.ByteString as BS
