@@ -1,0 +1,27 @@
+- patterns:
+    - .*\.hs
+  excludes:
+    - dist-newstyle/
+  commands:
+    - ormolu --mode inplace \0
+
+- patterns:
+    - .*\.hs
+    - .*\.cabal
+  excludes:
+    - dist-newstyle/
+  commands:
+    - cabal new-build all -O0
+
+- patterns:
+    - .*\.cabal
+  excludes:
+    - dist-newstyle/
+  commands:
+    - cabal-fmt -i \0
+
+- pattern: .*\.nix
+  excludes:
+    - nix/sources.nix
+  commands:
+    - nixpkgs-fmt \0

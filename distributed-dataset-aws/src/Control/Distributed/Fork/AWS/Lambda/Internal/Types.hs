@@ -38,8 +38,7 @@ data ResponsePayload
 instance FromJSON Response where
   parseJSON (Object obj) =
     Response
-      <$> obj
-      .: "id"
+      <$> obj .: "id"
       <*> (parseInline obj <|> parseS3 obj)
     where
       parseInline o = do

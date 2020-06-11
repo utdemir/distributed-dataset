@@ -23,19 +23,11 @@ import Control.Distributed.Fork.AWS.Lambda.Internal.Invoke
 import Control.Distributed.Fork.AWS.Lambda.Internal.Stack
 import Control.Distributed.Fork.AWS.Lambda.Internal.Types
 import Control.Distributed.Fork.Backend
-import Control.Lens
-  ( Lens',
-    (^.),
-    lens,
-  )
+import Control.Lens (Lens', (^.), lens)
 import Data.Bool (bool)
-import Data.Monoid ((<>))
 import qualified Data.Text as T
 import Data.Time.Clock (getCurrentTime)
-import Data.Time.Format
-  ( defaultTimeLocale,
-    formatTime,
-  )
+import Data.Time.Format (defaultTimeLocale, formatTime)
 import Network.AWS
   ( Credentials (Discover),
     envRegion,

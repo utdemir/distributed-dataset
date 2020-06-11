@@ -102,12 +102,11 @@ I am open to contributions; any issue, PR or opinion is more than welcome.
 
 * You can use [my binary cache on cachix](https://utdemir.cachix.org/)
   so that you don't recompile half of the Hackage.
-* `nix-shell` will drop you into a shell with `ormolu`, `cabal-install`,
-  `.ghcid` alongside with all required haskell and system dependencies.
+* `nix-shell` will drop you into a shell with `ormolu`, `cabal-install` and
+  `steeloverseer` alongside with all required haskell and system dependencies.
   You can use `cabal new-*` commands there.
-* There is a `./make.sh` at the root folder with some utilities like
-  formatting the source code or running `ghcid`, run `./make.sh --help`
-  to see the usage.
+* Easiest way to get a development environment would be to run `sos` at the
+  top level directory inside of a nix-shell.
 
 ### Stack
 

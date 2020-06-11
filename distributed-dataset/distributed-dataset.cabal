@@ -1,88 +1,94 @@
-name:                distributed-dataset
-synopsis:            A distributed data processing framework in pure Haskell
-version:             0.0.1.0
-homepage:            https://github.com/utdemir/distributed-dataset
-license:             BSD3
-author:              Utku Demir
-maintainer:          me@utdemir.com
-copyright:           Utku Demir
-category:            Network
-build-type:          Simple
-cabal-version:       >=1.10
+name:          distributed-dataset
+synopsis:      A distributed data processing framework in pure Haskell
+version:       0.0.1.0
+homepage:      https://github.com/utdemir/distributed-dataset
+license:       BSD3
+author:        Utku Demir
+maintainer:    me@utdemir.com
+copyright:     Utku Demir
+category:      Network
+build-type:    Simple
+cabal-version: >=1.10
 
 library
-  hs-source-dirs:      src
-                     , src-internal
-  default-language:    Haskell2010
-  exposed-modules:     Control.Distributed.Fork
-                     , Control.Distributed.Fork.Utils
-                     , Control.Distributed.Fork.Local
-                     , Control.Distributed.Fork.Backend
-                     , Control.Distributed.Dataset
-                     , Control.Distributed.Dataset.Local
-                     , Control.Distributed.Dataset.Aggr
-                     , Control.Distributed.Dataset.ShuffleStore
-                     , Control.Concurrent.Throttled
-  other-modules:       Control.Distributed.Fork.Internal
-                     , Control.Distributed.Dataset.Internal.Dataset
-                     , Control.Distributed.Dataset.Internal.Class
-                     , Control.Distributed.Dataset.Internal.Aggr
-                     , Control.Distributed.Dataset.Internal.Process
-                     , Data.Binary.Zlib
-                     , Data.Conduit.Serialise
-  ghc-options:         -Wall -fno-warn-name-shadowing
-  build-depends:       base >= 4.11 && < 5
-                     , async
-                     , binary
-                     , bytestring
-                     , clock
-                     , conduit
-                     , conduit-extra
-                     , containers
-                     , directory
-                     , distributed-closure
-                     , exceptions
-                     , filepath
-                     , foldl
-                     , groups
-                     , hashable
-                     , heaps
-                     , lens
-                     , monad-logger
-                     , mtl
-                     , profunctors
-                     , random
-                     , retry
-                     , serialise
-                     , split
-                     , stm
-                     , terminal-size
-                     , text
-                     , transformers
-                     , typed-process
-                     , unix
-                     , unliftio-core
-                     , unordered-containers
-                     , zlib
+  hs-source-dirs:   src src-internal
+  default-language: Haskell2010
+  exposed-modules:
+    Control.Concurrent.Throttled
+    Control.Distributed.Dataset
+    Control.Distributed.Dataset.Aggr
+    Control.Distributed.Dataset.Local
+    Control.Distributed.Dataset.ShuffleStore
+    Control.Distributed.Fork
+    Control.Distributed.Fork.Backend
+    Control.Distributed.Fork.Local
+    Control.Distributed.Fork.Utils
+
+  other-modules:
+    Control.Distributed.Dataset.Internal.Aggr
+    Control.Distributed.Dataset.Internal.Class
+    Control.Distributed.Dataset.Internal.Dataset
+    Control.Distributed.Dataset.Internal.Process
+    Control.Distributed.Fork.Internal
+    Data.Binary.Zlib
+    Data.Conduit.Serialise
+
+  ghc-options:      -Wall -fno-warn-name-shadowing
+  build-depends:
+      async
+    , base                  >=4.11 && <5
+    , binary
+    , bytestring
+    , clock
+    , conduit
+    , conduit-extra
+    , containers
+    , directory
+    , distributed-closure
+    , exceptions
+    , filepath
+    , foldl
+    , groups
+    , hashable
+    , heaps
+    , lens
+    , monad-logger
+    , mtl
+    , profunctors
+    , random
+    , retry
+    , serialise
+    , split
+    , stm
+    , terminal-size
+    , text
+    , transformers
+    , typed-process
+    , unix
+    , unliftio-core
+    , unordered-containers
+    , zlib
 
 test-suite distributed-dataset-tests
   type:             exitcode-stdio-1.0
-  hs-source-dirs:   test
-                  , src-internal
+  hs-source-dirs:   test src-internal
   main-is:          Tests.hs
   default-language: Haskell2010
-  other-modules:    BatchTests
-                  , SerialiseTests
-                  , Data.Conduit.Serialise
+  other-modules:
+    BatchTests
+    Data.Conduit.Serialise
+    SerialiseTests
+
   ghc-options:      -Wall -threaded
-  build-depends:    base >=4.11 && < 5
-                  , distributed-dataset
-                  , binary
-                  , bytestring
-                  , conduit
-                  , distributed-closure
-                  , hashable
-                  , template-haskell
-                  , hedgehog
-                  , monad-logger
-                  , serialise
+  build-depends:
+      base                 >=4.11 && <5
+    , binary
+    , bytestring
+    , conduit
+    , distributed-closure
+    , distributed-dataset
+    , hashable
+    , hedgehog
+    , monad-logger
+    , serialise
+    , template-haskell
