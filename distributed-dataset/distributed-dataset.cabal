@@ -33,7 +33,7 @@ library
     Data.Binary.Zlib
     Data.Conduit.Serialise
 
-  ghc-options:      -Wall -fno-warn-name-shadowing
+  ghc-options:      -Wall -Wunused-packages
   build-depends:
       async
     , base                  >=4.11 && <5
@@ -79,7 +79,7 @@ test-suite distributed-dataset-tests
     Data.Conduit.Serialise
     SerialiseTests
 
-  ghc-options:      -Wall -threaded
+  ghc-options:      -Wall -Wunused-packages -threaded
   build-depends:
       base                 >=4.11 && <5
     , binary

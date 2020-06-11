@@ -1,83 +1,84 @@
-name:                distributed-dataset-aws
-version:             0.0.1.0
-synopsis:            AWS backends for distributed-dataset.
-homepage:            https://github.com/utdemir/distributed-dataset
-license:             BSD3
-license-file:        LICENSE
-author:              Utku Demir
-maintainer:          Utku Demir <me@utdemir.com>
-copyright:           Utku Demir
-category:            Control
-build-type:          Simple
-cabal-version:       >=1.10
+name:          distributed-dataset-aws
+version:       0.0.1.0
+synopsis:      AWS backends for distributed-dataset.
+homepage:      https://github.com/utdemir/distributed-dataset
+license:       BSD3
+license-file:  LICENSE
+author:        Utku Demir
+maintainer:    Utku Demir <me@utdemir.com>
+copyright:     Utku Demir
+category:      Control
+build-type:    Simple
+cabal-version: >=1.10
 
 library
-  hs-source-dirs:      src
-  default-language:    Haskell2010
-  exposed-modules:     Control.Distributed.Fork.AWS
-                     , Control.Distributed.Dataset.AWS
-  other-modules:       Control.Distributed.Fork.AWS.Lambda
-                     , Control.Distributed.Fork.AWS.Lambda.Internal.Types
-                     , Control.Distributed.Fork.AWS.Lambda.Internal.Constants
-                     , Control.Distributed.Fork.AWS.Lambda.Internal.Stack
-                     , Control.Distributed.Fork.AWS.Lambda.Internal.Archive
-                     , Control.Distributed.Fork.AWS.Lambda.Internal.Invoke
-  ghc-options:         -Wall
-  build-depends:       base >= 4.7 && < 5
-                     , distributed-dataset
-                     , aeson
-                     , aeson-qq
-                     , amazonka
-                     , amazonka-cloudformation
-                     , amazonka-core >= 1.6.1
-                     , amazonka-lambda >= 1.6.0
-                     , amazonka-s3
-                     , amazonka-s3-streaming >= 1.0.0
-                     , amazonka-sqs
-                     , async
-                     , base64-bytestring
-                     , bytestring
-                     , conduit
-                     , containers
-                     , deepseq
-                     , distributed-closure
-                     , dlist
-                     , elf
-                     , exceptions
-                     , interpolate
-                     , lens
-                     , lens-aeson
-                     , mmorph
-                     , resourcet
-                     , safe-exceptions
-                     , SHA
-                     , stm
-                     , stratosphere >= 0.33.0
-                     , text
-                     , time
-                     , transformers
-                     , unliftio-core
-                     , unordered-containers
-                     , zip-archive
+  hs-source-dirs:   src
+  default-language: Haskell2010
+  exposed-modules:
+    Control.Distributed.Dataset.AWS
+    Control.Distributed.Fork.AWS
+
+  other-modules:
+    Control.Distributed.Fork.AWS.Lambda
+    Control.Distributed.Fork.AWS.Lambda.Internal.Archive
+    Control.Distributed.Fork.AWS.Lambda.Internal.Constants
+    Control.Distributed.Fork.AWS.Lambda.Internal.Invoke
+    Control.Distributed.Fork.AWS.Lambda.Internal.Stack
+    Control.Distributed.Fork.AWS.Lambda.Internal.Types
+
+  ghc-options:      -Wall -Wunused-packages
+  build-depends:
+      aeson
+    , aeson-qq
+    , amazonka
+    , amazonka-cloudformation
+    , amazonka-core            >=1.6.1
+    , amazonka-lambda          >=1.6.0
+    , amazonka-s3
+    , amazonka-s3-streaming    >=1.0.0
+    , amazonka-sqs
+    , async
+    , base                     >=4.7    && <5
+    , base64-bytestring
+    , bytestring
+    , conduit
+    , containers
+    , distributed-closure
+    , distributed-dataset
+    , elf
+    , interpolate
+    , lens
+    , lens-aeson
+    , resourcet
+    , safe-exceptions
+    , SHA
+    , stratosphere             >=0.33.0
+    , text
+    , time
+    , transformers
+    , unordered-containers
+    , zip-archive
 
 flag enable-aws-tests
-    Description: Enable tests which use AWS resources
-    Manual: True
-    Default: False
+  description: Enable tests which use AWS resources
+  manual:      True
+  default:     False
 
 test-suite distributed-dataset-aws-tests
-    if !flag(enable-aws-tests)
-      buildable: False
-    type:             exitcode-stdio-1.0
-    hs-source-dirs:   test
-    main-is:          Test.hs
-    default-language: Haskell2010
-    ghc-options:      -Wall -static -optl-static -optl-pthread -fPIC
-    build-depends:  base >=4.7 && < 5
-                  , distributed-dataset
-                  , distributed-dataset-aws
-                  , distributed-closure
-                  , conduit
-                  , hedgehog
-                  , template-haskell
-                  , text
+  if !flag(enable-aws-tests)
+    buildable: False
+
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Test.hs
+  default-language: Haskell2010
+  ghc-options:      -Wall -static -optl-static -optl-pthread -fPIC
+  build-depends:
+      base                     >=4.7 && <5
+    , conduit
+    , distributed-closure
+    , distributed-dataset
+    , distributed-dataset-aws
+    , hedgehog
+    , template-haskell
+    , text

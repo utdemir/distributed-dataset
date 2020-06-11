@@ -1,30 +1,30 @@
-name:                distributed-dataset-opendatasets
-version:             0.0.1.0
-synopsis:            Ready to use open datasets for distribute-dataset
-homepage:            https://github.com/utdemir/distributed-dataset
-license:             BSD3
-author:              Utku Demir
-maintainer:          me@utdemir.com
-copyright:           Utku Demir
-category:            Network
-build-type:          Simple
-cabal-version:       >=1.10
+name:          distributed-dataset-opendatasets
+version:       0.0.1.0
+synopsis:      Ready to use open datasets for distribute-dataset
+homepage:      https://github.com/utdemir/distributed-dataset
+license:       BSD3
+author:        Utku Demir
+maintainer:    me@utdemir.com
+copyright:     Utku Demir
+category:      Network
+build-type:    Simple
+cabal-version: >=1.10
 
 library
-  hs-source-dirs:      src
-  default-language:    Haskell2010
-  exposed-modules:     Control.Distributed.Dataset.OpenDatasets.GHArchive
-  other-modules:       Control.Distributed.Dataset.OpenDatasets.GHArchive.Types
-  ghc-options:         -Wall
-  build-depends:       base >= 4.11 && < 5
-                     , distributed-dataset
-                     , aeson
-                     , base
-                     , conduit
-                     , conduit-extra
-                     , http-conduit
-                     , lens
-                     , ndjson-conduit
-                     , serialise
-                     , text
-                     , time
+  hs-source-dirs:   src
+  default-language: Haskell2010
+  exposed-modules:  Control.Distributed.Dataset.OpenDatasets.GHArchive
+  other-modules:    Control.Distributed.Dataset.OpenDatasets.GHArchive.Types
+  ghc-options:      -Wall -Wunused-packages
+  build-depends:
+      aeson
+    , base                 >=4.11 && <5
+    , conduit
+    , conduit-extra
+    , distributed-dataset
+    , http-conduit
+    , lens
+    , ndjson-conduit
+    , serialise
+    , text
+    , time
