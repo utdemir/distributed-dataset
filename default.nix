@@ -128,6 +128,7 @@ rec
       pkgsOrig.haskellPackages.steeloverseer
       pkgsOrig.haskellPackages.ormolu
       pkgsOrig.haskellPackages.cabal-fmt
+      pkgsOrig.nixpkgs-fmt
       pkgsOrig.niv
     ];
     withHoogle = true;
