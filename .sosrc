@@ -24,4 +24,5 @@
   excludes:
     - nix/sources.nix
   commands:
+    - nix-instantiate default.nix
     - nixpkgs-fmt \0
