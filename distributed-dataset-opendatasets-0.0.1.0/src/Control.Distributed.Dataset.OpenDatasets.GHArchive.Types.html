@@ -1,0 +1,759 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DeriveAnyClass #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveGeneric #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE StaticPointers #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Dataset.OpenDatasets.GHArchive.Types</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/gyhwf7f32g52hvlcai6r6nvfkwdg39wm-serialise-0.2.3.0-doc/share/doc/serialise-0.2.3.0/html/src"><span class="hs-identifier">Codec.Serialise</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/gyhwf7f32g52hvlcai6r6nvfkwdg39wm-serialise-0.2.3.0-doc/share/doc/serialise-0.2.3.0/html/src"><span class="hs-identifier">Serialise</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier">Control.Distributed.Dataset</span></a></span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier">Dict</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span>    </span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier">StaticSerialise</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier">staticSerialise</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-identifier">Control.Lens.TH</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-identifier">makeLenses</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-identifier">makePrisms</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Data.Aeson</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator">(.!=)</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator">(.:)</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator">(.:?)</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">FromJSON</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">withObject</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Data.Text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Text</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">GHC.Generics</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Generic</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span id="local-6989586621679151523"><span id="local-6989586621679151524"></span></span><span class="hs-keyword">data</span><span> </span><span id="GHEvent"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEvent"><span class="hs-identifier hs-var">GHEvent</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="GHEvent"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEvent"><span class="hs-identifier hs-var">GHEvent</span></a></span></span><span> </span><span class="hs-special">{</span><span id="_gheActor"><span class="annot"><span class="annottext">GHEvent -&gt; GHActor
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_gheActor"><span class="hs-identifier hs-var hs-var">_gheActor</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHActor"><span class="hs-identifier hs-type">GHActor</span></a></span><span class="hs-special">,</span><span> </span><span id="_gheRepo"><span class="annot"><span class="annottext">GHEvent -&gt; GHRepo
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_gheRepo"><span class="hs-identifier hs-var hs-var">_gheRepo</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHRepo"><span class="hs-identifier hs-type">GHRepo</span></a></span><span class="hs-special">,</span><span> </span><span id="_gheType"><span class="annot"><span class="annottext">GHEvent -&gt; GHEventType
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_gheType"><span class="hs-identifier hs-var hs-var">_gheType</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEventType"><span class="hs-identifier hs-type">GHEventType</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151515"><span id="local-6989586621679151517"><span class="annot"><span class="annottext">GHEvent -&gt; GHEvent -&gt; Bool
+(GHEvent -&gt; GHEvent -&gt; Bool)
+-&gt; (GHEvent -&gt; GHEvent -&gt; Bool) -&gt; Eq GHEvent
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: GHEvent -&gt; GHEvent -&gt; Bool
+$c/= :: GHEvent -&gt; GHEvent -&gt; Bool
+== :: GHEvent -&gt; GHEvent -&gt; Bool
+$c== :: GHEvent -&gt; GHEvent -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151508"><span id="local-6989586621679151510"><span id="local-6989586621679151512"><span class="annot"><span class="annottext">Int -&gt; GHEvent -&gt; ShowS
+[GHEvent] -&gt; ShowS
+GHEvent -&gt; String
+(Int -&gt; GHEvent -&gt; ShowS)
+-&gt; (GHEvent -&gt; String) -&gt; ([GHEvent] -&gt; ShowS) -&gt; Show GHEvent
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [GHEvent] -&gt; ShowS
+$cshowList :: [GHEvent] -&gt; ShowS
+show :: GHEvent -&gt; String
+$cshow :: GHEvent -&gt; String
+showsPrec :: Int -&gt; GHEvent -&gt; ShowS
+$cshowsPrec :: Int -&gt; GHEvent -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. GHEvent -&gt; Rep GHEvent x)
+-&gt; (forall x. Rep GHEvent x -&gt; GHEvent) -&gt; Generic GHEvent
+forall x. Rep GHEvent x -&gt; GHEvent
+forall x. GHEvent -&gt; Rep GHEvent x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep GHEvent x -&gt; GHEvent
+$cfrom :: forall x. GHEvent -&gt; Rep GHEvent x
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151496"><span id="local-6989586621679151498"><span id="local-6989586621679151500"><span id="local-6989586621679151502"><span class="annot"><span class="annottext">[GHEvent] -&gt; Encoding
+GHEvent -&gt; Encoding
+(GHEvent -&gt; Encoding)
+-&gt; (forall s. Decoder s GHEvent)
+-&gt; ([GHEvent] -&gt; Encoding)
+-&gt; (forall s. Decoder s [GHEvent])
+-&gt; Serialise GHEvent
+forall s. Decoder s [GHEvent]
+forall s. Decoder s GHEvent
+forall a.
+(a -&gt; Encoding)
+-&gt; (forall s. Decoder s a)
+-&gt; ([a] -&gt; Encoding)
+-&gt; (forall s. Decoder s [a])
+-&gt; Serialise a
+decodeList :: Decoder s [GHEvent]
+$cdecodeList :: forall s. Decoder s [GHEvent]
+encodeList :: [GHEvent] -&gt; Encoding
+$cencodeList :: [GHEvent] -&gt; Encoding
+decode :: Decoder s GHEvent
+$cdecode :: forall s. Decoder s GHEvent
+encode :: GHEvent -&gt; Encoding
+$cencode :: GHEvent -&gt; Encoding
+</span><a href="../file:///nix/store/gyhwf7f32g52hvlcai6r6nvfkwdg39wm-serialise-0.2.3.0-doc/share/doc/serialise-0.2.3.0/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Serialise</span></a></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEvent"><span class="hs-identifier hs-type">GHEvent</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-23"></span><span>  </span><span id="local-6989586621679151490"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable GHEvent, Serialise GHEvent))
+</span><a href="#local-6989586621679151490"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable GHEvent, Serialise GHEvent)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679151487"><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEvent"><span class="hs-identifier hs-type">GHEvent</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-26"></span><span>  </span><span id="local-6989586621679151485"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser GHEvent
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span id="local-6989586621679151483"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679151483"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; (Object -&gt; Parser GHEvent) -&gt; Value -&gt; Parser GHEvent
+forall a. String -&gt; (Object -&gt; Parser a) -&gt; Value -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">withObject</span></a></span><span>
+</span><span id="line-28"></span><span>      </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;GHEvent&quot;</span></span><span>
+</span><span id="line-29"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679151482"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151482"><span class="hs-identifier hs-var">obj</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-30"></span><span>          </span><span class="annot"><span class="annottext">GHActor -&gt; GHRepo -&gt; GHEventType -&gt; GHEvent
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEvent"><span class="hs-identifier hs-var">GHEvent</span></a></span><span>
+</span><span id="line-31"></span><span>            </span><span class="annot"><span class="annottext">(GHActor -&gt; GHRepo -&gt; GHEventType -&gt; GHEvent)
+-&gt; Parser GHActor -&gt; Parser (GHRepo -&gt; GHEventType -&gt; GHEvent)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151482"><span class="hs-identifier hs-var">obj</span></a></span><span>
+</span><span id="line-32"></span><span>            </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser GHActor
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;actor&quot;</span></span><span>
+</span><span id="line-33"></span><span>            </span><span class="annot"><span class="annottext">Parser (GHRepo -&gt; GHEventType -&gt; GHEvent)
+-&gt; Parser GHRepo -&gt; Parser (GHEventType -&gt; GHEvent)
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151482"><span class="hs-identifier hs-var">obj</span></a></span><span>
+</span><span id="line-34"></span><span>            </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser GHRepo
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;repo&quot;</span></span><span>
+</span><span id="line-35"></span><span>            </span><span class="annot"><span class="annottext">Parser (GHEventType -&gt; GHEvent)
+-&gt; Parser GHEventType -&gt; Parser GHEvent
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser GHEventType
+forall a. FromJSON a =&gt; Value -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679151483"><span class="hs-identifier hs-var">val</span></a></span><span>
+</span><span id="line-36"></span><span>      </span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>      </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679151483"><span class="hs-identifier hs-var">val</span></a></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span id="local-6989586621679151479"><span id="local-6989586621679151480"></span></span><span class="hs-keyword">data</span><span> </span><span id="GHEventType"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEventType"><span class="hs-identifier hs-var">GHEventType</span></a></span></span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="GHPushEvent"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHPushEvent"><span class="hs-identifier hs-var">GHPushEvent</span></a></span></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHPushEventPayload"><span class="hs-identifier hs-type">GHPushEventPayload</span></a></span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="GHOtherEvent"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHOtherEvent"><span class="hs-identifier hs-var">GHOtherEvent</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151473"><span id="local-6989586621679151475"><span class="annot"><span class="annottext">GHEventType -&gt; GHEventType -&gt; Bool
+(GHEventType -&gt; GHEventType -&gt; Bool)
+-&gt; (GHEventType -&gt; GHEventType -&gt; Bool) -&gt; Eq GHEventType
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: GHEventType -&gt; GHEventType -&gt; Bool
+$c/= :: GHEventType -&gt; GHEventType -&gt; Bool
+== :: GHEventType -&gt; GHEventType -&gt; Bool
+$c== :: GHEventType -&gt; GHEventType -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151467"><span id="local-6989586621679151469"><span id="local-6989586621679151471"><span class="annot"><span class="annottext">Int -&gt; GHEventType -&gt; ShowS
+[GHEventType] -&gt; ShowS
+GHEventType -&gt; String
+(Int -&gt; GHEventType -&gt; ShowS)
+-&gt; (GHEventType -&gt; String)
+-&gt; ([GHEventType] -&gt; ShowS)
+-&gt; Show GHEventType
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [GHEventType] -&gt; ShowS
+$cshowList :: [GHEventType] -&gt; ShowS
+show :: GHEventType -&gt; String
+$cshow :: GHEventType -&gt; String
+showsPrec :: Int -&gt; GHEventType -&gt; ShowS
+$cshowsPrec :: Int -&gt; GHEventType -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. GHEventType -&gt; Rep GHEventType x)
+-&gt; (forall x. Rep GHEventType x -&gt; GHEventType)
+-&gt; Generic GHEventType
+forall x. Rep GHEventType x -&gt; GHEventType
+forall x. GHEventType -&gt; Rep GHEventType x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep GHEventType x -&gt; GHEventType
+$cfrom :: forall x. GHEventType -&gt; Rep GHEventType x
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151457"><span id="local-6989586621679151459"><span id="local-6989586621679151461"><span id="local-6989586621679151463"><span class="annot"><span class="annottext">[GHEventType] -&gt; Encoding
+GHEventType -&gt; Encoding
+(GHEventType -&gt; Encoding)
+-&gt; (forall s. Decoder s GHEventType)
+-&gt; ([GHEventType] -&gt; Encoding)
+-&gt; (forall s. Decoder s [GHEventType])
+-&gt; Serialise GHEventType
+forall s. Decoder s [GHEventType]
+forall s. Decoder s GHEventType
+forall a.
+(a -&gt; Encoding)
+-&gt; (forall s. Decoder s a)
+-&gt; ([a] -&gt; Encoding)
+-&gt; (forall s. Decoder s [a])
+-&gt; Serialise a
+decodeList :: Decoder s [GHEventType]
+$cdecodeList :: forall s. Decoder s [GHEventType]
+encodeList :: [GHEventType] -&gt; Encoding
+$cencodeList :: [GHEventType] -&gt; Encoding
+decode :: Decoder s GHEventType
+$cdecode :: forall s. Decoder s GHEventType
+encode :: GHEventType -&gt; Encoding
+$cencode :: GHEventType -&gt; Encoding
+</span><a href="#local-6989586621679151457"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Serialise</span></a></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEventType"><span class="hs-identifier hs-type">GHEventType</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-45"></span><span>  </span><span id="local-6989586621679151453"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable GHEventType, Serialise GHEventType))
+</span><a href="#local-6989586621679151453"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable GHEventType, Serialise GHEventType)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679151450"><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEventType"><span class="hs-identifier hs-type">GHEventType</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-48"></span><span>  </span><span id="local-6989586621679151449"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser GHEventType
+</span><a href="#local-6989586621679151449"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><span class="annottext">String
+-&gt; (Object -&gt; Parser GHEventType) -&gt; Value -&gt; Parser GHEventType
+forall a. String -&gt; (Object -&gt; Parser a) -&gt; Value -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">withObject</span></a></span><span>
+</span><span id="line-50"></span><span>      </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;GHEventType&quot;</span></span><span>
+</span><span id="line-51"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679151448"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151448"><span class="hs-identifier hs-var">obj</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-52"></span><span>          </span><span id="local-6989586621679151447"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679151447"><span class="hs-identifier hs-var">ty</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151448"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;type&quot;</span></span><span>
+</span><span id="line-53"></span><span>          </span><span id="local-6989586621679151446"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679151446"><span class="hs-identifier hs-var">payload</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151448"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Value
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;payload&quot;</span></span><span>
+</span><span id="line-54"></span><span>          </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679151447"><span class="hs-identifier hs-var">ty</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-55"></span><span>            </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;PushEvent&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">GHPushEventPayload -&gt; GHEventType
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHPushEvent"><span class="hs-identifier hs-var">GHPushEvent</span></a></span><span> </span><span class="annot"><span class="annottext">(GHPushEventPayload -&gt; GHEventType)
+-&gt; Parser GHPushEventPayload -&gt; Parser GHEventType
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser GHPushEventPayload
+forall a. FromJSON a =&gt; Value -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679151446"><span class="hs-identifier hs-var">payload</span></a></span><span>
+</span><span id="line-56"></span><span>            </span><span id="local-6989586621679151445"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679151445"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">GHEventType -&gt; Parser GHEventType
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">(GHEventType -&gt; Parser GHEventType)
+-&gt; GHEventType -&gt; Parser GHEventType
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; GHEventType
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHOtherEvent"><span class="hs-identifier hs-var">GHOtherEvent</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679151445"><span class="hs-identifier hs-var">other</span></a></span><span>
+</span><span id="line-57"></span><span>      </span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span id="local-6989586621679151443"><span id="local-6989586621679151444"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="GHPushEventPayload"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHPushEventPayload"><span class="hs-identifier hs-var">GHPushEventPayload</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="GHPushEventPayload"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHPushEventPayload"><span class="hs-identifier hs-var">GHPushEventPayload</span></a></span></span><span> </span><span class="hs-special">{</span><span id="_ghpepCommits"><span class="annot"><span class="annottext">GHPushEventPayload -&gt; [GHCommit]
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghpepCommits"><span class="hs-identifier hs-var hs-var">_ghpepCommits</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommit"><span class="hs-identifier hs-type">GHCommit</span></a></span><span class="hs-special">]</span><span class="hs-special">}</span><span>
+</span><span id="line-60"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151437"><span id="local-6989586621679151439"><span class="annot"><span class="annottext">GHPushEventPayload -&gt; GHPushEventPayload -&gt; Bool
+(GHPushEventPayload -&gt; GHPushEventPayload -&gt; Bool)
+-&gt; (GHPushEventPayload -&gt; GHPushEventPayload -&gt; Bool)
+-&gt; Eq GHPushEventPayload
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: GHPushEventPayload -&gt; GHPushEventPayload -&gt; Bool
+$c/= :: GHPushEventPayload -&gt; GHPushEventPayload -&gt; Bool
+== :: GHPushEventPayload -&gt; GHPushEventPayload -&gt; Bool
+$c== :: GHPushEventPayload -&gt; GHPushEventPayload -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151431"><span id="local-6989586621679151433"><span id="local-6989586621679151435"><span class="annot"><span class="annottext">Int -&gt; GHPushEventPayload -&gt; ShowS
+[GHPushEventPayload] -&gt; ShowS
+GHPushEventPayload -&gt; String
+(Int -&gt; GHPushEventPayload -&gt; ShowS)
+-&gt; (GHPushEventPayload -&gt; String)
+-&gt; ([GHPushEventPayload] -&gt; ShowS)
+-&gt; Show GHPushEventPayload
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [GHPushEventPayload] -&gt; ShowS
+$cshowList :: [GHPushEventPayload] -&gt; ShowS
+show :: GHPushEventPayload -&gt; String
+$cshow :: GHPushEventPayload -&gt; String
+showsPrec :: Int -&gt; GHPushEventPayload -&gt; ShowS
+$cshowsPrec :: Int -&gt; GHPushEventPayload -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. GHPushEventPayload -&gt; Rep GHPushEventPayload x)
+-&gt; (forall x. Rep GHPushEventPayload x -&gt; GHPushEventPayload)
+-&gt; Generic GHPushEventPayload
+forall x. Rep GHPushEventPayload x -&gt; GHPushEventPayload
+forall x. GHPushEventPayload -&gt; Rep GHPushEventPayload x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep GHPushEventPayload x -&gt; GHPushEventPayload
+$cfrom :: forall x. GHPushEventPayload -&gt; Rep GHPushEventPayload x
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151421"><span id="local-6989586621679151423"><span id="local-6989586621679151425"><span id="local-6989586621679151427"><span class="annot"><span class="annottext">[GHPushEventPayload] -&gt; Encoding
+GHPushEventPayload -&gt; Encoding
+(GHPushEventPayload -&gt; Encoding)
+-&gt; (forall s. Decoder s GHPushEventPayload)
+-&gt; ([GHPushEventPayload] -&gt; Encoding)
+-&gt; (forall s. Decoder s [GHPushEventPayload])
+-&gt; Serialise GHPushEventPayload
+forall s. Decoder s [GHPushEventPayload]
+forall s. Decoder s GHPushEventPayload
+forall a.
+(a -&gt; Encoding)
+-&gt; (forall s. Decoder s a)
+-&gt; ([a] -&gt; Encoding)
+-&gt; (forall s. Decoder s [a])
+-&gt; Serialise a
+decodeList :: Decoder s [GHPushEventPayload]
+$cdecodeList :: forall s. Decoder s [GHPushEventPayload]
+encodeList :: [GHPushEventPayload] -&gt; Encoding
+$cencodeList :: [GHPushEventPayload] -&gt; Encoding
+decode :: Decoder s GHPushEventPayload
+$cdecode :: forall s. Decoder s GHPushEventPayload
+encode :: GHPushEventPayload -&gt; Encoding
+$cencode :: GHPushEventPayload -&gt; Encoding
+</span><a href="#local-6989586621679151421"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Serialise</span></a></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHPushEventPayload"><span class="hs-identifier hs-type">GHPushEventPayload</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-63"></span><span>  </span><span id="local-6989586621679151417"><span class="annot"><span class="annottext">staticSerialise :: Closure
+  (Dict (Typeable GHPushEventPayload, Serialise GHPushEventPayload))
+</span><a href="#local-6989586621679151417"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable GHPushEventPayload, Serialise GHPushEventPayload)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679151414"><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHPushEventPayload"><span class="hs-identifier hs-type">GHPushEventPayload</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-66"></span><span>  </span><span id="local-6989586621679151413"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser GHPushEventPayload
+</span><a href="#local-6989586621679151413"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-67"></span><span>    </span><span class="annot"><span class="annottext">String
+-&gt; (Object -&gt; Parser GHPushEventPayload)
+-&gt; Value
+-&gt; Parser GHPushEventPayload
+forall a. String -&gt; (Object -&gt; Parser a) -&gt; Value -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">withObject</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;GHPushEventPayload&quot;</span></span><span> </span><span class="annot"><span class="annottext">((Object -&gt; Parser GHPushEventPayload)
+ -&gt; Value -&gt; Parser GHPushEventPayload)
+-&gt; (Object -&gt; Parser GHPushEventPayload)
+-&gt; Value
+-&gt; Parser GHPushEventPayload
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679151412"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151412"><span class="hs-identifier hs-var">obj</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-68"></span><span>      </span><span class="annot"><span class="annottext">[GHCommit] -&gt; GHPushEventPayload
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHPushEventPayload"><span class="hs-identifier hs-var">GHPushEventPayload</span></a></span><span>
+</span><span id="line-69"></span><span>        </span><span class="annot"><span class="annottext">([GHCommit] -&gt; GHPushEventPayload)
+-&gt; Parser [GHCommit] -&gt; Parser GHPushEventPayload
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151412"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser [GHCommit]
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;commits&quot;</span></span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span id="local-6989586621679151410"><span id="local-6989586621679151411"></span></span><span class="hs-keyword">data</span><span> </span><span id="GHCommit"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommit"><span class="hs-identifier hs-var">GHCommit</span></a></span></span><span>
+</span><span id="line-72"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="GHCommit"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommit"><span class="hs-identifier hs-var">GHCommit</span></a></span></span><span>
+</span><span id="line-73"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="_ghcAuthor"><span class="annot"><span class="annottext">GHCommit -&gt; GHCommitAuthor
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghcAuthor"><span class="hs-identifier hs-var hs-var">_ghcAuthor</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommitAuthor"><span class="hs-identifier hs-type">GHCommitAuthor</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-74"></span><span>        </span><span id="_ghcMessage"><span class="annot"><span class="annottext">GHCommit -&gt; Text
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghcMessage"><span class="hs-identifier hs-var hs-var">_ghcMessage</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-75"></span><span>        </span><span id="_ghcSha"><span class="annot"><span class="annottext">GHCommit -&gt; Text
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghcSha"><span class="hs-identifier hs-var hs-var">_ghcSha</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-76"></span><span>        </span><span id="_ghcDistinct"><span class="annot"><span class="annottext">GHCommit -&gt; Bool
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghcDistinct"><span class="hs-identifier hs-var hs-var">_ghcDistinct</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-77"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-78"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151401"><span id="local-6989586621679151403"><span class="annot"><span class="annottext">GHCommit -&gt; GHCommit -&gt; Bool
+(GHCommit -&gt; GHCommit -&gt; Bool)
+-&gt; (GHCommit -&gt; GHCommit -&gt; Bool) -&gt; Eq GHCommit
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: GHCommit -&gt; GHCommit -&gt; Bool
+$c/= :: GHCommit -&gt; GHCommit -&gt; Bool
+== :: GHCommit -&gt; GHCommit -&gt; Bool
+$c== :: GHCommit -&gt; GHCommit -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151395"><span id="local-6989586621679151397"><span id="local-6989586621679151399"><span class="annot"><span class="annottext">Int -&gt; GHCommit -&gt; ShowS
+[GHCommit] -&gt; ShowS
+GHCommit -&gt; String
+(Int -&gt; GHCommit -&gt; ShowS)
+-&gt; (GHCommit -&gt; String) -&gt; ([GHCommit] -&gt; ShowS) -&gt; Show GHCommit
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [GHCommit] -&gt; ShowS
+$cshowList :: [GHCommit] -&gt; ShowS
+show :: GHCommit -&gt; String
+$cshow :: GHCommit -&gt; String
+showsPrec :: Int -&gt; GHCommit -&gt; ShowS
+$cshowsPrec :: Int -&gt; GHCommit -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. GHCommit -&gt; Rep GHCommit x)
+-&gt; (forall x. Rep GHCommit x -&gt; GHCommit) -&gt; Generic GHCommit
+forall x. Rep GHCommit x -&gt; GHCommit
+forall x. GHCommit -&gt; Rep GHCommit x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep GHCommit x -&gt; GHCommit
+$cfrom :: forall x. GHCommit -&gt; Rep GHCommit x
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151385"><span id="local-6989586621679151387"><span id="local-6989586621679151389"><span id="local-6989586621679151391"><span class="annot"><span class="annottext">[GHCommit] -&gt; Encoding
+GHCommit -&gt; Encoding
+(GHCommit -&gt; Encoding)
+-&gt; (forall s. Decoder s GHCommit)
+-&gt; ([GHCommit] -&gt; Encoding)
+-&gt; (forall s. Decoder s [GHCommit])
+-&gt; Serialise GHCommit
+forall s. Decoder s [GHCommit]
+forall s. Decoder s GHCommit
+forall a.
+(a -&gt; Encoding)
+-&gt; (forall s. Decoder s a)
+-&gt; ([a] -&gt; Encoding)
+-&gt; (forall s. Decoder s [a])
+-&gt; Serialise a
+decodeList :: Decoder s [GHCommit]
+$cdecodeList :: forall s. Decoder s [GHCommit]
+encodeList :: [GHCommit] -&gt; Encoding
+$cencodeList :: [GHCommit] -&gt; Encoding
+decode :: Decoder s GHCommit
+$cdecode :: forall s. Decoder s GHCommit
+encode :: GHCommit -&gt; Encoding
+$cencode :: GHCommit -&gt; Encoding
+</span><a href="#local-6989586621679151385"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Serialise</span></a></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommit"><span class="hs-identifier hs-type">GHCommit</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-81"></span><span>  </span><span id="local-6989586621679151381"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable GHCommit, Serialise GHCommit))
+</span><a href="#local-6989586621679151381"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable GHCommit, Serialise GHCommit)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679151378"><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommit"><span class="hs-identifier hs-type">GHCommit</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-84"></span><span>  </span><span id="local-6989586621679151377"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser GHCommit
+</span><a href="#local-6989586621679151377"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-85"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; (Object -&gt; Parser GHCommit) -&gt; Value -&gt; Parser GHCommit
+forall a. String -&gt; (Object -&gt; Parser a) -&gt; Value -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">withObject</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;GHCommit&quot;</span></span><span> </span><span class="annot"><span class="annottext">((Object -&gt; Parser GHCommit) -&gt; Value -&gt; Parser GHCommit)
+-&gt; (Object -&gt; Parser GHCommit) -&gt; Value -&gt; Parser GHCommit
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679151376"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151376"><span class="hs-identifier hs-var">obj</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-86"></span><span>      </span><span class="annot"><span class="annottext">GHCommitAuthor -&gt; Text -&gt; Text -&gt; Bool -&gt; GHCommit
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommit"><span class="hs-identifier hs-var">GHCommit</span></a></span><span>
+</span><span id="line-87"></span><span>        </span><span class="annot"><span class="annottext">(GHCommitAuthor -&gt; Text -&gt; Text -&gt; Bool -&gt; GHCommit)
+-&gt; Parser GHCommitAuthor
+-&gt; Parser (Text -&gt; Text -&gt; Bool -&gt; GHCommit)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151376"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser GHCommitAuthor
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;author&quot;</span></span><span>
+</span><span id="line-88"></span><span>        </span><span class="annot"><span class="annottext">Parser (Text -&gt; Text -&gt; Bool -&gt; GHCommit)
+-&gt; Parser Text -&gt; Parser (Text -&gt; Bool -&gt; GHCommit)
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151376"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;message&quot;</span></span><span>
+</span><span id="line-89"></span><span>        </span><span class="annot"><span class="annottext">Parser (Text -&gt; Bool -&gt; GHCommit)
+-&gt; Parser Text -&gt; Parser (Bool -&gt; GHCommit)
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151376"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;sha&quot;</span></span><span>
+</span><span id="line-90"></span><span>        </span><span class="annot"><span class="annottext">Parser (Bool -&gt; GHCommit) -&gt; Parser Bool -&gt; Parser GHCommit
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151376"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser (Maybe Bool)
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser (Maybe a)
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:?</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;distinct&quot;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe Bool) -&gt; Bool -&gt; Parser Bool
+forall a. Parser (Maybe a) -&gt; a -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.!=</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var">True</span></a></span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span id="local-6989586621679151374"><span id="local-6989586621679151375"></span></span><span class="hs-keyword">data</span><span> </span><span id="GHCommitAuthor"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommitAuthor"><span class="hs-identifier hs-var">GHCommitAuthor</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="GHCommitAuthor"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommitAuthor"><span class="hs-identifier hs-var">GHCommitAuthor</span></a></span></span><span> </span><span class="hs-special">{</span><span id="_ghcaEmail"><span class="annot"><span class="annottext">GHCommitAuthor -&gt; Text
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghcaEmail"><span class="hs-identifier hs-var hs-var">_ghcaEmail</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">,</span><span> </span><span id="_ghcaName"><span class="annot"><span class="annottext">GHCommitAuthor -&gt; Text
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghcaName"><span class="hs-identifier hs-var hs-var">_ghcaName</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-93"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151367"><span id="local-6989586621679151369"><span class="annot"><span class="annottext">GHCommitAuthor -&gt; GHCommitAuthor -&gt; Bool
+(GHCommitAuthor -&gt; GHCommitAuthor -&gt; Bool)
+-&gt; (GHCommitAuthor -&gt; GHCommitAuthor -&gt; Bool) -&gt; Eq GHCommitAuthor
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: GHCommitAuthor -&gt; GHCommitAuthor -&gt; Bool
+$c/= :: GHCommitAuthor -&gt; GHCommitAuthor -&gt; Bool
+== :: GHCommitAuthor -&gt; GHCommitAuthor -&gt; Bool
+$c== :: GHCommitAuthor -&gt; GHCommitAuthor -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151361"><span id="local-6989586621679151363"><span id="local-6989586621679151365"><span class="annot"><span class="annottext">Int -&gt; GHCommitAuthor -&gt; ShowS
+[GHCommitAuthor] -&gt; ShowS
+GHCommitAuthor -&gt; String
+(Int -&gt; GHCommitAuthor -&gt; ShowS)
+-&gt; (GHCommitAuthor -&gt; String)
+-&gt; ([GHCommitAuthor] -&gt; ShowS)
+-&gt; Show GHCommitAuthor
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [GHCommitAuthor] -&gt; ShowS
+$cshowList :: [GHCommitAuthor] -&gt; ShowS
+show :: GHCommitAuthor -&gt; String
+$cshow :: GHCommitAuthor -&gt; String
+showsPrec :: Int -&gt; GHCommitAuthor -&gt; ShowS
+$cshowsPrec :: Int -&gt; GHCommitAuthor -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. GHCommitAuthor -&gt; Rep GHCommitAuthor x)
+-&gt; (forall x. Rep GHCommitAuthor x -&gt; GHCommitAuthor)
+-&gt; Generic GHCommitAuthor
+forall x. Rep GHCommitAuthor x -&gt; GHCommitAuthor
+forall x. GHCommitAuthor -&gt; Rep GHCommitAuthor x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep GHCommitAuthor x -&gt; GHCommitAuthor
+$cfrom :: forall x. GHCommitAuthor -&gt; Rep GHCommitAuthor x
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151351"><span id="local-6989586621679151353"><span id="local-6989586621679151355"><span id="local-6989586621679151357"><span class="annot"><span class="annottext">[GHCommitAuthor] -&gt; Encoding
+GHCommitAuthor -&gt; Encoding
+(GHCommitAuthor -&gt; Encoding)
+-&gt; (forall s. Decoder s GHCommitAuthor)
+-&gt; ([GHCommitAuthor] -&gt; Encoding)
+-&gt; (forall s. Decoder s [GHCommitAuthor])
+-&gt; Serialise GHCommitAuthor
+forall s. Decoder s [GHCommitAuthor]
+forall s. Decoder s GHCommitAuthor
+forall a.
+(a -&gt; Encoding)
+-&gt; (forall s. Decoder s a)
+-&gt; ([a] -&gt; Encoding)
+-&gt; (forall s. Decoder s [a])
+-&gt; Serialise a
+decodeList :: Decoder s [GHCommitAuthor]
+$cdecodeList :: forall s. Decoder s [GHCommitAuthor]
+encodeList :: [GHCommitAuthor] -&gt; Encoding
+$cencodeList :: [GHCommitAuthor] -&gt; Encoding
+decode :: Decoder s GHCommitAuthor
+$cdecode :: forall s. Decoder s GHCommitAuthor
+encode :: GHCommitAuthor -&gt; Encoding
+$cencode :: GHCommitAuthor -&gt; Encoding
+</span><a href="#local-6989586621679151351"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Serialise</span></a></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommitAuthor"><span class="hs-identifier hs-type">GHCommitAuthor</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-96"></span><span>  </span><span id="local-6989586621679151347"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable GHCommitAuthor, Serialise GHCommitAuthor))
+</span><a href="#local-6989586621679151347"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable GHCommitAuthor, Serialise GHCommitAuthor)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679151344"><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommitAuthor"><span class="hs-identifier hs-type">GHCommitAuthor</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-99"></span><span>  </span><span id="local-6989586621679151343"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser GHCommitAuthor
+</span><a href="#local-6989586621679151343"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-100"></span><span>    </span><span class="annot"><span class="annottext">String
+-&gt; (Object -&gt; Parser GHCommitAuthor)
+-&gt; Value
+-&gt; Parser GHCommitAuthor
+forall a. String -&gt; (Object -&gt; Parser a) -&gt; Value -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">withObject</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;GHCommitAuthor&quot;</span></span><span> </span><span class="annot"><span class="annottext">((Object -&gt; Parser GHCommitAuthor)
+ -&gt; Value -&gt; Parser GHCommitAuthor)
+-&gt; (Object -&gt; Parser GHCommitAuthor)
+-&gt; Value
+-&gt; Parser GHCommitAuthor
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679151342"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151342"><span class="hs-identifier hs-var">obj</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-101"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; GHCommitAuthor
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHCommitAuthor"><span class="hs-identifier hs-var">GHCommitAuthor</span></a></span><span>
+</span><span id="line-102"></span><span>        </span><span class="annot"><span class="annottext">(Text -&gt; Text -&gt; GHCommitAuthor)
+-&gt; Parser Text -&gt; Parser (Text -&gt; GHCommitAuthor)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151342"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;email&quot;</span></span><span>
+</span><span id="line-103"></span><span>        </span><span class="annot"><span class="annottext">Parser (Text -&gt; GHCommitAuthor)
+-&gt; Parser Text -&gt; Parser GHCommitAuthor
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151342"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;name&quot;</span></span><span>
+</span><span id="line-104"></span><span>
+</span><span id="line-105"></span><span id="local-6989586621679151340"><span id="local-6989586621679151341"></span></span><span class="hs-keyword">data</span><span> </span><span id="GHActor"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHActor"><span class="hs-identifier hs-var">GHActor</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="GHActor"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHActor"><span class="hs-identifier hs-var">GHActor</span></a></span></span><span> </span><span class="hs-special">{</span><span id="_ghaId"><span class="annot"><span class="annottext">GHActor -&gt; Maybe Integer
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghaId"><span class="hs-identifier hs-var hs-var">_ghaId</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span class="hs-special">,</span><span> </span><span id="_ghaLogin"><span class="annot"><span class="annottext">GHActor -&gt; Maybe Text
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghaLogin"><span class="hs-identifier hs-var hs-var">_ghaLogin</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">,</span><span> </span><span id="_ghaUrl"><span class="annot"><span class="annottext">GHActor -&gt; Text
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghaUrl"><span class="hs-identifier hs-var hs-var">_ghaUrl</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-106"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151332"><span id="local-6989586621679151334"><span class="annot"><span class="annottext">GHActor -&gt; GHActor -&gt; Bool
+(GHActor -&gt; GHActor -&gt; Bool)
+-&gt; (GHActor -&gt; GHActor -&gt; Bool) -&gt; Eq GHActor
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: GHActor -&gt; GHActor -&gt; Bool
+$c/= :: GHActor -&gt; GHActor -&gt; Bool
+== :: GHActor -&gt; GHActor -&gt; Bool
+$c== :: GHActor -&gt; GHActor -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151326"><span id="local-6989586621679151328"><span id="local-6989586621679151330"><span class="annot"><span class="annottext">Int -&gt; GHActor -&gt; ShowS
+[GHActor] -&gt; ShowS
+GHActor -&gt; String
+(Int -&gt; GHActor -&gt; ShowS)
+-&gt; (GHActor -&gt; String) -&gt; ([GHActor] -&gt; ShowS) -&gt; Show GHActor
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [GHActor] -&gt; ShowS
+$cshowList :: [GHActor] -&gt; ShowS
+show :: GHActor -&gt; String
+$cshow :: GHActor -&gt; String
+showsPrec :: Int -&gt; GHActor -&gt; ShowS
+$cshowsPrec :: Int -&gt; GHActor -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. GHActor -&gt; Rep GHActor x)
+-&gt; (forall x. Rep GHActor x -&gt; GHActor) -&gt; Generic GHActor
+forall x. Rep GHActor x -&gt; GHActor
+forall x. GHActor -&gt; Rep GHActor x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep GHActor x -&gt; GHActor
+$cfrom :: forall x. GHActor -&gt; Rep GHActor x
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151316"><span id="local-6989586621679151318"><span id="local-6989586621679151320"><span id="local-6989586621679151322"><span class="annot"><span class="annottext">[GHActor] -&gt; Encoding
+GHActor -&gt; Encoding
+(GHActor -&gt; Encoding)
+-&gt; (forall s. Decoder s GHActor)
+-&gt; ([GHActor] -&gt; Encoding)
+-&gt; (forall s. Decoder s [GHActor])
+-&gt; Serialise GHActor
+forall s. Decoder s [GHActor]
+forall s. Decoder s GHActor
+forall a.
+(a -&gt; Encoding)
+-&gt; (forall s. Decoder s a)
+-&gt; ([a] -&gt; Encoding)
+-&gt; (forall s. Decoder s [a])
+-&gt; Serialise a
+decodeList :: Decoder s [GHActor]
+$cdecodeList :: forall s. Decoder s [GHActor]
+encodeList :: [GHActor] -&gt; Encoding
+$cencodeList :: [GHActor] -&gt; Encoding
+decode :: Decoder s GHActor
+$cdecode :: forall s. Decoder s GHActor
+encode :: GHActor -&gt; Encoding
+$cencode :: GHActor -&gt; Encoding
+</span><a href="#local-6989586621679151316"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Serialise</span></a></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHActor"><span class="hs-identifier hs-type">GHActor</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-109"></span><span>  </span><span id="local-6989586621679151312"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable GHActor, Serialise GHActor))
+</span><a href="#local-6989586621679151312"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable GHActor, Serialise GHActor)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679151309"><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHActor"><span class="hs-identifier hs-type">GHActor</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-112"></span><span>  </span><span id="local-6989586621679151308"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser GHActor
+</span><a href="#local-6989586621679151308"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-113"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; (Object -&gt; Parser GHActor) -&gt; Value -&gt; Parser GHActor
+forall a. String -&gt; (Object -&gt; Parser a) -&gt; Value -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">withObject</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;GHActor&quot;</span></span><span> </span><span class="annot"><span class="annottext">((Object -&gt; Parser GHActor) -&gt; Value -&gt; Parser GHActor)
+-&gt; (Object -&gt; Parser GHActor) -&gt; Value -&gt; Parser GHActor
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679151307"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151307"><span class="hs-identifier hs-var">obj</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-114"></span><span>      </span><span class="annot"><span class="annottext">Maybe Integer -&gt; Maybe Text -&gt; Text -&gt; GHActor
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHActor"><span class="hs-identifier hs-var">GHActor</span></a></span><span>
+</span><span id="line-115"></span><span>        </span><span class="annot"><span class="annottext">(Maybe Integer -&gt; Maybe Text -&gt; Text -&gt; GHActor)
+-&gt; Parser (Maybe Integer) -&gt; Parser (Maybe Text -&gt; Text -&gt; GHActor)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151307"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser (Maybe Integer)
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser (Maybe a)
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:?</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;id&quot;</span></span><span>
+</span><span id="line-116"></span><span>        </span><span class="annot"><span class="annottext">Parser (Maybe Text -&gt; Text -&gt; GHActor)
+-&gt; Parser (Maybe Text) -&gt; Parser (Text -&gt; GHActor)
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151307"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser (Maybe Text)
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser (Maybe a)
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:?</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;login&quot;</span></span><span>
+</span><span id="line-117"></span><span>        </span><span class="annot"><span class="annottext">Parser (Text -&gt; GHActor) -&gt; Parser Text -&gt; Parser GHActor
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151307"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;url&quot;</span></span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span id="local-6989586621679151305"><span id="local-6989586621679151306"></span></span><span class="hs-keyword">data</span><span> </span><span id="GHRepo"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHRepo"><span class="hs-identifier hs-var">GHRepo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="GHRepo"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHRepo"><span class="hs-identifier hs-var">GHRepo</span></a></span></span><span> </span><span class="hs-special">{</span><span id="_ghrId"><span class="annot"><span class="annottext">GHRepo -&gt; Integer
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghrId"><span class="hs-identifier hs-var hs-var">_ghrId</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span class="hs-special">,</span><span> </span><span id="_ghrName"><span class="annot"><span class="annottext">GHRepo -&gt; Text
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#_ghrName"><span class="hs-identifier hs-var hs-var">_ghrName</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-120"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151298"><span id="local-6989586621679151300"><span class="annot"><span class="annottext">GHRepo -&gt; GHRepo -&gt; Bool
+(GHRepo -&gt; GHRepo -&gt; Bool)
+-&gt; (GHRepo -&gt; GHRepo -&gt; Bool) -&gt; Eq GHRepo
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: GHRepo -&gt; GHRepo -&gt; Bool
+$c/= :: GHRepo -&gt; GHRepo -&gt; Bool
+== :: GHRepo -&gt; GHRepo -&gt; Bool
+$c== :: GHRepo -&gt; GHRepo -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151292"><span id="local-6989586621679151294"><span id="local-6989586621679151296"><span class="annot"><span class="annottext">Int -&gt; GHRepo -&gt; ShowS
+[GHRepo] -&gt; ShowS
+GHRepo -&gt; String
+(Int -&gt; GHRepo -&gt; ShowS)
+-&gt; (GHRepo -&gt; String) -&gt; ([GHRepo] -&gt; ShowS) -&gt; Show GHRepo
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [GHRepo] -&gt; ShowS
+$cshowList :: [GHRepo] -&gt; ShowS
+show :: GHRepo -&gt; String
+$cshow :: GHRepo -&gt; String
+showsPrec :: Int -&gt; GHRepo -&gt; ShowS
+$cshowsPrec :: Int -&gt; GHRepo -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. GHRepo -&gt; Rep GHRepo x)
+-&gt; (forall x. Rep GHRepo x -&gt; GHRepo) -&gt; Generic GHRepo
+forall x. Rep GHRepo x -&gt; GHRepo
+forall x. GHRepo -&gt; Rep GHRepo x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep GHRepo x -&gt; GHRepo
+$cfrom :: forall x. GHRepo -&gt; Rep GHRepo x
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151282"><span id="local-6989586621679151284"><span id="local-6989586621679151286"><span id="local-6989586621679151288"><span class="annot"><span class="annottext">[GHRepo] -&gt; Encoding
+GHRepo -&gt; Encoding
+(GHRepo -&gt; Encoding)
+-&gt; (forall s. Decoder s GHRepo)
+-&gt; ([GHRepo] -&gt; Encoding)
+-&gt; (forall s. Decoder s [GHRepo])
+-&gt; Serialise GHRepo
+forall s. Decoder s [GHRepo]
+forall s. Decoder s GHRepo
+forall a.
+(a -&gt; Encoding)
+-&gt; (forall s. Decoder s a)
+-&gt; ([a] -&gt; Encoding)
+-&gt; (forall s. Decoder s [a])
+-&gt; Serialise a
+decodeList :: Decoder s [GHRepo]
+$cdecodeList :: forall s. Decoder s [GHRepo]
+encodeList :: [GHRepo] -&gt; Encoding
+$cencodeList :: [GHRepo] -&gt; Encoding
+decode :: Decoder s GHRepo
+$cdecode :: forall s. Decoder s GHRepo
+encode :: GHRepo -&gt; Encoding
+$cencode :: GHRepo -&gt; Encoding
+</span><a href="#local-6989586621679151282"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Serialise</span></a></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHRepo"><span class="hs-identifier hs-type">GHRepo</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-123"></span><span>  </span><span id="local-6989586621679151278"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable GHRepo, Serialise GHRepo))
+</span><a href="#local-6989586621679151278"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable GHRepo, Serialise GHRepo)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679151275"><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHRepo"><span class="hs-identifier hs-type">GHRepo</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-126"></span><span>  </span><span id="local-6989586621679151274"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser GHRepo
+</span><a href="#local-6989586621679151274"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-127"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; (Object -&gt; Parser GHRepo) -&gt; Value -&gt; Parser GHRepo
+forall a. String -&gt; (Object -&gt; Parser a) -&gt; Value -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">withObject</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;GHRepo&quot;</span></span><span> </span><span class="annot"><span class="annottext">((Object -&gt; Parser GHRepo) -&gt; Value -&gt; Parser GHRepo)
+-&gt; (Object -&gt; Parser GHRepo) -&gt; Value -&gt; Parser GHRepo
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679151273"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151273"><span class="hs-identifier hs-var">obj</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-128"></span><span>      </span><span class="annot"><span class="annottext">Integer -&gt; Text -&gt; GHRepo
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHRepo"><span class="hs-identifier hs-var">GHRepo</span></a></span><span>
+</span><span id="line-129"></span><span>        </span><span class="annot"><span class="annottext">(Integer -&gt; Text -&gt; GHRepo)
+-&gt; Parser Integer -&gt; Parser (Text -&gt; GHRepo)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151273"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Integer
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;id&quot;</span></span><span>
+</span><span id="line-130"></span><span>        </span><span class="annot"><span class="annottext">Parser (Text -&gt; GHRepo) -&gt; Parser Text -&gt; Parser GHRepo
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679151273"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;name&quot;</span></span><span>
+</span><span id="line-131"></span><span>
+</span><span id="line-132"></span><span id="gheType"><span id="gheRepo"><span id="gheActor"><span class="hs-identifier">makeLenses</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">GHEvent</span></span></span></span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span id="_GHOtherEvent"><span id="_GHPushEvent"><span class="hs-identifier">makePrisms</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">GHEventType</span></span></span><span>
+</span><span id="line-135"></span><span>
+</span><span id="line-136"></span><span id="ghpepCommits"><span class="hs-identifier">makeLenses</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">GHPushEventPayload</span></span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span id="ghcSha"><span id="ghcMessage"><span id="ghcDistinct"><span id="ghcAuthor"><span class="hs-identifier">makeLenses</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">GHCommit</span></span></span></span></span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span id="ghcaName"><span id="ghcaEmail"><span class="hs-identifier">makeLenses</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">GHCommitAuthor</span></span></span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span id="ghaUrl"><span id="ghaLogin"><span id="ghaId"><span class="hs-identifier">makeLenses</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">GHActor</span></span></span></span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span id="ghrName"><span id="ghrId"><span class="hs-identifier">makeLenses</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">GHRepo</span></span></span><span>
+</span><span id="line-145"></span></pre></body></html>

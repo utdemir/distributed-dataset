@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Fork.AWS.Lambda.Internal.Types</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Control.Monad</span></a></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Data.Aeson</span></a></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Data.Text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Text</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Data.Text</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">newtype</span><span> </span><span id="BucketName"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#BucketName"><span class="hs-identifier hs-var">BucketName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="BucketName"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#BucketName"><span class="hs-identifier hs-var">BucketName</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679255216"><span id="local-6989586621679255218"><span class="annot"><span class="annottext">BucketName -&gt; BucketName -&gt; Bool
+(BucketName -&gt; BucketName -&gt; Bool)
+-&gt; (BucketName -&gt; BucketName -&gt; Bool) -&gt; Eq BucketName
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: BucketName -&gt; BucketName -&gt; Bool
+$c/= :: BucketName -&gt; BucketName -&gt; Bool
+== :: BucketName -&gt; BucketName -&gt; Bool
+$c== :: BucketName -&gt; BucketName -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679255209"><span id="local-6989586621679255211"><span id="local-6989586621679255213"><span class="annot"><span class="annottext">Int -&gt; BucketName -&gt; ShowS
+[BucketName] -&gt; ShowS
+BucketName -&gt; String
+(Int -&gt; BucketName -&gt; ShowS)
+-&gt; (BucketName -&gt; String)
+-&gt; ([BucketName] -&gt; ShowS)
+-&gt; Show BucketName
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [BucketName] -&gt; ShowS
+$cshowList :: [BucketName] -&gt; ShowS
+show :: BucketName -&gt; String
+$cshow :: BucketName -&gt; String
+showsPrec :: Int -&gt; BucketName -&gt; ShowS
+$cshowsPrec :: Int -&gt; BucketName -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">data</span><span> </span><span id="S3Loc"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#S3Loc"><span class="hs-identifier hs-var">S3Loc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="S3Loc"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#S3Loc"><span class="hs-identifier hs-var">S3Loc</span></a></span></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#BucketName"><span class="hs-identifier hs-type">BucketName</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679255203"><span id="local-6989586621679255205"><span class="annot"><span class="annottext">S3Loc -&gt; S3Loc -&gt; Bool
+(S3Loc -&gt; S3Loc -&gt; Bool) -&gt; (S3Loc -&gt; S3Loc -&gt; Bool) -&gt; Eq S3Loc
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: S3Loc -&gt; S3Loc -&gt; Bool
+$c/= :: S3Loc -&gt; S3Loc -&gt; Bool
+== :: S3Loc -&gt; S3Loc -&gt; Bool
+$c== :: S3Loc -&gt; S3Loc -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679255198"><span id="local-6989586621679255201"><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#S3Loc"><span class="hs-identifier hs-type">S3Loc</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-18"></span><span>  </span><span id="local-6989586621679255197"><span class="annot"><span class="annottext">show :: S3Loc -&gt; String
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#S3Loc"><span class="hs-identifier hs-type">S3Loc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#BucketName"><span class="hs-identifier hs-type">BucketName</span></a></span><span> </span><span id="local-6989586621679255195"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255195"><span class="hs-identifier hs-var">bucket</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679255194"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255194"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; String
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-var">T.unpack</span></a></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; String) -&gt; Text -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;s3://&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255195"><span class="hs-identifier hs-var">bucket</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;/&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255194"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">newtype</span><span> </span><span id="StackName"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#StackName"><span class="hs-identifier hs-var">StackName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="StackName"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#StackName"><span class="hs-identifier hs-var">StackName</span></a></span></span><span> </span><span class="hs-special">{</span><span id="unStackName"><span class="annot"><span class="annottext">StackName -&gt; Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#unStackName"><span class="hs-identifier hs-var hs-var">unStackName</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679255187"><span id="local-6989586621679255189"><span class="annot"><span class="annottext">StackName -&gt; StackName -&gt; Bool
+(StackName -&gt; StackName -&gt; Bool)
+-&gt; (StackName -&gt; StackName -&gt; Bool) -&gt; Eq StackName
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: StackName -&gt; StackName -&gt; Bool
+$c/= :: StackName -&gt; StackName -&gt; Bool
+== :: StackName -&gt; StackName -&gt; Bool
+$c== :: StackName -&gt; StackName -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679255181"><span id="local-6989586621679255183"><span id="local-6989586621679255185"><span class="annot"><span class="annottext">Int -&gt; StackName -&gt; ShowS
+[StackName] -&gt; ShowS
+StackName -&gt; String
+(Int -&gt; StackName -&gt; ShowS)
+-&gt; (StackName -&gt; String)
+-&gt; ([StackName] -&gt; ShowS)
+-&gt; Show StackName
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [StackName] -&gt; ShowS
+$cshowList :: [StackName] -&gt; ShowS
+show :: StackName -&gt; String
+$cshow :: StackName -&gt; String
+showsPrec :: Int -&gt; StackName -&gt; ShowS
+$cshowsPrec :: Int -&gt; StackName -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">data</span><span> </span><span id="StackOptions"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#StackOptions"><span class="hs-identifier hs-var">StackOptions</span></a></span></span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="StackOptions"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#StackOptions"><span class="hs-identifier hs-var">StackOptions</span></a></span></span><span>
+</span><span id="line-25"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="soName"><span class="annot"><span class="annottext">StackOptions -&gt; StackName
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#soName"><span class="hs-identifier hs-var hs-var">soName</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#StackName"><span class="hs-identifier hs-type">StackName</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>        </span><span id="soLambdaMemory"><span class="annot"><span class="annottext">StackOptions -&gt; Int
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#soLambdaMemory"><span class="hs-identifier hs-var hs-var">soLambdaMemory</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>        </span><span id="soLambdaCode"><span class="annot"><span class="annottext">StackOptions -&gt; S3Loc
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#soLambdaCode"><span class="hs-identifier hs-var hs-var">soLambdaCode</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#S3Loc"><span class="hs-identifier hs-type">S3Loc</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>        </span><span id="soKeep"><span class="annot"><span class="annottext">StackOptions -&gt; Bool
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#soKeep"><span class="hs-identifier hs-var hs-var">soKeep</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-29"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">data</span><span> </span><span id="Response"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#Response"><span class="hs-identifier hs-var">Response</span></a></span></span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Response"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#Response"><span class="hs-identifier hs-var">Response</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#ResponsePayload"><span class="hs-identifier hs-type">ResponsePayload</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">data</span><span> </span><span id="ResponsePayload"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#ResponsePayload"><span class="hs-identifier hs-var">ResponsePayload</span></a></span></span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ResponsePayloadInline"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#ResponsePayloadInline"><span class="hs-identifier hs-var">ResponsePayloadInline</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ResponsePayloadS3"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#ResponsePayloadS3"><span class="hs-identifier hs-var">ResponsePayloadS3</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679255170"><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#Response"><span class="hs-identifier hs-type">Response</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-39"></span><span>  </span><span id="local-6989586621679255168"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Response
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">Object</span></a></span><span> </span><span id="local-6989586621679255165"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255165"><span class="hs-identifier hs-var">obj</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><span class="annottext">Int -&gt; ResponsePayload -&gt; Response
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#Response"><span class="hs-identifier hs-var">Response</span></a></span><span>
+</span><span id="line-41"></span><span>      </span><span class="annot"><span class="annottext">(Int -&gt; ResponsePayload -&gt; Response)
+-&gt; Parser Int -&gt; Parser (ResponsePayload -&gt; Response)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255165"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Int
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;id&quot;</span></span><span>
+</span><span id="line-42"></span><span>      </span><span class="annot"><span class="annottext">Parser (ResponsePayload -&gt; Response)
+-&gt; Parser ResponsePayload -&gt; Parser Response
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Object -&gt; Parser ResponsePayload
+</span><a href="#local-6989586621679255162"><span class="hs-identifier hs-var">parseInline</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255165"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Parser ResponsePayload
+-&gt; Parser ResponsePayload -&gt; Parser ResponsePayload
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;|&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Parser ResponsePayload
+</span><a href="#local-6989586621679255160"><span class="hs-identifier hs-var">parseS3</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255165"><span class="hs-identifier hs-var">obj</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-44"></span><span>      </span><span id="local-6989586621679255162"><span class="annot"><span class="annottext">parseInline :: Object -&gt; Parser ResponsePayload
+</span><a href="#local-6989586621679255162"><span class="hs-identifier hs-var hs-var">parseInline</span></a></span></span><span> </span><span id="local-6989586621679255159"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255159"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-45"></span><span>        </span><span id="local-6989586621679255158"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255158"><span class="hs-identifier hs-var">ty</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255159"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;type&quot;</span></span><span>
+</span><span id="line-46"></span><span>        </span><span class="annot"><span class="annottext">Bool -&gt; Parser ()
+forall (f :: * -&gt; *). Alternative f =&gt; Bool -&gt; f ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">guard</span></a></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Parser ()) -&gt; Bool -&gt; Parser ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255158"><span class="hs-identifier hs-var">ty</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;response-inline&quot;</span></span><span>
+</span><span id="line-47"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; ResponsePayload
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#ResponsePayloadInline"><span class="hs-identifier hs-var">ResponsePayloadInline</span></a></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; ResponsePayload) -&gt; Parser Text -&gt; Parser ResponsePayload
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255159"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;payload&quot;</span></span><span>
+</span><span id="line-48"></span><span>      </span><span id="local-6989586621679255160"><span class="annot"><span class="annottext">parseS3 :: Object -&gt; Parser ResponsePayload
+</span><a href="#local-6989586621679255160"><span class="hs-identifier hs-var hs-var">parseS3</span></a></span></span><span> </span><span id="local-6989586621679255157"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255157"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-49"></span><span>        </span><span id="local-6989586621679255156"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255156"><span class="hs-identifier hs-var">ty</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255157"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;type&quot;</span></span><span>
+</span><span id="line-50"></span><span>        </span><span class="annot"><span class="annottext">Bool -&gt; Parser ()
+forall (f :: * -&gt; *). Alternative f =&gt; Bool -&gt; f ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">guard</span></a></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Parser ()) -&gt; Bool -&gt; Parser ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255156"><span class="hs-identifier hs-var">ty</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;response-s3&quot;</span></span><span>
+</span><span id="line-51"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; ResponsePayload
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#ResponsePayloadS3"><span class="hs-identifier hs-var">ResponsePayloadS3</span></a></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; ResponsePayload) -&gt; Parser Text -&gt; Parser ResponsePayload
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255157"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;path&quot;</span></span><span>
+</span><span id="line-52"></span><span>  </span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser Response
+forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fail</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;unexpected response&quot;</span></span><span>
+</span><span id="line-53"></span></pre></body></html>

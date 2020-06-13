@@ -1,0 +1,377 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DeriveAnyClass #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveGeneric #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE RankNTypes #-}</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Dataset.Internal.Process</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">Conduit</span></a></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/binary-0.8.8.0/src"><span class="hs-identifier">Data.Binary</span></a></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier">Data.ByteString</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BS</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.IORef</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">GHC.Generics</span></a></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/zr2yhivgya0sjgpkjz2c790h3msd61qp-clock-0.8-doc/share/doc/clock-0.8/html/src"><span class="hs-identifier">System.Clock</span></a></span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span id="local-6989586621679160278"><span id="local-6989586621679160279"></span></span><span class="hs-keyword">data</span><span> </span><span id="ExecutorResponse"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorResponse"><span class="hs-identifier hs-var">ExecutorResponse</span></a></span></span><span> </span><span id="local-6989586621679160280"><span class="annot"><a href="#local-6989586621679160280"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ExecutorResponse"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorResponse"><span class="hs-identifier hs-var">ExecutorResponse</span></a></span></span><span>
+</span><span id="line-16"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="erStats"><span class="annot"><span class="annottext">ExecutorResponse a -&gt; ExecutorStats
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#erStats"><span class="hs-identifier hs-var hs-var">erStats</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStats"><span class="hs-identifier hs-type">ExecutorStats</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>        </span><span id="erResponse"><span class="annot"><span class="annottext">ExecutorResponse a -&gt; a
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#erResponse"><span class="hs-identifier hs-var hs-var">erResponse</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679160280"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-18"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679160269"><span id="local-6989586621679160271"><span id="local-6989586621679160273"><span class="annot"><span class="annottext">Int -&gt; ExecutorResponse a -&gt; ShowS
+[ExecutorResponse a] -&gt; ShowS
+ExecutorResponse a -&gt; String
+(Int -&gt; ExecutorResponse a -&gt; ShowS)
+-&gt; (ExecutorResponse a -&gt; String)
+-&gt; ([ExecutorResponse a] -&gt; ShowS)
+-&gt; Show (ExecutorResponse a)
+forall a. Show a =&gt; Int -&gt; ExecutorResponse a -&gt; ShowS
+forall a. Show a =&gt; [ExecutorResponse a] -&gt; ShowS
+forall a. Show a =&gt; ExecutorResponse a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ExecutorResponse a] -&gt; ShowS
+$cshowList :: forall a. Show a =&gt; [ExecutorResponse a] -&gt; ShowS
+show :: ExecutorResponse a -&gt; String
+$cshow :: forall a. Show a =&gt; ExecutorResponse a -&gt; String
+showsPrec :: Int -&gt; ExecutorResponse a -&gt; ShowS
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; ExecutorResponse a -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. ExecutorResponse a -&gt; Rep (ExecutorResponse a) x)
+-&gt; (forall x. Rep (ExecutorResponse a) x -&gt; ExecutorResponse a)
+-&gt; Generic (ExecutorResponse a)
+forall x. Rep (ExecutorResponse a) x -&gt; ExecutorResponse a
+forall x. ExecutorResponse a -&gt; Rep (ExecutorResponse a) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall a x. Rep (ExecutorResponse a) x -&gt; ExecutorResponse a
+forall a x. ExecutorResponse a -&gt; Rep (ExecutorResponse a) x
+$cto :: forall a x. Rep (ExecutorResponse a) x -&gt; ExecutorResponse a
+$cfrom :: forall a x. ExecutorResponse a -&gt; Rep (ExecutorResponse a) x
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679160259"><span id="local-6989586621679160261"><span id="local-6989586621679160263"><span class="annot"><span class="annottext">Get (ExecutorResponse a)
+[ExecutorResponse a] -&gt; Put
+ExecutorResponse a -&gt; Put
+(ExecutorResponse a -&gt; Put)
+-&gt; Get (ExecutorResponse a)
+-&gt; ([ExecutorResponse a] -&gt; Put)
+-&gt; Binary (ExecutorResponse a)
+forall a. Binary a =&gt; Get (ExecutorResponse a)
+forall a. Binary a =&gt; [ExecutorResponse a] -&gt; Put
+forall a. Binary a =&gt; ExecutorResponse a -&gt; Put
+forall t. (t -&gt; Put) -&gt; Get t -&gt; ([t] -&gt; Put) -&gt; Binary t
+putList :: [ExecutorResponse a] -&gt; Put
+$cputList :: forall a. Binary a =&gt; [ExecutorResponse a] -&gt; Put
+get :: Get (ExecutorResponse a)
+$cget :: forall a. Binary a =&gt; Get (ExecutorResponse a)
+put :: ExecutorResponse a -&gt; Put
+$cput :: forall a. Binary a =&gt; ExecutorResponse a -&gt; Put
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/binary-0.8.8.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Binary</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span id="local-6989586621679160256"><span id="local-6989586621679160257"></span></span><span class="hs-keyword">data</span><span> </span><span id="ExecutorStats"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStats"><span class="hs-identifier hs-var">ExecutorStats</span></a></span></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ExecutorStats"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStats"><span class="hs-identifier hs-var">ExecutorStats</span></a></span></span><span>
+</span><span id="line-23"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="esDownloadBytes"><span class="annot"><span class="annottext">ExecutorStats -&gt; Integer
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#esDownloadBytes"><span class="hs-identifier hs-var hs-var">esDownloadBytes</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>        </span><span id="esUploadBytes"><span class="annot"><span class="annottext">ExecutorStats -&gt; Integer
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#esUploadBytes"><span class="hs-identifier hs-var hs-var">esUploadBytes</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>        </span><span id="esInputItems"><span class="annot"><span class="annottext">ExecutorStats -&gt; Integer
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#esInputItems"><span class="hs-identifier hs-var hs-var">esInputItems</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>        </span><span id="esOutputItems"><span class="annot"><span class="annottext">ExecutorStats -&gt; Integer
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#esOutputItems"><span class="hs-identifier hs-var hs-var">esOutputItems</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>        </span><span id="esElapsedMillis"><span class="annot"><span class="annottext">ExecutorStats -&gt; Integer
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#esElapsedMillis"><span class="hs-identifier hs-var hs-var">esElapsedMillis</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span>
+</span><span id="line-28"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679160244"><span id="local-6989586621679160246"><span id="local-6989586621679160248"><span class="annot"><span class="annottext">Int -&gt; ExecutorStats -&gt; ShowS
+[ExecutorStats] -&gt; ShowS
+ExecutorStats -&gt; String
+(Int -&gt; ExecutorStats -&gt; ShowS)
+-&gt; (ExecutorStats -&gt; String)
+-&gt; ([ExecutorStats] -&gt; ShowS)
+-&gt; Show ExecutorStats
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ExecutorStats] -&gt; ShowS
+$cshowList :: [ExecutorStats] -&gt; ShowS
+show :: ExecutorStats -&gt; String
+$cshow :: ExecutorStats -&gt; String
+showsPrec :: Int -&gt; ExecutorStats -&gt; ShowS
+$cshowsPrec :: Int -&gt; ExecutorStats -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. ExecutorStats -&gt; Rep ExecutorStats x)
+-&gt; (forall x. Rep ExecutorStats x -&gt; ExecutorStats)
+-&gt; Generic ExecutorStats
+forall x. Rep ExecutorStats x -&gt; ExecutorStats
+forall x. ExecutorStats -&gt; Rep ExecutorStats x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep ExecutorStats x -&gt; ExecutorStats
+$cfrom :: forall x. ExecutorStats -&gt; Rep ExecutorStats x
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679160236"><span id="local-6989586621679160238"><span id="local-6989586621679160240"><span class="annot"><span class="annottext">Get ExecutorStats
+[ExecutorStats] -&gt; Put
+ExecutorStats -&gt; Put
+(ExecutorStats -&gt; Put)
+-&gt; Get ExecutorStats
+-&gt; ([ExecutorStats] -&gt; Put)
+-&gt; Binary ExecutorStats
+forall t. (t -&gt; Put) -&gt; Get t -&gt; ([t] -&gt; Put) -&gt; Binary t
+putList :: [ExecutorStats] -&gt; Put
+$cputList :: [ExecutorStats] -&gt; Put
+get :: Get ExecutorStats
+$cget :: Get ExecutorStats
+put :: ExecutorStats -&gt; Put
+$cput :: ExecutorStats -&gt; Put
+</span><a href="#local-6989586621679160236"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Binary</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679160231"><span id="local-6989586621679160233"><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStats"><span class="hs-identifier hs-type">ExecutorStats</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-32"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStats"><span class="hs-identifier hs-type">ExecutorStats</span></a></span><span> </span><span id="local-6989586621679160229"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160229"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679160228"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160228"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679160227"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160227"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621679160226"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160226"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621679160225"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160225"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679160224"><span class="annot"><span class="annottext">&lt;&gt; :: ExecutorStats -&gt; ExecutorStats -&gt; ExecutorStats
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></a></span></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStats"><span class="hs-identifier hs-type">ExecutorStats</span></a></span><span> </span><span id="local-6989586621679160223"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160223"><span class="hs-identifier hs-var">a'</span></a></span></span><span> </span><span id="local-6989586621679160222"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160222"><span class="hs-identifier hs-var">b'</span></a></span></span><span> </span><span id="local-6989586621679160221"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160221"><span class="hs-identifier hs-var">c'</span></a></span></span><span> </span><span id="local-6989586621679160220"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160220"><span class="hs-identifier hs-var">d'</span></a></span></span><span> </span><span id="local-6989586621679160219"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160219"><span class="hs-identifier hs-var">e'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><span class="annottext">Integer
+-&gt; Integer -&gt; Integer -&gt; Integer -&gt; Integer -&gt; ExecutorStats
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStats"><span class="hs-identifier hs-var">ExecutorStats</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160229"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160223"><span class="hs-identifier hs-var">a'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160228"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160222"><span class="hs-identifier hs-var">b'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160227"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160221"><span class="hs-identifier hs-var">c'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160226"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160220"><span class="hs-identifier hs-var">d'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160225"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160219"><span class="hs-identifier hs-var">e'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679160212"><span id="local-6989586621679160214"><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStats"><span class="hs-identifier hs-type">ExecutorStats</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-36"></span><span>  </span><span id="local-6989586621679160210"><span class="annot"><span class="annottext">mempty :: ExecutorStats
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer
+-&gt; Integer -&gt; Integer -&gt; Integer -&gt; Integer -&gt; ExecutorStats
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStats"><span class="hs-identifier hs-var">ExecutorStats</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">data</span><span> </span><span id="ExecutorStatsHooks"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStatsHooks"><span class="hs-identifier hs-var">ExecutorStatsHooks</span></a></span></span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ExecutorStatsHooks"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStatsHooks"><span class="hs-identifier hs-var">ExecutorStatsHooks</span></a></span></span><span>
+</span><span id="line-40"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="eshDownload"><span class="annot"><span class="annottext">ExecutorStatsHooks
+-&gt; forall (m :: * -&gt; *).
+   MonadIO m =&gt;
+   ConduitT ByteString ByteString m ()
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#eshDownload"><span class="hs-identifier hs-var hs-var">eshDownload</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679160316"><span class="annot"><a href="#local-6989586621679160316"><span class="hs-identifier hs-type">m</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">MonadIO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160316"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-type">ConduitT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier hs-type">BS.ByteString</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier hs-type">BS.ByteString</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160316"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-41"></span><span>        </span><span id="eshUpload"><span class="annot"><span class="annottext">ExecutorStatsHooks
+-&gt; forall (m :: * -&gt; *).
+   MonadIO m =&gt;
+   ConduitT ByteString ByteString m ()
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#eshUpload"><span class="hs-identifier hs-var hs-var">eshUpload</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679160206"><span class="annot"><a href="#local-6989586621679160206"><span class="hs-identifier hs-type">m</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">MonadIO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160206"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-type">ConduitT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier hs-type">BS.ByteString</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier hs-type">BS.ByteString</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160206"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>        </span><span id="eshInput"><span class="annot"><span class="annottext">ExecutorStatsHooks
+-&gt; forall a (m :: * -&gt; *). MonadIO m =&gt; ConduitT a a m ()
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#eshInput"><span class="hs-identifier hs-var hs-var">eshInput</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679160311"><span class="annot"><a href="#local-6989586621679160311"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621679160312"><span class="annot"><a href="#local-6989586621679160312"><span class="hs-identifier hs-type">m</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">MonadIO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160312"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-type">ConduitT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160311"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160311"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160312"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>        </span><span id="eshOutput"><span class="annot"><span class="annottext">ExecutorStatsHooks
+-&gt; forall a (m :: * -&gt; *). MonadIO m =&gt; ConduitT a a m ()
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#eshOutput"><span class="hs-identifier hs-var hs-var">eshOutput</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679160203"><span class="annot"><a href="#local-6989586621679160203"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621679160202"><span class="annot"><a href="#local-6989586621679160202"><span class="hs-identifier hs-type">m</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">MonadIO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160202"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-type">ConduitT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160203"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160203"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160202"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span id="local-6989586621679160201"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#withExecutorStats"><span class="hs-identifier hs-type">withExecutorStats</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStatsHooks"><span class="hs-identifier hs-type">ExecutorStatsHooks</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160201"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorResponse"><span class="hs-identifier hs-type">ExecutorResponse</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160201"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-47"></span><span id="withExecutorStats"><span class="annot"><span class="annottext">withExecutorStats :: (ExecutorStatsHooks -&gt; IO a) -&gt; IO (ExecutorResponse a)
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#withExecutorStats"><span class="hs-identifier hs-var hs-var">withExecutorStats</span></a></span></span><span> </span><span id="local-6989586621679160199"><span class="annot"><span class="annottext">ExecutorStatsHooks -&gt; IO a
+</span><a href="#local-6989586621679160199"><span class="hs-identifier hs-var">act</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-48"></span><span>  </span><span id="local-6989586621679160198"><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160198"><span class="hs-identifier hs-var">downloadRef</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; IO (IORef Integer)
+forall a. a -&gt; IO (IORef a)
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">newIORef</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-49"></span><span>  </span><span id="local-6989586621679160196"><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160196"><span class="hs-identifier hs-var">uploadRef</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; IO (IORef Integer)
+forall a. a -&gt; IO (IORef a)
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">newIORef</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-50"></span><span>  </span><span id="local-6989586621679160195"><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160195"><span class="hs-identifier hs-var">inputRef</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; IO (IORef Integer)
+forall a. a -&gt; IO (IORef a)
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">newIORef</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-51"></span><span>  </span><span id="local-6989586621679160194"><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160194"><span class="hs-identifier hs-var">outputRef</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; IO (IORef Integer)
+forall a. a -&gt; IO (IORef a)
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">newIORef</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679160193"><span class="annot"><span class="annottext">countBs :: IORef a -&gt; ConduitT ByteString ByteString m ()
+</span><a href="#local-6989586621679160193"><span class="hs-identifier hs-var hs-var">countBs</span></a></span></span><span> </span><span id="local-6989586621679160192"><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679160192"><span class="hs-identifier hs-var">ref</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-53"></span><span>        </span><span class="annot"><span class="annottext">(ByteString -&gt; m ()) -&gt; ConduitT ByteString ByteString m ()
+forall (m :: * -&gt; *) a. Monad m =&gt; (a -&gt; m ()) -&gt; ConduitT a a m ()
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-var">iterMC</span></a></span><span> </span><span class="annot"><span class="annottext">((ByteString -&gt; m ()) -&gt; ConduitT ByteString ByteString m ())
+-&gt; (ByteString -&gt; m ()) -&gt; ConduitT ByteString ByteString m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679160190"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679160190"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-54"></span><span>          </span><span class="annot"><span class="annottext">IO () -&gt; m ()
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">liftIO</span></a></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">IORef a -&gt; (a -&gt; a) -&gt; IO ()
+forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">modifyIORef</span></a></span><span> </span><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679160192"><span class="hs-identifier hs-var">ref</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; a
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ByteString -&gt; Int
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier hs-var">BS.length</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679160190"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>      </span><span id="local-6989586621679160186"><span class="annot"><span class="annottext">countIt :: IORef a -&gt; ConduitT a a m ()
+</span><a href="#local-6989586621679160186"><span class="hs-identifier hs-var hs-var">countIt</span></a></span></span><span> </span><span id="local-6989586621679160185"><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679160185"><span class="hs-identifier hs-var">ref</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-56"></span><span>        </span><span class="annot"><span class="annottext">(a -&gt; m ()) -&gt; ConduitT a a m ()
+forall (m :: * -&gt; *) a. Monad m =&gt; (a -&gt; m ()) -&gt; ConduitT a a m ()
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-var">iterMC</span></a></span><span> </span><span class="annot"><span class="annottext">((a -&gt; m ()) -&gt; ConduitT a a m ())
+-&gt; (a -&gt; m ()) -&gt; ConduitT a a m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-57"></span><span>          </span><span class="annot"><span class="annottext">IO () -&gt; m ()
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">liftIO</span></a></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">IORef a -&gt; (a -&gt; a) -&gt; IO ()
+forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">modifyIORef</span></a></span><span> </span><span class="annot"><span class="annottext">IORef a
+</span><a href="#local-6989586621679160185"><span class="hs-identifier hs-var">ref</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>      </span><span id="local-6989586621679160184"><span class="annot"><span class="annottext">hooks :: ExecutorStatsHooks
+</span><a href="#local-6989586621679160184"><span class="hs-identifier hs-var hs-var">hooks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-59"></span><span>        </span><span class="annot"><span class="annottext">ExecutorStatsHooks :: (forall (m :: * -&gt; *).
+ MonadIO m =&gt;
+ ConduitT ByteString ByteString m ())
+-&gt; (forall (m :: * -&gt; *).
+    MonadIO m =&gt;
+    ConduitT ByteString ByteString m ())
+-&gt; (forall a (m :: * -&gt; *). MonadIO m =&gt; ConduitT a a m ())
+-&gt; (forall a (m :: * -&gt; *). MonadIO m =&gt; ConduitT a a m ())
+-&gt; ExecutorStatsHooks
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStatsHooks"><span class="hs-identifier hs-type">ExecutorStatsHooks</span></a></span><span>
+</span><span id="line-60"></span><span>          </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">eshDownload :: forall (m :: * -&gt; *).
+MonadIO m =&gt;
+ConduitT ByteString ByteString m ()
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#eshDownload"><span class="hs-identifier hs-var">eshDownload</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef Integer -&gt; ConduitT ByteString ByteString m ()
+forall (m :: * -&gt; *) a.
+(MonadIO m, Num a) =&gt;
+IORef a -&gt; ConduitT ByteString ByteString m ()
+</span><a href="#local-6989586621679160193"><span class="hs-identifier hs-var">countBs</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160198"><span class="hs-identifier hs-var">downloadRef</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-61"></span><span>            </span><span class="annot"><span class="annottext">eshUpload :: forall (m :: * -&gt; *).
+MonadIO m =&gt;
+ConduitT ByteString ByteString m ()
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#eshUpload"><span class="hs-identifier hs-var">eshUpload</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef Integer -&gt; ConduitT ByteString ByteString m ()
+forall (m :: * -&gt; *) a.
+(MonadIO m, Num a) =&gt;
+IORef a -&gt; ConduitT ByteString ByteString m ()
+</span><a href="#local-6989586621679160193"><span class="hs-identifier hs-var">countBs</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160196"><span class="hs-identifier hs-var">uploadRef</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-62"></span><span>            </span><span class="annot"><span class="annottext">eshInput :: forall a (m :: * -&gt; *). MonadIO m =&gt; ConduitT a a m ()
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#eshInput"><span class="hs-identifier hs-var">eshInput</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef Integer -&gt; ConduitT a a m ()
+forall (m :: * -&gt; *) a a.
+(MonadIO m, Num a) =&gt;
+IORef a -&gt; ConduitT a a m ()
+</span><a href="#local-6989586621679160186"><span class="hs-identifier hs-var">countIt</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160195"><span class="hs-identifier hs-var">inputRef</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-63"></span><span>            </span><span class="annot"><span class="annottext">eshOutput :: forall a (m :: * -&gt; *). MonadIO m =&gt; ConduitT a a m ()
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#eshOutput"><span class="hs-identifier hs-var">eshOutput</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef Integer -&gt; ConduitT a a m ()
+forall (m :: * -&gt; *) a a.
+(MonadIO m, Num a) =&gt;
+IORef a -&gt; ConduitT a a m ()
+</span><a href="#local-6989586621679160186"><span class="hs-identifier hs-var">countIt</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160194"><span class="hs-identifier hs-var">outputRef</span></a></span><span>
+</span><span id="line-64"></span><span>          </span><span class="hs-special">}</span><span>
+</span><span id="line-65"></span><span>  </span><span id="local-6989586621679160183"><span class="annot"><span class="annottext">TimeSpec
+</span><a href="#local-6989586621679160183"><span class="hs-identifier hs-var">start</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Clock -&gt; IO TimeSpec
+</span><a href="../file:///nix/store/zr2yhivgya0sjgpkjz2c790h3msd61qp-clock-0.8-doc/share/doc/clock-0.8/html/src"><span class="hs-identifier hs-var">getTime</span></a></span><span> </span><span class="annot"><span class="annottext">Clock
+</span><a href="../file:///nix/store/zr2yhivgya0sjgpkjz2c790h3msd61qp-clock-0.8-doc/share/doc/clock-0.8/html/src"><span class="hs-identifier hs-var">Monotonic</span></a></span><span>
+</span><span id="line-66"></span><span>  </span><span id="local-6989586621679160180"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679160180"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ExecutorStatsHooks -&gt; IO a
+</span><a href="#local-6989586621679160199"><span class="hs-identifier hs-var">act</span></a></span><span> </span><span class="annot"><span class="annottext">ExecutorStatsHooks
+</span><a href="#local-6989586621679160184"><span class="hs-identifier hs-var">hooks</span></a></span><span>
+</span><span id="line-67"></span><span>  </span><span id="local-6989586621679160179"><span class="annot"><span class="annottext">TimeSpec
+</span><a href="#local-6989586621679160179"><span class="hs-identifier hs-var">end</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Clock -&gt; IO TimeSpec
+</span><a href="../file:///nix/store/zr2yhivgya0sjgpkjz2c790h3msd61qp-clock-0.8-doc/share/doc/clock-0.8/html/src"><span class="hs-identifier hs-var">getTime</span></a></span><span> </span><span class="annot"><span class="annottext">Clock
+</span><a href="../file:///nix/store/zr2yhivgya0sjgpkjz2c790h3msd61qp-clock-0.8-doc/share/doc/clock-0.8/html/src"><span class="hs-identifier hs-var">Monotonic</span></a></span><span>
+</span><span id="line-68"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679160178"><span class="annot"><span class="annottext">elapsed :: Integer
+</span><a href="#local-6989586621679160178"><span class="hs-identifier hs-var hs-var">elapsed</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeSpec -&gt; Integer
+</span><a href="../file:///nix/store/zr2yhivgya0sjgpkjz2c790h3msd61qp-clock-0.8-doc/share/doc/clock-0.8/html/src"><span class="hs-identifier hs-var">toNanoSecs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TimeSpec
+</span><a href="#local-6989586621679160179"><span class="hs-identifier hs-var">end</span></a></span><span> </span><span class="annot"><span class="annottext">TimeSpec -&gt; TimeSpec -&gt; TimeSpec
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="annot"><span class="annottext">TimeSpec
+</span><a href="#local-6989586621679160183"><span class="hs-identifier hs-var">start</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">`div`</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">1000000</span></span><span>
+</span><span id="line-69"></span><span>  </span><span id="local-6989586621679160175"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160175"><span class="hs-identifier hs-var">downloadBytes</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IORef Integer -&gt; IO Integer
+forall a. IORef a -&gt; IO a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">readIORef</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160198"><span class="hs-identifier hs-var">downloadRef</span></a></span><span>
+</span><span id="line-70"></span><span>  </span><span id="local-6989586621679160173"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160173"><span class="hs-identifier hs-var">uploadBytes</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IORef Integer -&gt; IO Integer
+forall a. IORef a -&gt; IO a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">readIORef</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160196"><span class="hs-identifier hs-var">uploadRef</span></a></span><span>
+</span><span id="line-71"></span><span>  </span><span id="local-6989586621679160172"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160172"><span class="hs-identifier hs-var">inputCount</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IORef Integer -&gt; IO Integer
+forall a. IORef a -&gt; IO a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">readIORef</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160195"><span class="hs-identifier hs-var">inputRef</span></a></span><span>
+</span><span id="line-72"></span><span>  </span><span id="local-6989586621679160171"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160171"><span class="hs-identifier hs-var">outputCount</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IORef Integer -&gt; IO Integer
+forall a. IORef a -&gt; IO a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">readIORef</span></a></span><span> </span><span class="annot"><span class="annottext">IORef Integer
+</span><a href="#local-6989586621679160194"><span class="hs-identifier hs-var">outputRef</span></a></span><span>
+</span><span id="line-73"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679160170"><span class="annot"><span class="annottext">stats :: ExecutorStats
+</span><a href="#local-6989586621679160170"><span class="hs-identifier hs-var hs-var">stats</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-74"></span><span>        </span><span class="annot"><span class="annottext">ExecutorStats :: Integer
+-&gt; Integer -&gt; Integer -&gt; Integer -&gt; Integer -&gt; ExecutorStats
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorStats"><span class="hs-identifier hs-type">ExecutorStats</span></a></span><span>
+</span><span id="line-75"></span><span>          </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">esDownloadBytes :: Integer
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#esDownloadBytes"><span class="hs-identifier hs-var">esDownloadBytes</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160175"><span class="hs-identifier hs-var">downloadBytes</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-76"></span><span>            </span><span class="annot"><span class="annottext">esUploadBytes :: Integer
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#esUploadBytes"><span class="hs-identifier hs-var">esUploadBytes</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160173"><span class="hs-identifier hs-var">uploadBytes</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-77"></span><span>            </span><span class="annot"><span class="annottext">esInputItems :: Integer
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#esInputItems"><span class="hs-identifier hs-var">esInputItems</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160172"><span class="hs-identifier hs-var">inputCount</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-78"></span><span>            </span><span class="annot"><span class="annottext">esOutputItems :: Integer
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#esOutputItems"><span class="hs-identifier hs-var">esOutputItems</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160171"><span class="hs-identifier hs-var">outputCount</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-79"></span><span>            </span><span class="annot"><span class="annottext">esElapsedMillis :: Integer
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#esElapsedMillis"><span class="hs-identifier hs-var">esElapsedMillis</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679160178"><span class="hs-identifier hs-var">elapsed</span></a></span><span>
+</span><span id="line-80"></span><span>          </span><span class="hs-special">}</span><span>
+</span><span id="line-81"></span><span>  </span><span class="annot"><span class="annottext">ExecutorResponse a -&gt; IO (ExecutorResponse a)
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">(ExecutorResponse a -&gt; IO (ExecutorResponse a))
+-&gt; ExecutorResponse a -&gt; IO (ExecutorResponse a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">ExecutorStats -&gt; a -&gt; ExecutorResponse a
+forall a. ExecutorStats -&gt; a -&gt; ExecutorResponse a
+</span><a href="Control.Distributed.Dataset.Internal.Process.html#ExecutorResponse"><span class="hs-identifier hs-var">ExecutorResponse</span></a></span><span> </span><span class="annot"><span class="annottext">ExecutorStats
+</span><a href="#local-6989586621679160170"><span class="hs-identifier hs-var">stats</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679160180"><span class="hs-identifier hs-var">ret</span></a></span><span>
+</span><span id="line-82"></span></pre></body></html>

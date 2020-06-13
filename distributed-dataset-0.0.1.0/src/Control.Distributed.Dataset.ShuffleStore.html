@@ -1,0 +1,80 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DeriveAnyClass #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveGeneric #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE ExistentialQuantification #-}</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Dataset.ShuffleStore</span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#ShuffleStore"><span class="hs-identifier">ShuffleStore</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#Range"><span class="hs-identifier">Range</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">Conduit</span></a></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">Consumer</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">Producer</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">await</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">Control.Distributed.Closure</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/binary-0.8.8.0/src"><span class="hs-identifier">Data.Binary</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/binary-0.8.8.0/src"><span class="hs-identifier">Binary</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier">Data.ByteString</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier">ByteString</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Int</span></a></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">GHC.Generics</span></a></span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- Provides a way to store intermediate temporary data.</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- See:</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-comment">--   * 'Control.Distributed.Dataset.Local.withLocalTmpShuffleStore'</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-comment">--   * &lt;http://hackage.haskell.org/package/distributed-dataset-aws distributed-dataset-aws&gt;</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">data</span><span> </span><span id="ShuffleStore"><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#ShuffleStore"><span class="hs-identifier hs-var">ShuffleStore</span></a></span></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ShuffleStore"><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#ShuffleStore"><span class="hs-identifier hs-var">ShuffleStore</span></a></span></span><span>
+</span><span id="line-28"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="ssGet"><span class="annot"><span class="annottext">ShuffleStore
+-&gt; Closure
+     (Int64 -&gt; Range -&gt; ConduitT () ByteString (ResourceT IO) ())
+</span><a href="Control.Distributed.Dataset.ShuffleStore.html#ssGet"><span class="hs-identifier hs-var hs-var">ssGet</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Int64</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#Range"><span class="hs-identifier hs-type">Range</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-type">ConduitT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier hs-type">ByteString</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/x49rz651v9cgnj874d6smacv0b5w45bn-resourcet-1.2.4-doc/share/doc/resourcet-1.2.4/html/src"><span class="hs-identifier hs-type">ResourceT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>        </span><span id="ssPut"><span class="annot"><span class="annottext">ShuffleStore
+-&gt; Closure (Int64 -&gt; ConduitT ByteString Void (ResourceT IO) ())
+</span><a href="Control.Distributed.Dataset.ShuffleStore.html#ssPut"><span class="hs-identifier hs-var hs-var">ssPut</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Int64</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-type">ConduitT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier hs-type">ByteString</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Void</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/x49rz651v9cgnj874d6smacv0b5w45bn-resourcet-1.2.4-doc/share/doc/resourcet-1.2.4/html/src"><span class="hs-identifier hs-type">ResourceT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span id="local-6989586621679160369"><span id="local-6989586621679160370"></span></span><span class="hs-keyword">data</span><span> </span><span id="Range"><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#Range"><span class="hs-identifier hs-var">Range</span></a></span></span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="RangeAll"><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#RangeAll"><span class="hs-identifier hs-var">RangeAll</span></a></span></span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="RangeOnly"><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#RangeOnly"><span class="hs-identifier hs-var">RangeOnly</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679160361"><span id="local-6989586621679160363"><span id="local-6989586621679160365"><span class="annot"><span class="annottext">Int -&gt; Range -&gt; ShowS
+[Range] -&gt; ShowS
+Range -&gt; String
+(Int -&gt; Range -&gt; ShowS)
+-&gt; (Range -&gt; String) -&gt; ([Range] -&gt; ShowS) -&gt; Show Range
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Range] -&gt; ShowS
+$cshowList :: [Range] -&gt; ShowS
+show :: Range -&gt; String
+$cshow :: Range -&gt; String
+showsPrec :: Int -&gt; Range -&gt; ShowS
+$cshowsPrec :: Int -&gt; Range -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679160356"><span id="local-6989586621679160358"><span class="annot"><span class="annottext">Range -&gt; Range -&gt; Bool
+(Range -&gt; Range -&gt; Bool) -&gt; (Range -&gt; Range -&gt; Bool) -&gt; Eq Range
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Range -&gt; Range -&gt; Bool
+$c/= :: Range -&gt; Range -&gt; Bool
+== :: Range -&gt; Range -&gt; Bool
+$c== :: Range -&gt; Range -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. Range -&gt; Rep Range x)
+-&gt; (forall x. Rep Range x -&gt; Range) -&gt; Generic Range
+forall x. Rep Range x -&gt; Range
+forall x. Range -&gt; Rep Range x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep Range x -&gt; Range
+$cfrom :: forall x. Range -&gt; Rep Range x
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679160346"><span id="local-6989586621679160348"><span id="local-6989586621679160350"><span class="annot"><span class="annottext">Get Range
+[Range] -&gt; Put
+Range -&gt; Put
+(Range -&gt; Put) -&gt; Get Range -&gt; ([Range] -&gt; Put) -&gt; Binary Range
+forall t. (t -&gt; Put) -&gt; Get t -&gt; ([t] -&gt; Put) -&gt; Binary t
+putList :: [Range] -&gt; Put
+$cputList :: [Range] -&gt; Put
+get :: Get Range
+$cget :: Get Range
+put :: Range -&gt; Put
+$cput :: Range -&gt; Put
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/binary-0.8.8.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Binary</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span></pre></body></html>

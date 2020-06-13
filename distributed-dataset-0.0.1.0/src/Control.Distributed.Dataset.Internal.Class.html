@@ -1,0 +1,694 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE InstanceSigs #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE StaticPointers #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Dataset.Internal.Class</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/gyhwf7f32g52hvlcai6r6nvfkwdg39wm-serialise-0.2.3.0-doc/share/doc/serialise-0.2.3.0/html/src"><span class="hs-identifier">Codec.Serialise</span></a></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">Control.Distributed.Closure</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html"><span class="hs-identifier">Control.Distributed.Dataset.ShuffleStore</span></a></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.html"><span class="hs-identifier">Control.Distributed.Fork</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier">Backend</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-identifier">Control.Lens</span></a></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/exceptions-0.10.4/src"><span class="hs-identifier">Control.Monad.Catch</span></a></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/2kagg0aa7i0njmsmrpsvgsmg3faxjbxy-unliftio-core-0.1.2.0-doc/share/doc/unliftio-core-0.1.2.0/html/src"><span class="hs-identifier">Control.Monad.IO.Unlift</span></a></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/7h6g9wx3dpjsfsrd04f2ci578wfv9zqp-monad-logger-0.3.32-doc/share/doc/monad-logger-0.3.32/html/src"><span class="hs-identifier">Control.Monad.Logger</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/mtl-2.2.2/src"><span class="hs-identifier">Control.Monad.Reader</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier">Data.HashSet</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier">HashSet</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/4dmjxkc7la3hg9sk7sd3q8hl8ff8w3g5-hashable-1.3.0.0-doc/share/doc/hashable-1.3.0.0/html/src"><span class="hs-identifier">Data.Hashable</span></a></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Monoid</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Ord</span></a></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Data.Text</span></a></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">data</span><span> </span><span id="DDEnv"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#DDEnv"><span class="hs-identifier hs-var">DDEnv</span></a></span></span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="DDEnv"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#DDEnv"><span class="hs-identifier hs-var">DDEnv</span></a></span></span><span>
+</span><span id="line-30"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="_ddBackend"><span class="annot"><span class="annottext">DDEnv -&gt; Backend
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#_ddBackend"><span class="hs-identifier hs-var hs-var">_ddBackend</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier hs-type">Backend</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>        </span><span id="_ddShuffleStore"><span class="annot"><span class="annottext">DDEnv -&gt; ShuffleStore
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#_ddShuffleStore"><span class="hs-identifier hs-var hs-var">_ddShuffleStore</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#ShuffleStore"><span class="hs-identifier hs-type">ShuffleStore</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>        </span><span id="_ddLogLevel"><span class="annot"><span class="annottext">DDEnv -&gt; LogLevel
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#_ddLogLevel"><span class="hs-identifier hs-var hs-var">_ddLogLevel</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/7h6g9wx3dpjsfsrd04f2ci578wfv9zqp-monad-logger-0.3.32-doc/share/doc/monad-logger-0.3.32/html/src"><span class="hs-identifier hs-type">LogLevel</span></a></span><span>
+</span><span id="line-33"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span id="ddShuffleStore"><span id="ddLogLevel"><span id="ddBackend"><span class="hs-identifier">makeLenses</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">DDEnv</span></span></span></span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">newtype</span><span> </span><span id="DD"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#DD"><span class="hs-identifier hs-var">DD</span></a></span></span><span> </span><span id="local-6989586621679161497"><span class="annot"><a href="#local-6989586621679161497"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DDT"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#DDT"><span class="hs-identifier hs-var">DDT</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/transformers-0.5.6.2/src"><span class="hs-identifier hs-type">ReaderT</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#DDEnv"><span class="hs-identifier hs-type">DDEnv</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/7h6g9wx3dpjsfsrd04f2ci578wfv9zqp-monad-logger-0.3.32-doc/share/doc/monad-logger-0.3.32/html/src"><span class="hs-identifier hs-type">LoggingT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679161497"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-keyword">deriving</span><span>
+</span><span id="line-39"></span><span>    </span><span class="hs-special">(</span><span> </span><span id="local-6989586621679161492"><span id="local-6989586621679161494"><span class="annot"><span class="annottext">a -&gt; DD b -&gt; DD a
+(a -&gt; b) -&gt; DD a -&gt; DD b
+(forall a b. (a -&gt; b) -&gt; DD a -&gt; DD b)
+-&gt; (forall a b. a -&gt; DD b -&gt; DD a) -&gt; Functor DD
+forall a b. a -&gt; DD b -&gt; DD a
+forall a b. (a -&gt; b) -&gt; DD a -&gt; DD b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; DD b -&gt; DD a
+$c&lt;$ :: forall a b. a -&gt; DD b -&gt; DD a
+fmap :: (a -&gt; b) -&gt; DD a -&gt; DD b
+$cfmap :: forall a b. (a -&gt; b) -&gt; DD a -&gt; DD b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-40"></span><span>      </span><span id="local-6989586621679161480"><span id="local-6989586621679161482"><span id="local-6989586621679161484"><span id="local-6989586621679161486"><span id="local-6989586621679161488"><span class="annot"><span class="annottext">Functor DD
+a -&gt; DD a
+Functor DD
+-&gt; (forall a. a -&gt; DD a)
+-&gt; (forall a b. DD (a -&gt; b) -&gt; DD a -&gt; DD b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; DD a -&gt; DD b -&gt; DD c)
+-&gt; (forall a b. DD a -&gt; DD b -&gt; DD b)
+-&gt; (forall a b. DD a -&gt; DD b -&gt; DD a)
+-&gt; Applicative DD
+DD a -&gt; DD b -&gt; DD b
+DD a -&gt; DD b -&gt; DD a
+DD (a -&gt; b) -&gt; DD a -&gt; DD b
+(a -&gt; b -&gt; c) -&gt; DD a -&gt; DD b -&gt; DD c
+forall a. a -&gt; DD a
+forall a b. DD a -&gt; DD b -&gt; DD a
+forall a b. DD a -&gt; DD b -&gt; DD b
+forall a b. DD (a -&gt; b) -&gt; DD a -&gt; DD b
+forall a b c. (a -&gt; b -&gt; c) -&gt; DD a -&gt; DD b -&gt; DD c
+forall (f :: * -&gt; *).
+Functor f
+-&gt; (forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: DD a -&gt; DD b -&gt; DD a
+$c&lt;* :: forall a b. DD a -&gt; DD b -&gt; DD a
+*&gt; :: DD a -&gt; DD b -&gt; DD b
+$c*&gt; :: forall a b. DD a -&gt; DD b -&gt; DD b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; DD a -&gt; DD b -&gt; DD c
+$cliftA2 :: forall a b c. (a -&gt; b -&gt; c) -&gt; DD a -&gt; DD b -&gt; DD c
+&lt;*&gt; :: DD (a -&gt; b) -&gt; DD a -&gt; DD b
+$c&lt;*&gt; :: forall a b. DD (a -&gt; b) -&gt; DD a -&gt; DD b
+pure :: a -&gt; DD a
+$cpure :: forall a. a -&gt; DD a
+$cp1Applicative :: Functor DD
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-41"></span><span>      </span><span id="local-6989586621679161472"><span id="local-6989586621679161474"><span id="local-6989586621679161476"><span class="annot"><span class="annottext">Applicative DD
+a -&gt; DD a
+Applicative DD
+-&gt; (forall a b. DD a -&gt; (a -&gt; DD b) -&gt; DD b)
+-&gt; (forall a b. DD a -&gt; DD b -&gt; DD b)
+-&gt; (forall a. a -&gt; DD a)
+-&gt; Monad DD
+DD a -&gt; (a -&gt; DD b) -&gt; DD b
+DD a -&gt; DD b -&gt; DD b
+forall a. a -&gt; DD a
+forall a b. DD a -&gt; DD b -&gt; DD b
+forall a b. DD a -&gt; (a -&gt; DD b) -&gt; DD b
+forall (m :: * -&gt; *).
+Applicative m
+-&gt; (forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; DD a
+$creturn :: forall a. a -&gt; DD a
+&gt;&gt; :: DD a -&gt; DD b -&gt; DD b
+$c&gt;&gt; :: forall a b. DD a -&gt; DD b -&gt; DD b
+&gt;&gt;= :: DD a -&gt; (a -&gt; DD b) -&gt; DD b
+$c&gt;&gt;= :: forall a b. DD a -&gt; (a -&gt; DD b) -&gt; DD b
+$cp1Monad :: Applicative DD
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>      </span><span id="local-6989586621679161464"><span id="local-6989586621679161466"><span id="local-6989586621679161468"><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/mtl-2.2.2/src"><span class="hs-identifier hs-type">MonadReader</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#DDEnv"><span class="hs-identifier hs-type">DDEnv</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>      </span><span id="local-6989586621679161460"><span class="annot"><span class="annottext">Monad DD
+Monad DD -&gt; (forall a. IO a -&gt; DD a) -&gt; MonadIO DD
+IO a -&gt; DD a
+forall a. IO a -&gt; DD a
+forall (m :: * -&gt; *).
+Monad m -&gt; (forall a. IO a -&gt; m a) -&gt; MonadIO m
+liftIO :: IO a -&gt; DD a
+$cliftIO :: forall a. IO a -&gt; DD a
+$cp1MonadIO :: Monad DD
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">MonadIO</span></a></span></span><span class="hs-special">,</span><span>
+</span><span id="line-44"></span><span>      </span><span id="local-6989586621679161456"><span class="annot"><span class="annottext">Monad DD
+e -&gt; DD a
+Monad DD -&gt; (forall e a. Exception e =&gt; e -&gt; DD a) -&gt; MonadThrow DD
+forall e a. Exception e =&gt; e -&gt; DD a
+forall (m :: * -&gt; *).
+Monad m -&gt; (forall e a. Exception e =&gt; e -&gt; m a) -&gt; MonadThrow m
+throwM :: e -&gt; DD a
+$cthrowM :: forall e a. Exception e =&gt; e -&gt; DD a
+$cp1MonadThrow :: Monad DD
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/exceptions-0.10.4/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">MonadThrow</span></a></span></span><span class="hs-special">,</span><span>
+</span><span id="line-45"></span><span>      </span><span id="local-6989586621679161452"><span class="annot"><span class="annottext">MonadThrow DD
+MonadThrow DD
+-&gt; (forall e a. Exception e =&gt; DD a -&gt; (e -&gt; DD a) -&gt; DD a)
+-&gt; MonadCatch DD
+DD a -&gt; (e -&gt; DD a) -&gt; DD a
+forall e a. Exception e =&gt; DD a -&gt; (e -&gt; DD a) -&gt; DD a
+forall (m :: * -&gt; *).
+MonadThrow m
+-&gt; (forall e a. Exception e =&gt; m a -&gt; (e -&gt; m a) -&gt; m a)
+-&gt; MonadCatch m
+catch :: DD a -&gt; (e -&gt; DD a) -&gt; DD a
+$ccatch :: forall e a. Exception e =&gt; DD a -&gt; (e -&gt; DD a) -&gt; DD a
+$cp1MonadCatch :: MonadThrow DD
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/exceptions-0.10.4/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">MonadCatch</span></a></span></span><span class="hs-special">,</span><span>
+</span><span id="line-46"></span><span>      </span><span id="local-6989586621679161448"><span class="annot"><span class="annottext">Monad DD
+Monad DD
+-&gt; (forall msg.
+    ToLogStr msg =&gt;
+    Loc -&gt; LogSource -&gt; LogLevel -&gt; msg -&gt; DD ())
+-&gt; MonadLogger DD
+Loc -&gt; LogSource -&gt; LogLevel -&gt; msg -&gt; DD ()
+forall msg.
+ToLogStr msg =&gt;
+Loc -&gt; LogSource -&gt; LogLevel -&gt; msg -&gt; DD ()
+forall (m :: * -&gt; *).
+Monad m
+-&gt; (forall msg.
+    ToLogStr msg =&gt;
+    Loc -&gt; LogSource -&gt; LogLevel -&gt; msg -&gt; m ())
+-&gt; MonadLogger m
+monadLoggerLog :: Loc -&gt; LogSource -&gt; LogLevel -&gt; msg -&gt; DD ()
+$cmonadLoggerLog :: forall msg.
+ToLogStr msg =&gt;
+Loc -&gt; LogSource -&gt; LogLevel -&gt; msg -&gt; DD ()
+$cp1MonadLogger :: Monad DD
+</span><a href="../file:///nix/store/7h6g9wx3dpjsfsrd04f2ci578wfv9zqp-monad-logger-0.3.32-doc/share/doc/monad-logger-0.3.32/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">MonadLogger</span></a></span></span><span class="hs-special">,</span><span>
+</span><span id="line-47"></span><span>      </span><span id="local-6989586621679161442"><span id="local-6989586621679161444"><span class="annot"><span class="annottext">MonadIO DD
+DD (UnliftIO DD)
+MonadIO DD
+-&gt; DD (UnliftIO DD)
+-&gt; (forall b. ((forall a. DD a -&gt; IO a) -&gt; IO b) -&gt; DD b)
+-&gt; MonadUnliftIO DD
+((forall a. DD a -&gt; IO a) -&gt; IO b) -&gt; DD b
+forall b. ((forall a. DD a -&gt; IO a) -&gt; IO b) -&gt; DD b
+forall (m :: * -&gt; *).
+MonadIO m
+-&gt; m (UnliftIO m)
+-&gt; (forall b. ((forall a. m a -&gt; IO a) -&gt; IO b) -&gt; m b)
+-&gt; MonadUnliftIO m
+withRunInIO :: ((forall a. DD a -&gt; IO a) -&gt; IO b) -&gt; DD b
+$cwithRunInIO :: forall b. ((forall a. DD a -&gt; IO a) -&gt; IO b) -&gt; DD b
+askUnliftIO :: DD (UnliftIO DD)
+$caskUnliftIO :: DD (UnliftIO DD)
+$cp1MonadUnliftIO :: MonadIO DD
+</span><a href="../file:///nix/store/2kagg0aa7i0njmsmrpsvgsmg3faxjbxy-unliftio-core-0.1.2.0-doc/share/doc/unliftio-core-0.1.2.0/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">MonadUnliftIO</span></a></span></span></span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span id="local-6989586621679161440"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#runDD"><span class="hs-identifier hs-type">runDD</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier hs-type">Backend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#ShuffleStore"><span class="hs-identifier hs-type">ShuffleStore</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#DD"><span class="hs-identifier hs-type">DD</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161440"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161440"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-51"></span><span id="runDD"><span class="annot"><span class="annottext">runDD :: Backend -&gt; ShuffleStore -&gt; DD a -&gt; IO a
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#runDD"><span class="hs-identifier hs-var hs-var">runDD</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LogLevel -&gt; Backend -&gt; ShuffleStore -&gt; DD a -&gt; IO a
+forall a. LogLevel -&gt; Backend -&gt; ShuffleStore -&gt; DD a -&gt; IO a
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#runDDWith"><span class="hs-identifier hs-var">runDDWith</span></a></span><span> </span><span class="annot"><span class="annottext">LogLevel
+</span><a href="../file:///nix/store/7h6g9wx3dpjsfsrd04f2ci578wfv9zqp-monad-logger-0.3.32-doc/share/doc/monad-logger-0.3.32/html/src"><span class="hs-identifier hs-var">LevelInfo</span></a></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span id="local-6989586621679161558"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#runDDWith"><span class="hs-identifier hs-type">runDDWith</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/7h6g9wx3dpjsfsrd04f2ci578wfv9zqp-monad-logger-0.3.32-doc/share/doc/monad-logger-0.3.32/html/src"><span class="hs-identifier hs-type">LogLevel</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier hs-type">Backend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#ShuffleStore"><span class="hs-identifier hs-type">ShuffleStore</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#DD"><span class="hs-identifier hs-type">DD</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161558"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161558"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-54"></span><span id="runDDWith"><span class="annot"><span class="annottext">runDDWith :: LogLevel -&gt; Backend -&gt; ShuffleStore -&gt; DD a -&gt; IO a
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#runDDWith"><span class="hs-identifier hs-var hs-var">runDDWith</span></a></span></span><span> </span><span id="local-6989586621679161436"><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679161436"><span class="hs-identifier hs-var">level</span></a></span></span><span> </span><span id="local-6989586621679161435"><span class="annot"><span class="annottext">Backend
+</span><a href="#local-6989586621679161435"><span class="hs-identifier hs-var">backend</span></a></span></span><span> </span><span id="local-6989586621679161434"><span class="annot"><span class="annottext">ShuffleStore
+</span><a href="#local-6989586621679161434"><span class="hs-identifier hs-var">shuffleStore</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#DDT"><span class="hs-identifier hs-type">DDT</span></a></span><span> </span><span id="local-6989586621679161433"><span class="annot"><span class="annottext">ReaderT DDEnv (LoggingT IO) a
+</span><a href="#local-6989586621679161433"><span class="hs-identifier hs-var">act</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-55"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161432"><span class="annot"><span class="annottext">env :: DDEnv
+</span><a href="#local-6989586621679161432"><span class="hs-identifier hs-var hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Backend -&gt; ShuffleStore -&gt; LogLevel -&gt; DDEnv
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#DDEnv"><span class="hs-identifier hs-var">DDEnv</span></a></span><span> </span><span class="annot"><span class="annottext">Backend
+</span><a href="#local-6989586621679161435"><span class="hs-identifier hs-var">backend</span></a></span><span> </span><span class="annot"><span class="annottext">ShuffleStore
+</span><a href="#local-6989586621679161434"><span class="hs-identifier hs-var">shuffleStore</span></a></span><span> </span><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679161436"><span class="hs-identifier hs-var">level</span></a></span><span>
+</span><span id="line-56"></span><span>      </span><span id="local-6989586621679161431"><span class="annot"><span class="annottext">logFilter :: LoggingT m a -&gt; LoggingT m a
+</span><a href="#local-6989586621679161431"><span class="hs-identifier hs-var hs-var">logFilter</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(LogSource -&gt; LogLevel -&gt; Bool) -&gt; LoggingT m a -&gt; LoggingT m a
+forall (m :: * -&gt; *) a.
+(LogSource -&gt; LogLevel -&gt; Bool) -&gt; LoggingT m a -&gt; LoggingT m a
+</span><a href="../file:///nix/store/7h6g9wx3dpjsfsrd04f2ci578wfv9zqp-monad-logger-0.3.32-doc/share/doc/monad-logger-0.3.32/html/src"><span class="hs-identifier hs-var">filterLogger</span></a></span><span> </span><span class="annot"><span class="annottext">((LogSource -&gt; LogLevel -&gt; Bool) -&gt; LoggingT m a -&gt; LoggingT m a)
+-&gt; (LogSource -&gt; LogLevel -&gt; Bool) -&gt; LoggingT m a -&gt; LoggingT m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">LogSource
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679161429"><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679161429"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679161429"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">LogLevel -&gt; LogLevel -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">&gt;=</span></a></span><span> </span><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679161436"><span class="hs-identifier hs-var">level</span></a></span><span>
+</span><span id="line-57"></span><span>  </span><span class="annot"><span class="annottext">LoggingT IO a -&gt; IO a
+forall (m :: * -&gt; *) a. MonadIO m =&gt; LoggingT m a -&gt; m a
+</span><a href="../file:///nix/store/7h6g9wx3dpjsfsrd04f2ci578wfv9zqp-monad-logger-0.3.32-doc/share/doc/monad-logger-0.3.32/html/src"><span class="hs-identifier hs-var">runStderrLoggingT</span></a></span><span> </span><span class="annot"><span class="annottext">(LoggingT IO a -&gt; IO a) -&gt; LoggingT IO a -&gt; IO a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">LoggingT IO a -&gt; LoggingT IO a
+forall (m :: * -&gt; *) a. LoggingT m a -&gt; LoggingT m a
+</span><a href="#local-6989586621679161431"><span class="hs-identifier hs-var">logFilter</span></a></span><span> </span><span class="annot"><span class="annottext">(LoggingT IO a -&gt; LoggingT IO a) -&gt; LoggingT IO a -&gt; LoggingT IO a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">ReaderT DDEnv (LoggingT IO) a -&gt; DDEnv -&gt; LoggingT IO a
+forall r (m :: * -&gt; *) a. ReaderT r m a -&gt; r -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/transformers-0.5.6.2/src"><span class="hs-identifier hs-var hs-var">runReaderT</span></a></span><span> </span><span class="annot"><span class="annottext">ReaderT DDEnv (LoggingT IO) a
+</span><a href="#local-6989586621679161433"><span class="hs-identifier hs-var">act</span></a></span><span> </span><span class="annot"><span class="annottext">DDEnv
+</span><a href="#local-6989586621679161432"><span class="hs-identifier hs-var">env</span></a></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161537"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/gyhwf7f32g52hvlcai6r6nvfkwdg39wm-serialise-0.2.3.0-doc/share/doc/serialise-0.2.3.0/html/src"><span class="hs-identifier hs-type">Serialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161537"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="StaticSerialise"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-var">StaticSerialise</span></a></span></span><span> </span><span id="local-6989586621679161537"><span class="annot"><a href="#local-6989586621679161537"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-60"></span><span>  </span><span id="staticSerialise"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-type">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-type">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161537"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/gyhwf7f32g52hvlcai6r6nvfkwdg39wm-serialise-0.2.3.0-doc/share/doc/serialise-0.2.3.0/html/src"><span class="hs-identifier hs-type">Serialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161537"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-63"></span><span>  </span><span id="local-6989586621679161421"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable (), Serialise ()))
+</span><a href="#local-6989586621679161421"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (), Serialise ())
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Bool</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-66"></span><span>  </span><span id="local-6989586621679161416"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable Bool, Serialise Bool))
+</span><a href="#local-6989586621679161416"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Bool, Serialise Bool)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Char</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-69"></span><span>  </span><span id="local-6989586621679161412"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable Char, Serialise Char))
+</span><a href="#local-6989586621679161412"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Char, Serialise Char)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Double</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-72"></span><span>  </span><span id="local-6989586621679161408"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable Double, Serialise Double))
+</span><a href="#local-6989586621679161408"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Double, Serialise Double)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Float</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-75"></span><span>  </span><span id="local-6989586621679161404"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable Float, Serialise Float))
+</span><a href="#local-6989586621679161404"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Float, Serialise Float)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-78"></span><span>  </span><span id="local-6989586621679161400"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable Int, Serialise Int))
+</span><a href="#local-6989586621679161400"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Int, Serialise Int)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-81"></span><span>  </span><span id="local-6989586621679161396"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable Integer, Serialise Integer))
+</span><a href="#local-6989586621679161396"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Integer, Serialise Integer)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-84"></span><span>  </span><span id="local-6989586621679161391"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable LogSource, Serialise LogSource))
+</span><a href="#local-6989586621679161391"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable LogSource, Serialise LogSource)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span id="local-6989586621679161390"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161390"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679161390"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-87"></span><span>  </span><span id="local-6989586621679161386"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable [a], Serialise [a]))
+</span><a href="#local-6989586621679161386"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Serialise a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable [a], Serialise [a])
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Serialise a)
+   -&gt; Dict (Typeable [a], Serialise [a]))
+-&gt; Closure (Dict (Typeable a, Serialise a))
+-&gt; Closure (Dict (Typeable [a], Serialise [a]))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise a =&gt; Closure (Dict (Typeable a, Serialise a))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161390"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span id="local-6989586621679161384"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161384"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161384"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier hs-type">HashSet</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161384"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-90"></span><span>  </span><span id="local-6989586621679161380"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable (HashSet a), Serialise (HashSet a)))
+</span><a href="#local-6989586621679161380"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Serialise a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="annot"><span class="annottext">Dict (Typeable a, Eq a, Hashable a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (HashSet a), Serialise (HashSet a))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Serialise a)
+   -&gt; Dict (Typeable a, Eq a, Hashable a)
+   -&gt; Dict (Typeable (HashSet a), Serialise (HashSet a)))
+-&gt; Closure (Dict (Typeable a, Serialise a))
+-&gt; Closure
+     (Dict (Typeable a, Eq a, Hashable a)
+      -&gt; Dict (Typeable (HashSet a), Serialise (HashSet a)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise a =&gt; Closure (Dict (Typeable a, Serialise a))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161384"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Eq a, Hashable a)
+   -&gt; Dict (Typeable (HashSet a), Serialise (HashSet a)))
+-&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+-&gt; Closure (Dict (Typeable (HashSet a), Serialise (HashSet a)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable a =&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161384"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span id="local-6989586621679161378"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161378"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161378"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-93"></span><span>  </span><span id="local-6989586621679161374"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable (Maybe a), Serialise (Maybe a)))
+</span><a href="#local-6989586621679161374"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Serialise a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (Maybe a), Serialise (Maybe a))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Serialise a)
+   -&gt; Dict (Typeable (Maybe a), Serialise (Maybe a)))
+-&gt; Closure (Dict (Typeable a, Serialise a))
+-&gt; Closure (Dict (Typeable (Maybe a), Serialise (Maybe a)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise a =&gt; Closure (Dict (Typeable a, Serialise a))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161378"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span id="local-6989586621679161373"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161373"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Sum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161373"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-96"></span><span>  </span><span id="local-6989586621679161369"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable (Sum a), Serialise (Sum a)))
+</span><a href="#local-6989586621679161369"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Serialise a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (Sum a), Serialise (Sum a))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Serialise a)
+   -&gt; Dict (Typeable (Sum a), Serialise (Sum a)))
+-&gt; Closure (Dict (Typeable a, Serialise a))
+-&gt; Closure (Dict (Typeable (Sum a), Serialise (Sum a)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise a =&gt; Closure (Dict (Typeable a, Serialise a))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161373"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span id="local-6989586621679161368"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161368"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Down</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161368"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-99"></span><span>  </span><span id="local-6989586621679161364"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable (Down a), Serialise (Down a)))
+</span><a href="#local-6989586621679161364"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Serialise a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (Down a), Serialise (Down a))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Serialise a)
+   -&gt; Dict (Typeable (Down a), Serialise (Down a)))
+-&gt; Closure (Dict (Typeable a, Serialise a))
+-&gt; Closure (Dict (Typeable (Down a), Serialise (Down a)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise a =&gt; Closure (Dict (Typeable a, Serialise a))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161368"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span id="local-6989586621679161363"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161363"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Max</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161363"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-102"></span><span>  </span><span id="local-6989586621679161359"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable (Max a), Serialise (Max a)))
+</span><a href="#local-6989586621679161359"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Serialise a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (Max a), Serialise (Max a))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Serialise a)
+   -&gt; Dict (Typeable (Max a), Serialise (Max a)))
+-&gt; Closure (Dict (Typeable a, Serialise a))
+-&gt; Closure (Dict (Typeable (Max a), Serialise (Max a)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise a =&gt; Closure (Dict (Typeable a, Serialise a))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161363"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span id="local-6989586621679161358"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161358"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Min</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161358"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-105"></span><span>  </span><span id="local-6989586621679161354"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable (Min a), Serialise (Min a)))
+</span><a href="#local-6989586621679161354"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Serialise a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (Min a), Serialise (Min a))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Serialise a)
+   -&gt; Dict (Typeable (Min a), Serialise (Min a)))
+-&gt; Closure (Dict (Typeable a, Serialise a))
+-&gt; Closure (Dict (Typeable (Min a), Serialise (Min a)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise a =&gt; Closure (Dict (Typeable a, Serialise a))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161358"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span id="local-6989586621679161352"><span id="local-6989586621679161353"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161353"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161352"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679161353"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679161352"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-108"></span><span>  </span><span id="local-6989586621679161348"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable (a, b), Serialise (a, b)))
+</span><a href="#local-6989586621679161348"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Serialise a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="annot"><span class="annottext">Dict (Typeable b, Serialise b)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (a, b), Serialise (a, b))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Serialise a)
+   -&gt; Dict (Typeable b, Serialise b)
+   -&gt; Dict (Typeable (a, b), Serialise (a, b)))
+-&gt; Closure (Dict (Typeable a, Serialise a))
+-&gt; Closure
+     (Dict (Typeable b, Serialise b)
+      -&gt; Dict (Typeable (a, b), Serialise (a, b)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise a =&gt; Closure (Dict (Typeable a, Serialise a))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161353"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable b, Serialise b)
+   -&gt; Dict (Typeable (a, b), Serialise (a, b)))
+-&gt; Closure (Dict (Typeable b, Serialise b))
+-&gt; Closure (Dict (Typeable (a, b), Serialise (a, b)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise b =&gt; Closure (Dict (Typeable b, Serialise b))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161352"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span id="local-6989586621679161345"><span id="local-6989586621679161346"><span id="local-6989586621679161347"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161347"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161346"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161345"><span class="hs-identifier hs-type">c</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679161347"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679161346"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679161345"><span class="hs-identifier hs-type">c</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-111"></span><span>  </span><span id="local-6989586621679161341"><span class="annot"><span class="annottext">staticSerialise :: Closure (Dict (Typeable (a, b, c), Serialise (a, b, c)))
+</span><a href="#local-6989586621679161341"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticSerialise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Serialise a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="annot"><span class="annottext">Dict (Typeable b, Serialise b)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="annot"><span class="annottext">Dict (Typeable c, Serialise c)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (a, b, c), Serialise (a, b, c))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Serialise a)
+   -&gt; Dict (Typeable b, Serialise b)
+   -&gt; Dict (Typeable c, Serialise c)
+   -&gt; Dict (Typeable (a, b, c), Serialise (a, b, c)))
+-&gt; Closure (Dict (Typeable a, Serialise a))
+-&gt; Closure
+     (Dict (Typeable b, Serialise b)
+      -&gt; Dict (Typeable c, Serialise c)
+      -&gt; Dict (Typeable (a, b, c), Serialise (a, b, c)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise a =&gt; Closure (Dict (Typeable a, Serialise a))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161347"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable b, Serialise b)
+   -&gt; Dict (Typeable c, Serialise c)
+   -&gt; Dict (Typeable (a, b, c), Serialise (a, b, c)))
+-&gt; Closure (Dict (Typeable b, Serialise b))
+-&gt; Closure
+     (Dict (Typeable c, Serialise c)
+      -&gt; Dict (Typeable (a, b, c), Serialise (a, b, c)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise b =&gt; Closure (Dict (Typeable b, Serialise b))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161346"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable c, Serialise c)
+   -&gt; Dict (Typeable (a, b, c), Serialise (a, b, c)))
+-&gt; Closure (Dict (Typeable c, Serialise c))
+-&gt; Closure (Dict (Typeable (a, b, c), Serialise (a, b, c)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticSerialise c =&gt; Closure (Dict (Typeable c, Serialise c))
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Typeable a, Serialise a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticSerialise"><span class="hs-identifier hs-var">staticSerialise</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161345"><span class="hs-identifier hs-type">c</span></a></span></span></span></span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161525"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161525"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/4dmjxkc7la3hg9sk7sd3q8hl8ff8w3g5-hashable-1.3.0.0-doc/share/doc/hashable-1.3.0.0/html/src"><span class="hs-identifier hs-type">Hashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161525"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="StaticHashable"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-var">StaticHashable</span></a></span></span><span> </span><span id="local-6989586621679161525"><span class="annot"><a href="#local-6989586621679161525"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-114"></span><span>  </span><span id="staticHashable"><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-type">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-type">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161525"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161525"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/4dmjxkc7la3hg9sk7sd3q8hl8ff8w3g5-hashable-1.3.0.0-doc/share/doc/hashable-1.3.0.0/html/src"><span class="hs-identifier hs-type">Hashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161525"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-117"></span><span>  </span><span id="local-6989586621679161335"><span class="annot"><span class="annottext">staticHashable :: Closure (Dict (Typeable (), Eq (), Hashable ()))
+</span><a href="#local-6989586621679161335"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (), Eq (), Hashable ())
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Bool</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-120"></span><span>  </span><span id="local-6989586621679161330"><span class="annot"><span class="annottext">staticHashable :: Closure (Dict (Typeable Bool, Eq Bool, Hashable Bool))
+</span><a href="#local-6989586621679161330"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Bool, Eq Bool, Hashable Bool)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Char</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-123"></span><span>  </span><span id="local-6989586621679161325"><span class="annot"><span class="annottext">staticHashable :: Closure (Dict (Typeable Char, Eq Char, Hashable Char))
+</span><a href="#local-6989586621679161325"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Char, Eq Char, Hashable Char)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Double</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-126"></span><span>  </span><span id="local-6989586621679161320"><span class="annot"><span class="annottext">staticHashable :: Closure (Dict (Typeable Double, Eq Double, Hashable Double))
+</span><a href="#local-6989586621679161320"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Double, Eq Double, Hashable Double)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-127"></span><span>
+</span><span id="line-128"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Float</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-129"></span><span>  </span><span id="local-6989586621679161315"><span class="annot"><span class="annottext">staticHashable :: Closure (Dict (Typeable Float, Eq Float, Hashable Float))
+</span><a href="#local-6989586621679161315"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Float, Eq Float, Hashable Float)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-132"></span><span>  </span><span id="local-6989586621679161310"><span class="annot"><span class="annottext">staticHashable :: Closure (Dict (Typeable Int, Eq Int, Hashable Int))
+</span><a href="#local-6989586621679161310"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Int, Eq Int, Hashable Int)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-135"></span><span>  </span><span id="local-6989586621679161305"><span class="annot"><span class="annottext">staticHashable :: Closure (Dict (Typeable Integer, Eq Integer, Hashable Integer))
+</span><a href="#local-6989586621679161305"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable Integer, Eq Integer, Hashable Integer)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-136"></span><span>
+</span><span id="line-137"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-138"></span><span>  </span><span id="local-6989586621679161300"><span class="annot"><span class="annottext">staticHashable :: Closure
+  (Dict (Typeable LogSource, Eq LogSource, Hashable LogSource))
+</span><a href="#local-6989586621679161300"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable LogSource, Eq LogSource, Hashable LogSource)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span id="local-6989586621679161299"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161299"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679161299"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-141"></span><span>  </span><span id="local-6989586621679161294"><span class="annot"><span class="annottext">staticHashable :: Closure (Dict (Typeable [a], Eq [a], Hashable [a]))
+</span><a href="#local-6989586621679161294"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Eq a, Hashable a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable [a], Eq [a], Hashable [a])
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Eq a, Hashable a)
+   -&gt; Dict (Typeable [a], Eq [a], Hashable [a]))
+-&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+-&gt; Closure (Dict (Typeable [a], Eq [a], Hashable [a]))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable a =&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161299"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-142"></span><span>
+</span><span id="line-143"></span><span id="local-6989586621679161292"><span id="local-6989586621679161293"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161293"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161292"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679161293"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679161292"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-144"></span><span>  </span><span id="local-6989586621679161287"><span class="annot"><span class="annottext">staticHashable :: Closure (Dict (Typeable (a, b), Eq (a, b), Hashable (a, b)))
+</span><a href="#local-6989586621679161287"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Eq a, Hashable a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="annot"><span class="annottext">Dict (Typeable b, Eq b, Hashable b)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (a, b), Eq (a, b), Hashable (a, b))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Eq a, Hashable a)
+   -&gt; Dict (Typeable b, Eq b, Hashable b)
+   -&gt; Dict (Typeable (a, b), Eq (a, b), Hashable (a, b)))
+-&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+-&gt; Closure
+     (Dict (Typeable b, Eq b, Hashable b)
+      -&gt; Dict (Typeable (a, b), Eq (a, b), Hashable (a, b)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable a =&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161293"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable b, Eq b, Hashable b)
+   -&gt; Dict (Typeable (a, b), Eq (a, b), Hashable (a, b)))
+-&gt; Closure (Dict (Typeable b, Eq b, Hashable b))
+-&gt; Closure (Dict (Typeable (a, b), Eq (a, b), Hashable (a, b)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable b =&gt; Closure (Dict (Typeable b, Eq b, Hashable b))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161292"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span id="local-6989586621679161284"><span id="local-6989586621679161285"><span id="local-6989586621679161286"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161286"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161285"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161284"><span class="hs-identifier hs-type">c</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679161286"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679161285"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679161284"><span class="hs-identifier hs-type">c</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-147"></span><span>  </span><span id="local-6989586621679161279"><span class="annot"><span class="annottext">staticHashable :: Closure
+  (Dict (Typeable (a, b, c), Eq (a, b, c), Hashable (a, b, c)))
+</span><a href="#local-6989586621679161279"><span class="hs-identifier hs-var hs-var hs-var hs-var">staticHashable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Eq a, Hashable a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="annot"><span class="annottext">Dict (Typeable b, Eq b, Hashable b)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="annot"><span class="annottext">Dict (Typeable c, Eq c, Hashable c)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Typeable (a, b, c), Eq (a, b, c), Hashable (a, b, c))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Eq a, Hashable a)
+   -&gt; Dict (Typeable b, Eq b, Hashable b)
+   -&gt; Dict (Typeable c, Eq c, Hashable c)
+   -&gt; Dict (Typeable (a, b, c), Eq (a, b, c), Hashable (a, b, c)))
+-&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+-&gt; Closure
+     (Dict (Typeable b, Eq b, Hashable b)
+      -&gt; Dict (Typeable c, Eq c, Hashable c)
+      -&gt; Dict (Typeable (a, b, c), Eq (a, b, c), Hashable (a, b, c)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable a =&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161286"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable b, Eq b, Hashable b)
+   -&gt; Dict (Typeable c, Eq c, Hashable c)
+   -&gt; Dict (Typeable (a, b, c), Eq (a, b, c), Hashable (a, b, c)))
+-&gt; Closure (Dict (Typeable b, Eq b, Hashable b))
+-&gt; Closure
+     (Dict (Typeable c, Eq c, Hashable c)
+      -&gt; Dict (Typeable (a, b, c), Eq (a, b, c), Hashable (a, b, c)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable b =&gt; Closure (Dict (Typeable b, Eq b, Hashable b))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161285"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable c, Eq c, Hashable c)
+   -&gt; Dict (Typeable (a, b, c), Eq (a, b, c), Hashable (a, b, c)))
+-&gt; Closure (Dict (Typeable c, Eq c, Hashable c))
+-&gt; Closure
+     (Dict (Typeable (a, b, c), Eq (a, b, c), Hashable (a, b, c)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable c =&gt; Closure (Dict (Typeable c, Eq c, Hashable c))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161284"><span class="hs-identifier hs-type">c</span></a></span></span></span></span><span>
+</span><span id="line-148"></span></pre></body></html>

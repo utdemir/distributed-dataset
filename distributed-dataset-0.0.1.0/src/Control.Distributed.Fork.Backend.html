@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- See 'Control.Distributed.Fork.Local.localProcessBackend' for a minimal example.</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- You only need this module if you want to create a new backend for distributed-dataset.</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Fork.Backend</span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Writing a 'Backend'.</span></span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier">Backend</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#BackendM"><span class="hs-identifier">BackendM</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#argExecutorMode"><span class="hs-identifier">argExecutorMode</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Reporting status</span></span><span>
+</span><span id="line-12"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorFinalStatus"><span class="hs-identifier">ExecutorFinalStatus</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorStatus"><span class="hs-identifier">ExecutorStatus</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorPendingStatus"><span class="hs-identifier">ExecutorPendingStatus</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#waiting"><span class="hs-identifier">waiting</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#waitingDesc"><span class="hs-identifier">waitingDesc</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#submitted"><span class="hs-identifier">submitted</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#submittedDesc"><span class="hs-identifier">submittedDesc</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#started"><span class="hs-identifier">started</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#startedDesc"><span class="hs-identifier">startedDesc</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Utils</span></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#throttledBackend"><span class="hs-identifier">throttledBackend</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#runBackend"><span class="hs-identifier">runBackend</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#toBackendStdin"><span class="hs-identifier">toBackendStdin</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#fromBackendStdout"><span class="hs-identifier">fromBackendStdout</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Re-exports</span></span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">liftIO</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">getExecutablePath</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Concurrent.Throttled.html"><span class="hs-identifier">Control.Concurrent.Throttled</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html"><span class="hs-identifier">Control.Distributed.Fork.Internal</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Control.Monad.IO.Class</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/transformers-0.5.6.2/src"><span class="hs-identifier">Control.Monad.Trans.Reader</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Data.Text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Text</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">System.Environment</span></a></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#pendingStatus"><span class="hs-identifier hs-type">pendingStatus</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorPendingStatus"><span class="hs-identifier hs-type">ExecutorPendingStatus</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#BackendM"><span class="hs-identifier hs-type">BackendM</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span id="pendingStatus"><span class="annot"><span class="annottext">pendingStatus :: ExecutorPendingStatus -&gt; BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#pendingStatus"><span class="hs-identifier hs-var hs-var">pendingStatus</span></a></span></span><span> </span><span id="local-6989586621679160783"><span class="annot"><span class="annottext">ExecutorPendingStatus
+</span><a href="#local-6989586621679160783"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ReaderT
+  (ExecutorPendingStatus -&gt; IO ())
+  IO
+  (ExecutorPendingStatus -&gt; IO ())
+-&gt; BackendM (ExecutorPendingStatus -&gt; IO ())
+forall a.
+ReaderT (ExecutorPendingStatus -&gt; IO ()) IO a -&gt; BackendM a
+</span><a href="Control.Distributed.Fork.Internal.html#BackendM"><span class="hs-identifier hs-var">BackendM</span></a></span><span> </span><span class="annot"><span class="annottext">ReaderT
+  (ExecutorPendingStatus -&gt; IO ())
+  IO
+  (ExecutorPendingStatus -&gt; IO ())
+forall (m :: * -&gt; *) r. Monad m =&gt; ReaderT r m r
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/transformers-0.5.6.2/src"><span class="hs-identifier hs-var">ask</span></a></span><span> </span><span class="annot"><span class="annottext">BackendM (ExecutorPendingStatus -&gt; IO ())
+-&gt; ((ExecutorPendingStatus -&gt; IO ()) -&gt; BackendM ()) -&gt; BackendM ()
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&gt;&gt;=</span></a></span><span> </span><span class="annot"><span class="annottext">IO () -&gt; BackendM ()
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">liftIO</span></a></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; BackendM ())
+-&gt; ((ExecutorPendingStatus -&gt; IO ()) -&gt; IO ())
+-&gt; (ExecutorPendingStatus -&gt; IO ())
+-&gt; BackendM ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(ExecutorPendingStatus -&gt; IO ()) -&gt; ExecutorPendingStatus -&gt; IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">ExecutorPendingStatus
+</span><a href="#local-6989586621679160783"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#waiting"><span class="hs-identifier hs-type">waiting</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#BackendM"><span class="hs-identifier hs-type">BackendM</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span id="waiting"><span class="annot"><span class="annottext">waiting :: BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#waiting"><span class="hs-identifier hs-var hs-var">waiting</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ExecutorPendingStatus -&gt; BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#pendingStatus"><span class="hs-identifier hs-var">pendingStatus</span></a></span><span> </span><span class="annot"><span class="annottext">(ExecutorPendingStatus -&gt; BackendM ())
+-&gt; ExecutorPendingStatus -&gt; BackendM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text -&gt; ExecutorPendingStatus
+</span><a href="Control.Distributed.Fork.Internal.html#ExecutorWaiting"><span class="hs-identifier hs-var">ExecutorWaiting</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text
+forall a. Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#waitingDesc"><span class="hs-identifier hs-type">waitingDesc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#BackendM"><span class="hs-identifier hs-type">BackendM</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span id="waitingDesc"><span class="annot"><span class="annottext">waitingDesc :: Text -&gt; BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#waitingDesc"><span class="hs-identifier hs-var hs-var">waitingDesc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ExecutorPendingStatus -&gt; BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#pendingStatus"><span class="hs-identifier hs-var">pendingStatus</span></a></span><span> </span><span class="annot"><span class="annottext">(ExecutorPendingStatus -&gt; BackendM ())
+-&gt; (Text -&gt; ExecutorPendingStatus) -&gt; Text -&gt; BackendM ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text -&gt; ExecutorPendingStatus
+</span><a href="Control.Distributed.Fork.Internal.html#ExecutorWaiting"><span class="hs-identifier hs-var">ExecutorWaiting</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Text -&gt; ExecutorPendingStatus)
+-&gt; (Text -&gt; Maybe Text) -&gt; Text -&gt; ExecutorPendingStatus
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#submitted"><span class="hs-identifier hs-type">submitted</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#BackendM"><span class="hs-identifier hs-type">BackendM</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span id="submitted"><span class="annot"><span class="annottext">submitted :: BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#submitted"><span class="hs-identifier hs-var hs-var">submitted</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ExecutorPendingStatus -&gt; BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#pendingStatus"><span class="hs-identifier hs-var">pendingStatus</span></a></span><span> </span><span class="annot"><span class="annottext">(ExecutorPendingStatus -&gt; BackendM ())
+-&gt; ExecutorPendingStatus -&gt; BackendM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text -&gt; ExecutorPendingStatus
+</span><a href="Control.Distributed.Fork.Internal.html#ExecutorSubmitted"><span class="hs-identifier hs-var">ExecutorSubmitted</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text
+forall a. Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#submittedDesc"><span class="hs-identifier hs-type">submittedDesc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#BackendM"><span class="hs-identifier hs-type">BackendM</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span id="submittedDesc"><span class="annot"><span class="annottext">submittedDesc :: Text -&gt; BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#submittedDesc"><span class="hs-identifier hs-var hs-var">submittedDesc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ExecutorPendingStatus -&gt; BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#pendingStatus"><span class="hs-identifier hs-var">pendingStatus</span></a></span><span> </span><span class="annot"><span class="annottext">(ExecutorPendingStatus -&gt; BackendM ())
+-&gt; (Text -&gt; ExecutorPendingStatus) -&gt; Text -&gt; BackendM ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text -&gt; ExecutorPendingStatus
+</span><a href="Control.Distributed.Fork.Internal.html#ExecutorSubmitted"><span class="hs-identifier hs-var">ExecutorSubmitted</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Text -&gt; ExecutorPendingStatus)
+-&gt; (Text -&gt; Maybe Text) -&gt; Text -&gt; ExecutorPendingStatus
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#started"><span class="hs-identifier hs-type">started</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#BackendM"><span class="hs-identifier hs-type">BackendM</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span id="started"><span class="annot"><span class="annottext">started :: BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#started"><span class="hs-identifier hs-var hs-var">started</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ExecutorPendingStatus -&gt; BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#pendingStatus"><span class="hs-identifier hs-var">pendingStatus</span></a></span><span> </span><span class="annot"><span class="annottext">(ExecutorPendingStatus -&gt; BackendM ())
+-&gt; ExecutorPendingStatus -&gt; BackendM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text -&gt; ExecutorPendingStatus
+</span><a href="Control.Distributed.Fork.Internal.html#ExecutorStarted"><span class="hs-identifier hs-var">ExecutorStarted</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text
+forall a. Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="annot"><a href="Control.Distributed.Fork.Backend.html#startedDesc"><span class="hs-identifier hs-type">startedDesc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#BackendM"><span class="hs-identifier hs-type">BackendM</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span id="startedDesc"><span class="annot"><span class="annottext">startedDesc :: Text -&gt; BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#startedDesc"><span class="hs-identifier hs-var hs-var">startedDesc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ExecutorPendingStatus -&gt; BackendM ()
+</span><a href="Control.Distributed.Fork.Backend.html#pendingStatus"><span class="hs-identifier hs-var">pendingStatus</span></a></span><span> </span><span class="annot"><span class="annottext">(ExecutorPendingStatus -&gt; BackendM ())
+-&gt; (Text -&gt; ExecutorPendingStatus) -&gt; Text -&gt; BackendM ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text -&gt; ExecutorPendingStatus
+</span><a href="Control.Distributed.Fork.Internal.html#ExecutorStarted"><span class="hs-identifier hs-var">ExecutorStarted</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Text -&gt; ExecutorPendingStatus)
+-&gt; (Text -&gt; Maybe Text) -&gt; Text -&gt; ExecutorPendingStatus
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span id="local-6989586621679160776"><span class="annot"><a href="Control.Distributed.Fork.Backend.html#throttledBackend"><span class="hs-identifier hs-type">throttledBackend</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">MonadIO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160776"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier hs-type">Backend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679160776"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier hs-type">Backend</span></a></span></span><span>
+</span><span id="line-63"></span><span id="throttledBackend"><span class="annot"><span class="annottext">throttledBackend :: Int -&gt; Backend -&gt; m Backend
+</span><a href="Control.Distributed.Fork.Backend.html#throttledBackend"><span class="hs-identifier hs-var hs-var">throttledBackend</span></a></span></span><span> </span><span id="local-6989586621679160775"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679160775"><span class="hs-identifier hs-var">limit</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier hs-type">Backend</span></a></span><span> </span><span id="local-6989586621679160773"><span class="annot"><span class="annottext">ByteString -&gt; BackendM ByteString
+</span><a href="#local-6989586621679160773"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-64"></span><span>  </span><span id="local-6989586621679160772"><span class="annot"><span class="annottext">Throttle
+</span><a href="#local-6989586621679160772"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; m Throttle
+forall (m :: * -&gt; *). MonadIO m =&gt; Int -&gt; m Throttle
+</span><a href="Control.Concurrent.Throttled.html#newThrottle"><span class="hs-identifier hs-var">newThrottle</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679160775"><span class="hs-identifier hs-var">limit</span></a></span><span>
+</span><span id="line-65"></span><span>  </span><span class="annot"><span class="annottext">Backend -&gt; m Backend
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">(Backend -&gt; m Backend) -&gt; Backend -&gt; m Backend
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; BackendM ByteString) -&gt; Backend
+</span><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier hs-var">Backend</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Throttle
+-&gt; forall (m :: * -&gt; *) a. (MonadIO m, MonadMask m) =&gt; m a -&gt; m a
+</span><a href="Control.Concurrent.Throttled.html#throttled"><span class="hs-identifier hs-var hs-var">throttled</span></a></span><span> </span><span class="annot"><span class="annottext">Throttle
+</span><a href="#local-6989586621679160772"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">(BackendM ByteString -&gt; BackendM ByteString)
+-&gt; (ByteString -&gt; BackendM ByteString)
+-&gt; ByteString
+-&gt; BackendM ByteString
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; BackendM ByteString
+</span><a href="#local-6989586621679160773"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span></pre></body></html>

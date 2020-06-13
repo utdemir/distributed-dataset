@@ -1,0 +1,550 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE RankNTypes #-}</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Fork.Utils</span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#forkConcurrently"><span class="hs-identifier">forkConcurrently</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Options"><span class="hs-identifier">Options</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#defaultOptions"><span class="hs-identifier">defaultOptions</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Control.Concurrent</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">threadDelay</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/jx4y2sid3s6533m1kr8bjgv62vanjhjk-async-2.2.2-doc/share/doc/async-2.2.2/html/src"><span class="hs-identifier">Control.Concurrent.Async</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/jx4y2sid3s6533m1kr8bjgv62vanjhjk-async-2.2.2-doc/share/doc/async-2.2.2/html/src"><span class="hs-identifier">async</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/jx4y2sid3s6533m1kr8bjgv62vanjhjk-async-2.2.2-doc/share/doc/async-2.2.2/html/src"><span class="hs-identifier">wait</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/jx4y2sid3s6533m1kr8bjgv62vanjhjk-async-2.2.2-doc/share/doc/async-2.2.2/html/src"><span class="hs-identifier">waitBoth</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/stm-2.5.0.0/src"><span class="hs-identifier">Control.Concurrent.STM</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.html"><span class="hs-identifier">Control.Distributed.Fork</span></a></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Control.Exception</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">throwIO</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Control.Monad</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">forM</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">when</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Control.Monad.IO.Class</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">liftIO</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/q8g7vj75fxghmnh87k6gpdd7frfgc6rb-retry-0.8.1.2-doc/share/doc/retry-0.8.1.2/html/src"><span class="hs-identifier">Control.Retry</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Function</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">fix</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Functor</span></a></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/2j44fyychyb84kxna87dylcmpln6nz5d-groups-0.4.1.0-doc/share/doc/groups-0.4.1.0/html/src"><span class="hs-identifier">Data.Group</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/p1ffphcb84nc1jx60yvh84wpv2f5dq71-terminal-size-0.3.2.1-doc/share/doc/terminal-size-0.3.2.1/html/src"><span class="hs-identifier">System.Console.Terminal.Size</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">TS</span></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">data</span><span> </span><span id="Options"><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Options"><span class="hs-identifier hs-var">Options</span></a></span></span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Options"><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Options"><span class="hs-identifier hs-var">Options</span></a></span></span><span>
+</span><span id="line-27"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="oRetries"><span class="annot"><span class="annottext">Options -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#oRetries"><span class="hs-identifier hs-var hs-var">oRetries</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>        </span><span id="oShowProgress"><span class="annot"><span class="annottext">Options -&gt; Bool
+</span><a href="Control.Distributed.Fork.Utils.html#oShowProgress"><span class="hs-identifier hs-var hs-var">oShowProgress</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-29"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#defaultOptions"><span class="hs-identifier hs-type">defaultOptions</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span>
+</span><span id="line-32"></span><span id="defaultOptions"><span class="annot"><span class="annottext">defaultOptions :: Options
+</span><a href="Control.Distributed.Fork.Utils.html#defaultOptions"><span class="hs-identifier hs-var hs-var">defaultOptions</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Bool -&gt; Options
+</span><a href="Control.Distributed.Fork.Utils.html#Options"><span class="hs-identifier hs-var">Options</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var">True</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">data</span><span> </span><span id="Progress"><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Progress"><span class="hs-identifier hs-var">Progress</span></a></span></span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Progress"><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Progress"><span class="hs-identifier hs-var">Progress</span></a></span></span><span>
+</span><span id="line-36"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="waiting"><span class="annot"><span class="annottext">Progress -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#waiting"><span class="hs-identifier hs-var hs-var">waiting</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>        </span><span id="submitted"><span class="annot"><span class="annottext">Progress -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#submitted"><span class="hs-identifier hs-var hs-var">submitted</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>        </span><span id="started"><span class="annot"><span class="annottext">Progress -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#started"><span class="hs-identifier hs-var hs-var">started</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>        </span><span id="finished"><span class="annot"><span class="annottext">Progress -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#finished"><span class="hs-identifier hs-var hs-var">finished</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-40"></span><span>        </span><span id="retried"><span class="annot"><span class="annottext">Progress -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#retried"><span class="hs-identifier hs-var hs-var">retried</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span>
+</span><span id="line-41"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679161152"><span id="local-6989586621679161154"><span class="annot"><span class="annottext">Progress -&gt; Progress -&gt; Bool
+(Progress -&gt; Progress -&gt; Bool)
+-&gt; (Progress -&gt; Progress -&gt; Bool) -&gt; Eq Progress
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Progress -&gt; Progress -&gt; Bool
+$c/= :: Progress -&gt; Progress -&gt; Bool
+== :: Progress -&gt; Progress -&gt; Bool
+$c== :: Progress -&gt; Progress -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679161146"><span id="local-6989586621679161148"><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Progress"><span class="hs-identifier hs-type">Progress</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-45"></span><span>  </span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Progress"><span class="hs-identifier hs-type">Progress</span></a></span><span> </span><span id="local-6989586621679161144"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161144"><span class="hs-identifier hs-var">a1</span></a></span></span><span> </span><span id="local-6989586621679161143"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161143"><span class="hs-identifier hs-var">b1</span></a></span></span><span> </span><span id="local-6989586621679161142"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161142"><span class="hs-identifier hs-var">c1</span></a></span></span><span> </span><span id="local-6989586621679161141"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161141"><span class="hs-identifier hs-var">d1</span></a></span></span><span> </span><span id="local-6989586621679161140"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161140"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679161139"><span class="annot"><span class="annottext">&lt;&gt; :: Progress -&gt; Progress -&gt; Progress
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></a></span></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Progress"><span class="hs-identifier hs-type">Progress</span></a></span><span> </span><span id="local-6989586621679161138"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161138"><span class="hs-identifier hs-var">a2</span></a></span></span><span> </span><span id="local-6989586621679161137"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161137"><span class="hs-identifier hs-var">b2</span></a></span></span><span> </span><span id="local-6989586621679161136"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161136"><span class="hs-identifier hs-var">c2</span></a></span></span><span> </span><span id="local-6989586621679161135"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161135"><span class="hs-identifier hs-var">d2</span></a></span></span><span> </span><span id="local-6989586621679161134"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161134"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; Int -&gt; Int -&gt; Progress
+</span><a href="Control.Distributed.Fork.Utils.html#Progress"><span class="hs-identifier hs-var">Progress</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161144"><span class="hs-identifier hs-var">a1</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161138"><span class="hs-identifier hs-var">a2</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161143"><span class="hs-identifier hs-var">b1</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161137"><span class="hs-identifier hs-var">b2</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161142"><span class="hs-identifier hs-var">c1</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161136"><span class="hs-identifier hs-var">c2</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161141"><span class="hs-identifier hs-var">d1</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161135"><span class="hs-identifier hs-var">d2</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161140"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161134"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679161127"><span id="local-6989586621679161129"><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Progress"><span class="hs-identifier hs-type">Progress</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-49"></span><span>  </span><span id="local-6989586621679161125"><span class="annot"><span class="annottext">mempty :: Progress
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; Int -&gt; Int -&gt; Progress
+</span><a href="Control.Distributed.Fork.Utils.html#Progress"><span class="hs-identifier hs-var">Progress</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679161121"><span class="annot"><a href="../file:///nix/store/2j44fyychyb84kxna87dylcmpln6nz5d-groups-0.4.1.0-doc/share/doc/groups-0.4.1.0/html/src"><span class="hs-identifier hs-type">Group</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Progress"><span class="hs-identifier hs-type">Progress</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-52"></span><span>  </span><span id="local-6989586621679161119"><span class="annot"><span class="annottext">invert :: Progress -&gt; Progress
+</span><a href="../file:///nix/store/2j44fyychyb84kxna87dylcmpln6nz5d-groups-0.4.1.0-doc/share/doc/groups-0.4.1.0/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">invert</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Progress"><span class="hs-identifier hs-type">Progress</span></a></span><span> </span><span id="local-6989586621679161117"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161117"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679161116"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161116"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679161115"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161115"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621679161114"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161114"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621679161113"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161113"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; Int -&gt; Int -&gt; Progress
+</span><a href="Control.Distributed.Fork.Utils.html#Progress"><span class="hs-identifier hs-var">Progress</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">negate</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161117"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">negate</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161116"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">negate</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161115"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">negate</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161114"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">negate</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161113"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- Runs given closures concurrently using the 'Backend', showing a</span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- progress bar.</span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- Throws 'Execut orFailedException' if something fails.</span><span>
+</span><span id="line-60"></span><span id="local-6989586621679161112"><span class="annot"><a href="Control.Distributed.Fork.Utils.html#forkConcurrently"><span class="hs-identifier hs-type">forkConcurrently</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-61"></span><span>  </span><span class="annot"><a href="Control.Distributed.Fork.Utils.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-62"></span><span>  </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier hs-type">Backend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-63"></span><span>  </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-type">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Serializable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161112"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161112"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-65"></span><span>  </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679161112"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-66"></span><span id="forkConcurrently"><span class="annot"><span class="annottext">forkConcurrently :: Options
+-&gt; Backend
+-&gt; Closure (Dict (Serializable a))
+-&gt; [Closure (IO a)]
+-&gt; IO [a]
+</span><a href="Control.Distributed.Fork.Utils.html#forkConcurrently"><span class="hs-identifier hs-var hs-var">forkConcurrently</span></a></span></span><span> </span><span id="local-6989586621679161111"><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679161111"><span class="hs-identifier hs-var">options</span></a></span></span><span> </span><span id="local-6989586621679161110"><span class="annot"><span class="annottext">Backend
+</span><a href="#local-6989586621679161110"><span class="hs-identifier hs-var">backend</span></a></span></span><span> </span><span id="local-6989586621679161109"><span class="annot"><span class="annottext">Closure (Dict (Serializable a))
+</span><a href="#local-6989586621679161109"><span class="hs-identifier hs-var">dict</span></a></span></span><span> </span><span id="local-6989586621679161108"><span class="annot"><span class="annottext">[Closure (IO a)]
+</span><a href="#local-6989586621679161108"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-67"></span><span>  </span><span id="local-6989586621679161107"><span class="annot"><span class="annottext">TVar (Bool, Progress)
+</span><a href="#local-6989586621679161107"><span class="hs-identifier hs-var">st</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">STM (TVar (Bool, Progress)) -&gt; IO (TVar (Bool, Progress))
+forall a. STM a -&gt; IO a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">atomically</span></a></span><span> </span><span class="annot"><span class="annottext">(STM (TVar (Bool, Progress)) -&gt; IO (TVar (Bool, Progress)))
+-&gt; STM (TVar (Bool, Progress)) -&gt; IO (TVar (Bool, Progress))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Bool, Progress) -&gt; STM (TVar (Bool, Progress))
+forall a. a -&gt; STM (TVar a)
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">newTVar</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Progress
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>  </span><span id="local-6989586621679161104"><span class="annot"><span class="annottext">[Async a]
+</span><a href="#local-6989586621679161104"><span class="hs-identifier hs-var">asyncs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Closure (IO a)]
+-&gt; (Closure (IO a) -&gt; IO (Async a)) -&gt; IO [Async a]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+t a -&gt; (a -&gt; m b) -&gt; m (t b)
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">forM</span></a></span><span> </span><span class="annot"><span class="annottext">[Closure (IO a)]
+</span><a href="#local-6989586621679161108"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">((Closure (IO a) -&gt; IO (Async a)) -&gt; IO [Async a])
+-&gt; (Closure (IO a) -&gt; IO (Async a)) -&gt; IO [Async a]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">TVar (Bool, Progress) -&gt; Closure (IO a) -&gt; IO (Async a)
+</span><a href="#local-6989586621679161103"><span class="hs-identifier hs-var">updateThread</span></a></span><span> </span><span class="annot"><span class="annottext">TVar (Bool, Progress)
+</span><a href="#local-6989586621679161107"><span class="hs-identifier hs-var">st</span></a></span><span>
+</span><span id="line-69"></span><span>  </span><span id="local-6989586621679161102"><span class="annot"><span class="annottext">Async [a]
+</span><a href="#local-6989586621679161102"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO [a] -&gt; IO (Async [a])
+forall a. IO a -&gt; IO (Async a)
+</span><a href="../file:///nix/store/jx4y2sid3s6533m1kr8bjgv62vanjhjk-async-2.2.2-doc/share/doc/async-2.2.2/html/src"><span class="hs-identifier hs-var">async</span></a></span><span> </span><span class="annot"><span class="annottext">(IO [a] -&gt; IO (Async [a])) -&gt; IO [a] -&gt; IO (Async [a])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Async a -&gt; IO a) -&gt; [Async a] -&gt; IO [a]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">mapM</span></a></span><span> </span><span class="annot"><span class="annottext">Async a -&gt; IO a
+forall a. Async a -&gt; IO a
+</span><a href="../file:///nix/store/jx4y2sid3s6533m1kr8bjgv62vanjhjk-async-2.2.2-doc/share/doc/async-2.2.2/html/src"><span class="hs-identifier hs-var">wait</span></a></span><span> </span><span class="annot"><span class="annottext">[Async a]
+</span><a href="#local-6989586621679161104"><span class="hs-identifier hs-var">asyncs</span></a></span><span>
+</span><span id="line-70"></span><span>  </span><span id="local-6989586621679161100"><span class="annot"><span class="annottext">Async ()
+</span><a href="#local-6989586621679161100"><span class="hs-identifier hs-var">pbar</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-71"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Options -&gt; Bool
+</span><a href="Control.Distributed.Fork.Utils.html#oShowProgress"><span class="hs-identifier hs-var hs-var">oShowProgress</span></a></span><span> </span><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679161111"><span class="hs-identifier hs-var">options</span></a></span><span>
+</span><span id="line-72"></span><span>      </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">TVar (Bool, Progress) -&gt; Int -&gt; IO (Async ())
+</span><a href="#local-6989586621679161099"><span class="hs-identifier hs-var">progressThread</span></a></span><span> </span><span class="annot"><span class="annottext">TVar (Bool, Progress)
+</span><a href="#local-6989586621679161107"><span class="hs-identifier hs-var">st</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Closure (IO a)] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">length</span></a></span><span> </span><span class="annot"><span class="annottext">[Closure (IO a)]
+</span><a href="#local-6989586621679161108"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span>      </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">IO () -&gt; IO (Async ())
+forall a. IO a -&gt; IO (Async a)
+</span><a href="../file:///nix/store/jx4y2sid3s6533m1kr8bjgv62vanjhjk-async-2.2.2-doc/share/doc/async-2.2.2/html/src"><span class="hs-identifier hs-var">async</span></a></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; IO (Async ())) -&gt; IO () -&gt; IO (Async ())
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">() -&gt; IO ()
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>  </span><span class="annot"><span class="annottext">([a], ()) -&gt; [a]
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span> </span><span class="annot"><span class="annottext">(([a], ()) -&gt; [a]) -&gt; IO ([a], ()) -&gt; IO [a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Async [a] -&gt; Async () -&gt; IO ([a], ())
+forall a b. Async a -&gt; Async b -&gt; IO (a, b)
+</span><a href="../file:///nix/store/jx4y2sid3s6533m1kr8bjgv62vanjhjk-async-2.2.2-doc/share/doc/async-2.2.2/html/src"><span class="hs-identifier hs-var">waitBoth</span></a></span><span> </span><span class="annot"><span class="annottext">Async [a]
+</span><a href="#local-6989586621679161102"><span class="hs-identifier hs-var">result</span></a></span><span> </span><span class="annot"><span class="annottext">Async ()
+</span><a href="#local-6989586621679161100"><span class="hs-identifier hs-var">pbar</span></a></span><span>
+</span><span id="line-75"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-76"></span><span>    </span><span id="local-6989586621679161103"><span class="annot"><span class="annottext">updateThread :: TVar (Bool, Progress) -&gt; Closure (IO a) -&gt; IO (Async a)
+</span><a href="#local-6989586621679161103"><span class="hs-identifier hs-var hs-var">updateThread</span></a></span></span><span> </span><span id="local-6989586621679161096"><span class="annot"><span class="annottext">TVar (Bool, Progress)
+</span><a href="#local-6989586621679161096"><span class="hs-identifier hs-var">st</span></a></span></span><span> </span><span id="local-6989586621679161095"><span class="annot"><span class="annottext">Closure (IO a)
+</span><a href="#local-6989586621679161095"><span class="hs-identifier hs-var">act</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-77"></span><span>      </span><span class="annot"><span class="annottext">IO a -&gt; IO (Async a)
+forall a. IO a -&gt; IO (Async a)
+</span><a href="../file:///nix/store/jx4y2sid3s6533m1kr8bjgv62vanjhjk-async-2.2.2-doc/share/doc/async-2.2.2/html/src"><span class="hs-identifier hs-var">async</span></a></span><span> </span><span class="annot"><span class="annottext">(IO a -&gt; IO (Async a)) -&gt; IO a -&gt; IO (Async a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-78"></span><span>        </span><span id="local-6989586621679161094"><span class="annot"><span class="annottext">TVar Progress
+</span><a href="#local-6989586621679161094"><span class="hs-identifier hs-var">progress</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Progress -&gt; IO (TVar Progress)
+forall a. a -&gt; IO (TVar a)
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">newTVarIO</span></a></span><span> </span><span class="annot"><span class="annottext">Progress
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span>
+</span><span id="line-79"></span><span>        </span><span class="annot"><span class="annottext">RetryPolicyM IO -&gt; (RetryStatus -&gt; IO a) -&gt; IO a
+forall (m :: * -&gt; *) a.
+(MonadIO m, MonadMask m) =&gt;
+RetryPolicyM m -&gt; (RetryStatus -&gt; m a) -&gt; m a
+</span><a href="../file:///nix/store/q8g7vj75fxghmnh87k6gpdd7frfgc6rb-retry-0.8.1.2-doc/share/doc/retry-0.8.1.2/html/src"><span class="hs-identifier hs-var">recoverAll</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; RetryPolicy
+</span><a href="../file:///nix/store/q8g7vj75fxghmnh87k6gpdd7frfgc6rb-retry-0.8.1.2-doc/share/doc/retry-0.8.1.2/html/src"><span class="hs-identifier hs-var">limitRetries</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; RetryPolicy) -&gt; Int -&gt; RetryPolicy
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Options -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#oRetries"><span class="hs-identifier hs-var hs-var">oRetries</span></a></span><span> </span><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679161111"><span class="hs-identifier hs-var">options</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((RetryStatus -&gt; IO a) -&gt; IO a) -&gt; (RetryStatus -&gt; IO a) -&gt; IO a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679161090"><span class="annot"><span class="annottext">RetryStatus
+</span><a href="#local-6989586621679161090"><span class="hs-identifier hs-var">retryStatus</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-80"></span><span>          </span><span id="local-6989586621679161089"><span class="annot"><span class="annottext">Handle a
+</span><a href="#local-6989586621679161089"><span class="hs-identifier hs-var">handle</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Backend
+-&gt; Closure (Dict (Serializable a))
+-&gt; Closure (IO a)
+-&gt; IO (Handle a)
+forall (m :: * -&gt; *) a.
+MonadIO m =&gt;
+Backend
+-&gt; Closure (Dict (Serializable a))
+-&gt; Closure (IO a)
+-&gt; m (Handle a)
+</span><a href="Control.Distributed.Fork.html#fork"><span class="hs-identifier hs-var">fork</span></a></span><span> </span><span class="annot"><span class="annottext">Backend
+</span><a href="#local-6989586621679161110"><span class="hs-identifier hs-var">backend</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Serializable a))
+</span><a href="#local-6989586621679161109"><span class="hs-identifier hs-var">dict</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (IO a)
+</span><a href="#local-6989586621679161095"><span class="hs-identifier hs-var">act</span></a></span><span>
+</span><span id="line-81"></span><span>          </span><span class="annot"><span class="annottext">(IO a -&gt; IO a) -&gt; IO a
+forall a. (a -&gt; a) -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fix</span></a></span><span> </span><span class="annot"><span class="annottext">((IO a -&gt; IO a) -&gt; IO a) -&gt; (IO a -&gt; IO a) -&gt; IO a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679161087"><span class="annot"><span class="annottext">IO a
+</span><a href="#local-6989586621679161087"><span class="hs-identifier hs-var">recurse</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-82"></span><span>            </span><span id="local-6989586621679161086"><span class="annot"><span class="annottext">Maybe (ExecutorFinalStatus a)
+</span><a href="#local-6989586621679161086"><span class="hs-identifier hs-var">res</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-83"></span><span>              </span><span class="annot"><span class="annottext">IO (Maybe (ExecutorFinalStatus a))
+-&gt; IO (Maybe (ExecutorFinalStatus a))
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">liftIO</span></a></span><span> </span><span class="annot"><span class="annottext">(IO (Maybe (ExecutorFinalStatus a))
+ -&gt; IO (Maybe (ExecutorFinalStatus a)))
+-&gt; IO (Maybe (ExecutorFinalStatus a))
+-&gt; IO (Maybe (ExecutorFinalStatus a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">STM (Maybe (ExecutorFinalStatus a))
+-&gt; IO (Maybe (ExecutorFinalStatus a))
+forall a. STM a -&gt; IO a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">atomically</span></a></span><span> </span><span class="annot"><span class="annottext">(STM (Maybe (ExecutorFinalStatus a))
+ -&gt; IO (Maybe (ExecutorFinalStatus a)))
+-&gt; STM (Maybe (ExecutorFinalStatus a))
+-&gt; IO (Maybe (ExecutorFinalStatus a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-84"></span><span>                </span><span id="local-6989586621679161085"><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161085"><span class="hs-identifier hs-var">old</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">TVar Progress -&gt; STM Progress
+forall a. TVar a -&gt; STM a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">readTVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVar Progress
+</span><a href="#local-6989586621679161094"><span class="hs-identifier hs-var">progress</span></a></span><span>
+</span><span id="line-85"></span><span>                </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161083"><span class="annot"><span class="annottext">base :: Progress
+</span><a href="#local-6989586621679161083"><span class="hs-identifier hs-var hs-var">base</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Progress
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">retried :: Int
+</span><a href="Control.Distributed.Fork.Utils.html#retried"><span class="hs-identifier hs-var">retried</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">RetryStatus -&gt; Int
+</span><a href="../file:///nix/store/q8g7vj75fxghmnh87k6gpdd7frfgc6rb-retry-0.8.1.2-doc/share/doc/retry-0.8.1.2/html/src"><span class="hs-identifier hs-var hs-var">rsIterNumber</span></a></span><span> </span><span class="annot"><span class="annottext">RetryStatus
+</span><a href="#local-6989586621679161090"><span class="hs-identifier hs-var">retryStatus</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-86"></span><span>                </span><span class="hs-special">(</span><span id="local-6989586621679161081"><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161081"><span class="hs-identifier hs-var">new</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161080"><span class="annot"><span class="annottext">Maybe (ExecutorFinalStatus a)
+</span><a href="#local-6989586621679161080"><span class="hs-identifier hs-var">res</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-87"></span><span>                  </span><span class="annot"><span class="annottext">Handle a -&gt; STM (ExecutorStatus a)
+forall a. Handle a -&gt; STM (ExecutorStatus a)
+</span><a href="Control.Distributed.Fork.Internal.html#pollHandle"><span class="hs-identifier hs-var">pollHandle</span></a></span><span> </span><span class="annot"><span class="annottext">Handle a
+</span><a href="#local-6989586621679161089"><span class="hs-identifier hs-var">handle</span></a></span><span> </span><span class="annot"><span class="annottext">STM (ExecutorStatus a)
+-&gt; (ExecutorStatus a -&gt; (Progress, Maybe (ExecutorFinalStatus a)))
+-&gt; STM (Progress, Maybe (ExecutorFinalStatus a))
+forall (f :: * -&gt; *) a b. Functor f =&gt; f a -&gt; (a -&gt; b) -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&amp;&gt;</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-88"></span><span>                    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorPending"><span class="hs-identifier hs-type">ExecutorPending</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorWaiting"><span class="hs-identifier hs-type">ExecutorWaiting</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161083"><span class="hs-identifier hs-var">base</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">waiting :: Int
+</span><a href="Control.Distributed.Fork.Utils.html#waiting"><span class="hs-identifier hs-var">waiting</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">}</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe (ExecutorFinalStatus a)
+forall a. Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span>                    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorPending"><span class="hs-identifier hs-type">ExecutorPending</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorSubmitted"><span class="hs-identifier hs-type">ExecutorSubmitted</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161083"><span class="hs-identifier hs-var">base</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">submitted :: Int
+</span><a href="Control.Distributed.Fork.Utils.html#submitted"><span class="hs-identifier hs-var">submitted</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">}</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe (ExecutorFinalStatus a)
+forall a. Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-90"></span><span>                    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorPending"><span class="hs-identifier hs-type">ExecutorPending</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorStarted"><span class="hs-identifier hs-type">ExecutorStarted</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161083"><span class="hs-identifier hs-var">base</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">started :: Int
+</span><a href="Control.Distributed.Fork.Utils.html#started"><span class="hs-identifier hs-var">started</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">}</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe (ExecutorFinalStatus a)
+forall a. Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-91"></span><span>                    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorFinished"><span class="hs-identifier hs-type">ExecutorFinished</span></a></span><span> </span><span id="local-6989586621679161072"><span class="annot"><span class="annottext">ExecutorFinalStatus a
+</span><a href="#local-6989586621679161072"><span class="hs-identifier hs-var">fr</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161083"><span class="hs-identifier hs-var">base</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">finished :: Int
+</span><a href="Control.Distributed.Fork.Utils.html#finished"><span class="hs-identifier hs-var">finished</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">}</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ExecutorFinalStatus a -&gt; Maybe (ExecutorFinalStatus a)
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">ExecutorFinalStatus a
+</span><a href="#local-6989586621679161072"><span class="hs-identifier hs-var">fr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-92"></span><span>                </span><span class="annot"><span class="annottext">Bool -&gt; STM () -&gt; STM ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">when</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161085"><span class="hs-identifier hs-var">old</span></a></span><span> </span><span class="annot"><span class="annottext">Progress -&gt; Progress -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161081"><span class="hs-identifier hs-var">new</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">STM ()
+forall a. STM a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">retry</span></a></span><span>
+</span><span id="line-93"></span><span>                </span><span class="annot"><span class="annottext">TVar Progress -&gt; Progress -&gt; STM ()
+forall a. TVar a -&gt; a -&gt; STM ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">writeTVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVar Progress
+</span><a href="#local-6989586621679161094"><span class="hs-identifier hs-var">progress</span></a></span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161081"><span class="hs-identifier hs-var">new</span></a></span><span>
+</span><span id="line-94"></span><span>                </span><span class="annot"><span class="annottext">TVar (Bool, Progress)
+-&gt; ((Bool, Progress) -&gt; (Bool, Progress)) -&gt; STM ()
+forall a. TVar a -&gt; (a -&gt; a) -&gt; STM ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/stm-2.5.0.0/src"><span class="hs-identifier hs-var">modifyTVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVar (Bool, Progress)
+</span><a href="#local-6989586621679161096"><span class="hs-identifier hs-var">st</span></a></span><span> </span><span class="annot"><span class="annottext">(((Bool, Progress) -&gt; (Bool, Progress)) -&gt; STM ())
+-&gt; ((Bool, Progress) -&gt; (Bool, Progress)) -&gt; STM ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-95"></span><span>                  </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161068"><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161068"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161068"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Progress -&gt; Progress -&gt; Progress
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Progress -&gt; Progress
+forall m. Group m =&gt; m -&gt; m
+</span><a href="../file:///nix/store/2j44fyychyb84kxna87dylcmpln6nz5d-groups-0.4.1.0-doc/share/doc/groups-0.4.1.0/html/src"><span class="hs-identifier hs-var">invert</span></a></span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161085"><span class="hs-identifier hs-var">old</span></a></span><span> </span><span class="annot"><span class="annottext">Progress -&gt; Progress -&gt; Progress
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161081"><span class="hs-identifier hs-var">new</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span><span>                </span><span class="annot"><span class="annottext">Maybe (ExecutorFinalStatus a)
+-&gt; STM (Maybe (ExecutorFinalStatus a))
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe (ExecutorFinalStatus a)
+</span><a href="#local-6989586621679161080"><span class="hs-identifier hs-var">res</span></a></span><span>
+</span><span id="line-97"></span><span>            </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe (ExecutorFinalStatus a)
+</span><a href="#local-6989586621679161086"><span class="hs-identifier hs-var">res</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-98"></span><span>              </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorFailed"><span class="hs-identifier hs-type">ExecutorFailed</span></a></span><span> </span><span id="local-6989586621679161066"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679161066"><span class="hs-identifier hs-var">err</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO a -&gt; IO a
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">liftIO</span></a></span><span> </span><span class="annot"><span class="annottext">(IO a -&gt; IO a)
+-&gt; (ExecutorFailedException -&gt; IO a)
+-&gt; ExecutorFailedException
+-&gt; IO a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">ExecutorFailedException -&gt; IO a
+forall e a. Exception e =&gt; e -&gt; IO a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">throwIO</span></a></span><span> </span><span class="annot"><span class="annottext">(ExecutorFailedException -&gt; IO a)
+-&gt; ExecutorFailedException -&gt; IO a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; ExecutorFailedException
+</span><a href="Control.Distributed.Fork.html#ExecutorFailedException"><span class="hs-identifier hs-var">ExecutorFailedException</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679161066"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><span id="line-99"></span><span>              </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorSucceeded"><span class="hs-identifier hs-type">ExecutorSucceeded</span></a></span><span> </span><span id="local-6989586621679161062"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161062"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; IO a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161062"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-100"></span><span>              </span><span class="annot"><span class="annottext">Maybe (ExecutorFinalStatus a)
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO a
+</span><a href="#local-6989586621679161087"><span class="hs-identifier hs-var">recurse</span></a></span><span>
+</span><span id="line-101"></span><span>    </span><span id="local-6989586621679161099"><span class="annot"><span class="annottext">progressThread :: TVar (Bool, Progress) -&gt; Int -&gt; IO (Async ())
+</span><a href="#local-6989586621679161099"><span class="hs-identifier hs-var hs-var">progressThread</span></a></span></span><span> </span><span id="local-6989586621679161061"><span class="annot"><span class="annottext">TVar (Bool, Progress)
+</span><a href="#local-6989586621679161061"><span class="hs-identifier hs-var">st</span></a></span></span><span> </span><span id="local-6989586621679161060"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161060"><span class="hs-identifier hs-var">total</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-102"></span><span>      </span><span id="local-6989586621679161059"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161059"><span class="hs-identifier hs-var">termWidth</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; (Window Int -&gt; Int) -&gt; Maybe (Window Int) -&gt; Int
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">maybe</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">40</span></span><span> </span><span class="annot"><span class="annottext">Window Int -&gt; Int
+forall a. Window a -&gt; a
+</span><a href="../file:///nix/store/p1ffphcb84nc1jx60yvh84wpv2f5dq71-terminal-size-0.3.2.1-doc/share/doc/terminal-size-0.3.2.1/html/src"><span class="hs-identifier hs-var hs-var">TS.width</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Window Int) -&gt; Int) -&gt; IO (Maybe (Window Int)) -&gt; IO Int
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">IO (Maybe (Window Int))
+forall n. Integral n =&gt; IO (Maybe (Window n))
+</span><a href="../file:///nix/store/p1ffphcb84nc1jx60yvh84wpv2f5dq71-terminal-size-0.3.2.1-doc/share/doc/terminal-size-0.3.2.1/html/src"><span class="hs-identifier hs-var">TS.size</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span>
+</span><span id="line-103"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161055"><span class="annot"><span class="annottext">ratio :: Double
+</span><a href="#local-6989586621679161055"><span class="hs-identifier hs-var hs-var">ratio</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Double
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161060"><span class="hs-identifier hs-var">total</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Double
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161059"><span class="hs-identifier hs-var">termWidth</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Double</span></a></span><span>
+</span><span id="line-104"></span><span>      </span><span class="annot"><span class="annottext">IO () -&gt; IO (Async ())
+forall a. IO a -&gt; IO (Async a)
+</span><a href="../file:///nix/store/jx4y2sid3s6533m1kr8bjgv62vanjhjk-async-2.2.2-doc/share/doc/async-2.2.2/html/src"><span class="hs-identifier hs-var">async</span></a></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; IO (Async ()))
+-&gt; ((IO () -&gt; IO ()) -&gt; IO ()) -&gt; (IO () -&gt; IO ()) -&gt; IO (Async ())
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; IO ()) -&gt; IO ()
+forall a. (a -&gt; a) -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fix</span></a></span><span> </span><span class="annot"><span class="annottext">((IO () -&gt; IO ()) -&gt; IO (Async ()))
+-&gt; (IO () -&gt; IO ()) -&gt; IO (Async ())
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679161053"><span class="annot"><span class="annottext">IO ()
+</span><a href="#local-6989586621679161053"><span class="hs-identifier hs-var">recurse</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-105"></span><span>        </span><span id="local-6989586621679161052"><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161052"><span class="hs-identifier hs-var">progress</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-106"></span><span>          </span><span class="annot"><span class="annottext">STM Progress -&gt; IO Progress
+forall a. STM a -&gt; IO a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">atomically</span></a></span><span> </span><span class="annot"><span class="annottext">(STM Progress -&gt; IO Progress) -&gt; STM Progress -&gt; IO Progress
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
+</span><span id="line-107"></span><span>            </span><span class="annot"><span class="annottext">TVar (Bool, Progress) -&gt; STM (Bool, Progress)
+forall a. TVar a -&gt; STM a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">readTVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVar (Bool, Progress)
+</span><a href="#local-6989586621679161061"><span class="hs-identifier hs-var">st</span></a></span><span>
+</span><span id="line-108"></span><span>              </span><span class="annot"><span class="annottext">STM (Bool, Progress)
+-&gt; ((Bool, Progress) -&gt; STM Progress) -&gt; STM Progress
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&gt;&gt;=</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-109"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var">False</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Progress
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">STM Progress
+forall a. STM a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">retry</span></a></span><span>
+</span><span id="line-110"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161051"><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161051"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-111"></span><span>                  </span><span class="annot"><span class="annottext">TVar (Bool, Progress) -&gt; (Bool, Progress) -&gt; STM ()
+forall a. TVar a -&gt; a -&gt; STM ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">writeTVar</span></a></span><span> </span><span class="annot"><span class="annottext">TVar (Bool, Progress)
+</span><a href="#local-6989586621679161061"><span class="hs-identifier hs-var">st</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var">False</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161051"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-112"></span><span>                  </span><span class="annot"><span class="annottext">Progress -&gt; STM Progress
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161051"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-113"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161050"><span class="annot"><span class="annottext">p :: a -&gt; a -&gt; [a]
+</span><a href="#local-6989586621679161050"><span class="hs-identifier hs-var hs-var">p</span></a></span></span><span> </span><span id="local-6989586621679161049"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161049"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621679161048"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161048"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; a -&gt; [a]
+forall a. Int -&gt; a -&gt; [a]
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">replicate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Double -&gt; Int
+forall a b. (RealFrac a, Integral b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">truncate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Double
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161048"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621679161055"><span class="hs-identifier hs-var">ratio</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161049"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><span id="line-114"></span><span>        </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">putStr</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; IO ()) -&gt; ([String] -&gt; String) -&gt; [String] -&gt; IO ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">[String] -&gt; String
+forall (t :: * -&gt; *) a. Foldable t =&gt; t [a] -&gt; [a]
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">concat</span></a></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; IO ()) -&gt; [String] -&gt; IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
+</span><span id="line-115"></span><span>          </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;\r&quot;</span></span><span class="hs-special">,</span><span>
+</span><span id="line-116"></span><span>            </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;[&quot;</span></span><span class="hs-special">,</span><span>
+</span><span id="line-117"></span><span>            </span><span class="annot"><span class="annottext">Char -&gt; Int -&gt; String
+forall a a. Integral a =&gt; a -&gt; a -&gt; [a]
+</span><a href="#local-6989586621679161050"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'#'</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Progress -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#finished"><span class="hs-identifier hs-var hs-var">finished</span></a></span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161052"><span class="hs-identifier hs-var">progress</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-118"></span><span>            </span><span class="annot"><span class="annottext">Char -&gt; Int -&gt; String
+forall a a. Integral a =&gt; a -&gt; a -&gt; [a]
+</span><a href="#local-6989586621679161050"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">':'</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Progress -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#started"><span class="hs-identifier hs-var hs-var">started</span></a></span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161052"><span class="hs-identifier hs-var">progress</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-119"></span><span>            </span><span class="annot"><span class="annottext">Char -&gt; Int -&gt; String
+forall a a. Integral a =&gt; a -&gt; a -&gt; [a]
+</span><a href="#local-6989586621679161050"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'.'</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Progress -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#submitted"><span class="hs-identifier hs-var hs-var">submitted</span></a></span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161052"><span class="hs-identifier hs-var">progress</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-120"></span><span>            </span><span class="annot"><span class="annottext">Char -&gt; Int -&gt; String
+forall a a. Integral a =&gt; a -&gt; a -&gt; [a]
+</span><a href="#local-6989586621679161050"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">' '</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Progress -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#waiting"><span class="hs-identifier hs-var hs-var">waiting</span></a></span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161052"><span class="hs-identifier hs-var">progress</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-121"></span><span>            </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;]&quot;</span></span><span>
+</span><span id="line-122"></span><span>          </span><span class="hs-special">]</span><span>
+</span><span id="line-123"></span><span>        </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Progress -&gt; Int
+</span><a href="Control.Distributed.Fork.Utils.html#finished"><span class="hs-identifier hs-var hs-var">finished</span></a></span><span> </span><span class="annot"><span class="annottext">Progress
+</span><a href="#local-6989586621679161052"><span class="hs-identifier hs-var">progress</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161060"><span class="hs-identifier hs-var">total</span></a></span><span>
+</span><span id="line-124"></span><span>          </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IO ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">threadDelay</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">10000</span></span><span> </span><span class="annot"><span class="annottext">IO () -&gt; IO () -&gt; IO ()
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&gt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">IO ()
+</span><a href="#local-6989586621679161053"><span class="hs-identifier hs-var">recurse</span></a></span><span>
+</span><span id="line-125"></span><span>          </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">putStrLn</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;&quot;</span></span><span>
+</span><span id="line-126"></span></pre></body></html>

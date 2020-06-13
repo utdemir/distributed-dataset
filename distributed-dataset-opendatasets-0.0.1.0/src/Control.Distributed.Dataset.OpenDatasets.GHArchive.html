@@ -1,0 +1,300 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE StaticPointers #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Dataset.OpenDatasets.GHArchive</span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#ghArchive"><span class="hs-identifier">ghArchive</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html"><span class="hs-identifier">Control.Distributed.Dataset.OpenDatasets.GHArchive.Types</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Re-exports</span></span><span>
+</span><span id="line-10"></span><span>    </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/time-1.9.3/src"><span class="hs-identifier">fromGregorian</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">Conduit</span></a></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-operator">(.|)</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">ConduitT</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="../file:///nix/store/x49rz651v9cgnj874d6smacv0b5w45bn-resourcet-1.2.4-doc/share/doc/resourcet-1.2.4/html/src"><span class="hs-identifier">ResourceT</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">handleC</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/exceptions-0.10.4/src"><span class="hs-identifier">throwM</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier">Control.Distributed.Dataset</span></a></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html"><span class="hs-identifier">Control.Distributed.Dataset.OpenDatasets.GHArchive.Types</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Control.Exception</span></a></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">Data.Conduit.Combinators</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">C</span></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/sm5hshhjn6fa0q0jb7srspqyhdhmh384-ndjson-conduit-0.1.0.5-doc/share/doc/ndjson-conduit-0.1.0.5/html/src"><span class="hs-identifier">Data.Conduit.JSON.NewlineDelimited</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">NDJ</span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/qyipzaz1wf84ygb5r3h6q5w3fr19s3im-conduit-extra-1.3.5-doc/share/doc/conduit-extra-1.3.5/html/src"><span class="hs-identifier">Data.Conduit.Zlib</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/qyipzaz1wf84ygb5r3h6q5w3fr19s3im-conduit-extra-1.3.5-doc/share/doc/conduit-extra-1.3.5/html/src"><span class="hs-identifier">ungzip</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Data.Text</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/time-1.9.3/src"><span class="hs-identifier">Data.Time.Calendar</span></a></span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/time-1.9.3/src"><span class="hs-identifier">Day</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/time-1.9.3/src"><span class="hs-identifier">fromGregorian</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/time-1.9.3/src"><span class="hs-identifier">showGregorian</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/16k7v6711gqs50r2zibjs7wfynvwrzvl-http-conduit-2.3.7.3-doc/share/doc/http-conduit-2.3.7.3/html/src"><span class="hs-identifier">Network.HTTP.Simple</span></a></span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/16k7v6711gqs50r2zibjs7wfynvwrzvl-http-conduit-2.3.7.3-doc/share/doc/http-conduit-2.3.7.3/html/src"><span class="hs-identifier">getResponseBody</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="../file:///nix/store/16k7v6711gqs50r2zibjs7wfynvwrzvl-http-conduit-2.3.7.3-doc/share/doc/http-conduit-2.3.7.3/html/src"><span class="hs-identifier">getResponseStatusCode</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="../file:///nix/store/16k7v6711gqs50r2zibjs7wfynvwrzvl-http-conduit-2.3.7.3-doc/share/doc/http-conduit-2.3.7.3/html/src"><span class="hs-identifier">httpSource</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="../file:///nix/store/val8i0ydg4xwv2wkypmis9yj7nmpyhya-http-client-0.6.4.1-doc/share/doc/http-client-0.6.4.1/html/src"><span class="hs-identifier">parseRequest</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Text.Printf</span></a></span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#ghArchive"><span class="hs-identifier hs-type">ghArchive</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/time-1.9.3/src"><span class="hs-identifier hs-type">Day</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/time-1.9.3/src"><span class="hs-identifier hs-type">Day</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEvent"><span class="hs-identifier hs-type">GHEvent</span></a></span><span>
+</span><span id="line-43"></span><span id="ghArchive"><span class="annot"><span class="annottext">ghArchive :: (Day, Day) -&gt; Dataset GHEvent
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#ghArchive"><span class="hs-identifier hs-var hs-var">ghArchive</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679151729"><span class="annot"><span class="annottext">Day
+</span><a href="#local-6989586621679151729"><span class="hs-identifier hs-var">start</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151728"><span class="annot"><span class="annottext">Day
+</span><a href="#local-6989586621679151728"><span class="hs-identifier hs-var">end</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-44"></span><span>  </span><span class="annot"><span class="annottext">[Partition GHEvent] -&gt; Dataset GHEvent
+forall a. StaticSerialise a =&gt; [Partition a] -&gt; Dataset a
+</span><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier hs-var">dExternal</span></a></span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">(Text -&gt; Partition GHEvent) -&gt; [Text] -&gt; [Partition GHEvent]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">map</span></a></span><span>
+</span><span id="line-46"></span><span>        </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679151726"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679151726"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Closure (ConduitT () GHEvent (ResourceT IO) ())
+-&gt; Partition GHEvent
+forall a.
+Typeable a =&gt;
+Closure (ConduitT () a (ResourceT IO) ()) -&gt; Partition a
+</span><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier hs-var">mkPartition</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Text -&gt; ConduitT () GHEvent (ResourceT IO) ()
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#processUrl"><span class="hs-identifier hs-var">processUrl</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Text -&gt; ConduitT () GHEvent (ResourceT IO) ())
+-&gt; Closure Text -&gt; Closure (ConduitT () GHEvent (ResourceT IO) ())
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Serializable Text)) -&gt; Text -&gt; Closure Text
+forall a. Closure (Dict (Serializable a)) -&gt; a -&gt; Closure a
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-var">cpure</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Serializable Text)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679151726"><span class="hs-identifier hs-var">str</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Day -&gt; Day -&gt; [Text]
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#allUrls"><span class="hs-identifier hs-var">allUrls</span></a></span><span> </span><span class="annot"><span class="annottext">Day
+</span><a href="#local-6989586621679151729"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">Day
+</span><a href="#local-6989586621679151728"><span class="hs-identifier hs-var">end</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><span class="annottext">Dataset GHEvent
+-&gt; (Dataset GHEvent -&gt; Dataset GHEvent) -&gt; Dataset GHEvent
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Dataset GHEvent -&gt; Dataset GHEvent
+forall a. Typeable a =&gt; Int -&gt; Dataset a -&gt; Dataset a
+</span><a href="../file:///nix/store/maprj6j9fv4dy49i7q29b8sbhx5r5hs7-distributed-dataset-0.0.1.0-doc/share/doc/distributed-dataset-0.0.1.0/html/src"><span class="hs-identifier hs-var">dCoalesce</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Day -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fromEnum</span></a></span><span> </span><span class="annot"><span class="annottext">Day
+</span><a href="#local-6989586621679151728"><span class="hs-identifier hs-var">end</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="annot"><span class="annottext">Day -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fromEnum</span></a></span><span> </span><span class="annot"><span class="annottext">Day
+</span><a href="#local-6989586621679151729"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">6</span></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#allUrls"><span class="hs-identifier hs-type">allUrls</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/time-1.9.3/src"><span class="hs-identifier hs-type">Day</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/time-1.9.3/src"><span class="hs-identifier hs-type">Day</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-52"></span><span id="allUrls"><span class="annot"><span class="annottext">allUrls :: Day -&gt; Day -&gt; [Text]
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#allUrls"><span class="hs-identifier hs-var hs-var">allUrls</span></a></span></span><span> </span><span id="local-6989586621679151714"><span class="annot"><span class="annottext">Day
+</span><a href="#local-6989586621679151714"><span class="hs-identifier hs-var">start</span></a></span></span><span> </span><span id="local-6989586621679151713"><span class="annot"><span class="annottext">Day
+</span><a href="#local-6989586621679151713"><span class="hs-identifier hs-var">end</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-53"></span><span>  </span><span id="local-6989586621679151712"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679151712"><span class="hs-identifier hs-var">date</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Day -&gt; String
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/time-1.9.3/src"><span class="hs-identifier hs-var">showGregorian</span></a></span><span> </span><span class="annot"><span class="annottext">(Day -&gt; String) -&gt; [Day] -&gt; [String]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Day
+</span><a href="#local-6989586621679151714"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">Day
+</span><a href="#local-6989586621679151713"><span class="hs-identifier hs-var">end</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-54"></span><span>  </span><span id="local-6989586621679151710"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679151710"><span class="hs-identifier hs-var">time</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Int -&gt; String
+forall r. PrintfType r =&gt; String -&gt; r
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">printf</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;%02d&quot;</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; String) -&gt; [Int] -&gt; [String]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">23</span></span><span class="hs-special">]</span><span>
+</span><span id="line-55"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679151708"><span class="annot"><span class="annottext">str :: Text
+</span><a href="#local-6989586621679151708"><span class="hs-identifier hs-var hs-var">str</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-var">T.pack</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679151712"><span class="hs-identifier hs-var">date</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;-&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-var">T.pack</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679151710"><span class="hs-identifier hs-var">time</span></a></span><span>
+</span><span id="line-56"></span><span>  </span><span class="annot"><span class="annottext">Text -&gt; [Text]
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; [Text]) -&gt; Text -&gt; [Text]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;http://data.gharchive.org/&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679151708"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;.json.gz&quot;</span></span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#processUrl"><span class="hs-identifier hs-type">processUrl</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-type">ConduitT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEvent"><span class="hs-identifier hs-type">GHEvent</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/x49rz651v9cgnj874d6smacv0b5w45bn-resourcet-1.2.4-doc/share/doc/resourcet-1.2.4/html/src"><span class="hs-identifier hs-type">ResourceT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span id="processUrl"><span class="annot"><span class="annottext">processUrl :: Text -&gt; ConduitT () GHEvent (ResourceT IO) ()
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#processUrl"><span class="hs-identifier hs-var hs-var">processUrl</span></a></span></span><span> </span><span id="local-6989586621679151706"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679151706"><span class="hs-identifier hs-var">url</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-60"></span><span>  </span><span class="annot"><span class="annottext">(SomeException -&gt; ConduitT () GHEvent (ResourceT IO) ())
+-&gt; ConduitT () GHEvent (ResourceT IO) ()
+-&gt; ConduitT () GHEvent (ResourceT IO) ()
+forall (m :: * -&gt; *) e i o r.
+(MonadUnliftIO m, Exception e) =&gt;
+(e -&gt; ConduitT i o m r) -&gt; ConduitT i o m r -&gt; ConduitT i o m r
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-var">handleC</span></a></span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; ConduitT () GHEvent (ResourceT IO) ()
+forall a. SomeException -&gt; ConduitT () GHEvent (ResourceT IO) a
+</span><a href="#local-6989586621679151705"><span class="hs-identifier hs-var">wrapEx</span></a></span><span> </span><span class="annot"><span class="annottext">(ConduitT () GHEvent (ResourceT IO) ()
+ -&gt; ConduitT () GHEvent (ResourceT IO) ())
+-&gt; ConduitT () GHEvent (ResourceT IO) ()
+-&gt; ConduitT () GHEvent (ResourceT IO) ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-61"></span><span>    </span><span id="local-6989586621679151704"><span class="annot"><span class="annottext">Request
+</span><a href="#local-6989586621679151704"><span class="hs-identifier hs-var">req</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; ConduitT () GHEvent (ResourceT IO) Request
+forall (m :: * -&gt; *). MonadThrow m =&gt; String -&gt; m Request
+</span><a href="../file:///nix/store/val8i0ydg4xwv2wkypmis9yj7nmpyhya-http-client-0.6.4.1-doc/share/doc/http-client-0.6.4.1/html/src"><span class="hs-identifier hs-var">parseRequest</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-var">T.unpack</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679151706"><span class="hs-identifier hs-var">url</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">Request
+-&gt; (Response (ConduitM () ByteString (ResourceT IO) ())
+    -&gt; ConduitT () GHEvent (ResourceT IO) ())
+-&gt; ConduitT () GHEvent (ResourceT IO) ()
+forall (m :: * -&gt; *) (n :: * -&gt; *) i o r.
+(MonadResource m, MonadIO n) =&gt;
+Request
+-&gt; (Response (ConduitM i ByteString n ()) -&gt; ConduitM i o m r)
+-&gt; ConduitM i o m r
+</span><a href="../file:///nix/store/16k7v6711gqs50r2zibjs7wfynvwrzvl-http-conduit-2.3.7.3-doc/share/doc/http-conduit-2.3.7.3/html/src"><span class="hs-identifier hs-var">httpSource</span></a></span><span> </span><span class="annot"><span class="annottext">Request
+</span><a href="#local-6989586621679151704"><span class="hs-identifier hs-var">req</span></a></span><span> </span><span class="annot"><span class="annottext">Response (ConduitM () ByteString (ResourceT IO) ())
+-&gt; ConduitT () GHEvent (ResourceT IO) ()
+forall (m :: * -&gt; *) a.
+(PrimMonad m, MonadThrow m, MonadFail m) =&gt;
+Response (ConduitM a ByteString m ()) -&gt; ConduitM a GHEvent m ()
+</span><a href="#local-6989586621679151702"><span class="hs-identifier hs-var">call</span></a></span><span>
+</span><span id="line-63"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-64"></span><span>    </span><span id="local-6989586621679151702"><span class="annot"><span class="annottext">call :: Response (ConduitM a ByteString m ()) -&gt; ConduitM a GHEvent m ()
+</span><a href="#local-6989586621679151702"><span class="hs-identifier hs-var hs-var">call</span></a></span></span><span> </span><span id="local-6989586621679151701"><span class="annot"><span class="annottext">Response (ConduitM a ByteString m ())
+</span><a href="#local-6989586621679151701"><span class="hs-identifier hs-var">req</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-65"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Response (ConduitM a ByteString m ()) -&gt; Int
+forall a. Response a -&gt; Int
+</span><a href="../file:///nix/store/16k7v6711gqs50r2zibjs7wfynvwrzvl-http-conduit-2.3.7.3-doc/share/doc/http-conduit-2.3.7.3/html/src"><span class="hs-identifier hs-var">getResponseStatusCode</span></a></span><span> </span><span class="annot"><span class="annottext">Response (ConduitM a ByteString m ())
+</span><a href="#local-6989586621679151701"><span class="hs-identifier hs-var">req</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-66"></span><span>        </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">200</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-67"></span><span>          </span><span class="annot"><span class="annottext">Response (ConduitM a ByteString m ()) -&gt; ConduitM a ByteString m ()
+forall a. Response a -&gt; a
+</span><a href="../file:///nix/store/16k7v6711gqs50r2zibjs7wfynvwrzvl-http-conduit-2.3.7.3-doc/share/doc/http-conduit-2.3.7.3/html/src"><span class="hs-identifier hs-var">getResponseBody</span></a></span><span> </span><span class="annot"><span class="annottext">Response (ConduitM a ByteString m ())
+</span><a href="#local-6989586621679151701"><span class="hs-identifier hs-var">req</span></a></span><span>
+</span><span id="line-68"></span><span>            </span><span class="annot"><span class="annottext">ConduitM a ByteString m ()
+-&gt; ConduitM ByteString GHEvent m () -&gt; ConduitM a GHEvent m ()
+forall (m :: * -&gt; *) a b c r.
+Monad m =&gt;
+ConduitM a b m () -&gt; ConduitM b c m r -&gt; ConduitM a c m r
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-operator hs-var">.|</span></a></span><span> </span><span class="annot"><span class="annottext">ConduitT ByteString ByteString m ()
+forall (m :: * -&gt; *).
+(PrimMonad m, MonadThrow m) =&gt;
+ConduitT ByteString ByteString m ()
+</span><a href="../file:///nix/store/qyipzaz1wf84ygb5r3h6q5w3fr19s3im-conduit-extra-1.3.5-doc/share/doc/conduit-extra-1.3.5/html/src"><span class="hs-identifier hs-var">ungzip</span></a></span><span>
+</span><span id="line-69"></span><span>            </span><span class="annot"><span class="annottext">ConduitT ByteString ByteString m ()
+-&gt; ConduitM ByteString GHEvent m ()
+-&gt; ConduitM ByteString GHEvent m ()
+forall (m :: * -&gt; *) a b c r.
+Monad m =&gt;
+ConduitM a b m () -&gt; ConduitM b c m r -&gt; ConduitM a c m r
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-operator hs-var">.|</span></a></span><span> </span><span class="annot"><span class="annottext">(Monad m, FromJSON GHEvent) =&gt;
+Conduit ByteString m (Either String GHEvent)
+forall (m :: * -&gt; *) a.
+(Monad m, FromJSON a) =&gt;
+Conduit ByteString m (Either String a)
+</span><a href="../file:///nix/store/sm5hshhjn6fa0q0jb7srspqyhdhmh384-ndjson-conduit-0.1.0.5-doc/share/doc/ndjson-conduit-0.1.0.5/html/src"><span class="hs-identifier hs-var">NDJ.eitherParser</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.Types.html#GHEvent"><span class="hs-identifier hs-type">GHEvent</span></a></span><span>
+</span><span id="line-70"></span><span>            </span><span class="annot"><span class="annottext">Conduit ByteString m (Either String GHEvent)
+-&gt; ConduitM (Either String GHEvent) GHEvent m ()
+-&gt; ConduitM ByteString GHEvent m ()
+forall (m :: * -&gt; *) a b c r.
+Monad m =&gt;
+ConduitM a b m () -&gt; ConduitM b c m r -&gt; ConduitM a c m r
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-operator hs-var">.|</span></a></span><span> </span><span class="annot"><span class="annottext">(Either String GHEvent -&gt; m GHEvent)
+-&gt; ConduitM (Either String GHEvent) GHEvent m ()
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; ConduitT a b m ()
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-var">C.mapM</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(String -&gt; m GHEvent)
+-&gt; (GHEvent -&gt; m GHEvent) -&gt; Either String GHEvent -&gt; m GHEvent
+forall a c b. (a -&gt; c) -&gt; (b -&gt; c) -&gt; Either a b -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">either</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; m GHEvent
+forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fail</span></a></span><span> </span><span class="annot"><span class="annottext">GHEvent -&gt; m GHEvent
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span>        </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">404</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; ConduitM a GHEvent m ()
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>        </span><span id="local-6989586621679151697"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679151697"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; ConduitM a GHEvent m ()
+forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fail</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; ConduitM a GHEvent m ())
+-&gt; String -&gt; ConduitM a GHEvent m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Unexpected status code: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679151697"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-73"></span><span>    </span><span id="local-6989586621679151705"><span class="annot"><span class="annottext">wrapEx :: SomeException -&gt; ConduitT () GHEvent (ResourceT IO) a
+</span><a href="#local-6989586621679151705"><span class="hs-identifier hs-var hs-var">wrapEx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-74"></span><span>      </span><span class="annot"><span class="annottext">GHArchiveException SomeException
+-&gt; ConduitT () GHEvent (ResourceT IO) a
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/exceptions-0.10.4/src"><span class="hs-identifier hs-var">throwM</span></a></span><span> </span><span class="annot"><span class="annottext">(GHArchiveException SomeException
+ -&gt; ConduitT () GHEvent (ResourceT IO) a)
+-&gt; (SomeException -&gt; GHArchiveException SomeException)
+-&gt; SomeException
+-&gt; ConduitT () GHEvent (ResourceT IO) a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; SomeException -&gt; GHArchiveException SomeException
+forall e. Text -&gt; e -&gt; GHArchiveException e
+</span><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#GHArchiveException"><span class="hs-identifier hs-var">GHArchiveException</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679151706"><span class="hs-identifier hs-var">url</span></a></span><span> </span><span class="annot"><span class="annottext">(SomeException -&gt; GHArchiveException SomeException)
+-&gt; (SomeException -&gt; SomeException)
+-&gt; SomeException
+-&gt; GHArchiveException SomeException
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; SomeException
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">SomeException</span></a></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="hs-keyword">data</span><span> </span><span id="GHArchiveException"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#GHArchiveException"><span class="hs-identifier hs-var">GHArchiveException</span></a></span></span><span> </span><span id="local-6989586621679151745"><span class="annot"><a href="#local-6989586621679151745"><span class="hs-identifier hs-type">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="GHArchiveException"><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#GHArchiveException"><span class="hs-identifier hs-var">GHArchiveException</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679151745"><span class="hs-identifier hs-type">e</span></a></span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151687"><span id="local-6989586621679151689"><span id="local-6989586621679151691"><span class="annot"><span class="annottext">Int -&gt; GHArchiveException e -&gt; String -&gt; String
+[GHArchiveException e] -&gt; String -&gt; String
+GHArchiveException e -&gt; String
+(Int -&gt; GHArchiveException e -&gt; String -&gt; String)
+-&gt; (GHArchiveException e -&gt; String)
+-&gt; ([GHArchiveException e] -&gt; String -&gt; String)
+-&gt; Show (GHArchiveException e)
+forall e. Show e =&gt; Int -&gt; GHArchiveException e -&gt; String -&gt; String
+forall e. Show e =&gt; [GHArchiveException e] -&gt; String -&gt; String
+forall e. Show e =&gt; GHArchiveException e -&gt; String
+forall a.
+(Int -&gt; a -&gt; String -&gt; String)
+-&gt; (a -&gt; String) -&gt; ([a] -&gt; String -&gt; String) -&gt; Show a
+showList :: [GHArchiveException e] -&gt; String -&gt; String
+$cshowList :: forall e. Show e =&gt; [GHArchiveException e] -&gt; String -&gt; String
+show :: GHArchiveException e -&gt; String
+$cshow :: forall e. Show e =&gt; GHArchiveException e -&gt; String
+showsPrec :: Int -&gt; GHArchiveException e -&gt; String -&gt; String
+$cshowsPrec :: forall e. Show e =&gt; Int -&gt; GHArchiveException e -&gt; String -&gt; String
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span id="local-6989586621679151685"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679151677"><span id="local-6989586621679151679"><span id="local-6989586621679151681"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679151685"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679151685"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Exception</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.OpenDatasets.GHArchive.html#GHArchiveException"><span class="hs-identifier hs-type">GHArchiveException</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679151685"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-80"></span></pre></body></html>

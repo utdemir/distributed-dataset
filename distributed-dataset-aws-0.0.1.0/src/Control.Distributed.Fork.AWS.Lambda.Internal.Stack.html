@@ -1,0 +1,1082 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE NamedFieldPuns #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE QuasiQuotes #-}</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-comment">{-
+This module creates an environment for the Lambda function.
+-}</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Fork.AWS.Lambda.Internal.Stack</span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#withStack"><span class="hs-identifier">withStack</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackInfo"><span class="hs-identifier">StackInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#awsUploadObject"><span class="hs-identifier">awsUploadObject</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#awsObjectExists"><span class="hs-identifier">awsObjectExists</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Constants.html"><span class="hs-identifier">Control.Distributed.Fork.AWS.Lambda.Internal.Constants</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html"><span class="hs-identifier">Control.Distributed.Fork.AWS.Lambda.Internal.Types</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier">Control.Exception.Safe</span></a></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-identifier">Control.Lens</span></a></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Control.Monad</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Data.Aeson</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Value</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Object</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/jxdn66rirfajis5in6xa4j5fzfy3cjr0-aeson-qq-0.8.3-doc/share/doc/aeson-qq-0.8.3/html/src"><span class="hs-identifier">Data.Aeson.QQ</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier">Data.ByteString</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BS</span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier">Data.ByteString.Lazy</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BL</span></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier">Data.HashMap.Strict</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">HM</span></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Data.Text</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Data.Text.Encoding</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier">Network.AWS</span></a></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier">environment</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier">Network.AWS.CloudFormation</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/rqpiw4h1q711y0h2xbav6k1kg3sp3ji9-amazonka-lambda-1.6.1-doc/share/doc/amazonka-lambda-1.6.1/html/src"><span class="hs-identifier">Network.AWS.Lambda</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier">Network.AWS.S3</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">S3</span></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/dczlsaphw0jnppw3il06hfdim4vfcs80-amazonka-core-1.6.1-doc/share/doc/amazonka-core-1.6.1/html/src"><span class="hs-identifier">Network.AWS.Waiter</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier">Stratosphere</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">S</span></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="hs-comment">{-
+Our infrastructure in AWS Lambda looks like this.
+
+We're using CloudFormation to create all the necessary services declaratively
+and delete all of them by deleting the stack.
+
+The components are:
+
+* The lambda function.
+
+* A role for the function:
+
+    Lambda functions need to have a role attached. Currently we are both too
+    lax (we're not restricting the sqs:SendMessage permission to relevant topics)
+    and too strict (we're not letting user to provide a custom policy). This part
+    is probably the first one to change.
+
+* Two queues called answerQueue and deadLetterQueue
+
+    Lambda functins have two ways to invoke them on-demand, synchronously and
+    asynchronously. Using the synchronous invocation is simpler, you call the API
+    and it returns the result. However it requires the HTTP connection to be open
+    for the whole time. This puts a hard-cap on the scalability since the driver
+    can only have so many open HTTP connections simultaneously.
+
+    To mitigate this, we're going to use asynchronous invocation type, but use
+    an SQS queue (answerQueue) to gather the results. We use another queue
+    (deadLetterQueue) for collecting the failures.
+-}</span><span>
+</span><span id="line-68"></span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seTemplate"><span class="hs-identifier hs-type">seTemplate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#StackOptions"><span class="hs-identifier hs-type">StackOptions</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-type">S.Template</span></a></span><span>
+</span><span id="line-69"></span><span id="seTemplate"><span class="annot"><span class="annottext">seTemplate :: StackOptions -&gt; Template
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seTemplate"><span class="hs-identifier hs-var hs-var">seTemplate</span></a></span></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#StackOptions"><span class="hs-identifier hs-type">StackOptions</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">soLambdaCode :: StackOptions -&gt; S3Loc
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#soLambdaCode"><span class="hs-identifier hs-var">soLambdaCode</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#S3Loc"><span class="hs-identifier hs-type">S3Loc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#BucketName"><span class="hs-identifier hs-type">BucketName</span></a></span><span> </span><span id="local-6989586621679255414"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255414"><span class="hs-identifier hs-var">bucketName</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679255413"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255413"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679255412"><span class="annot"><span class="annottext">Int
+soLambdaMemory :: StackOptions -&gt; Int
+soLambdaMemory :: Int
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#soLambdaMemory"><span class="hs-identifier hs-var hs-var">soLambdaMemory</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-70"></span><span>  </span><span class="annot"><span class="annottext">Resources -&gt; Template
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.template</span></a></span><span>
+</span><span id="line-71"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">[Resource] -&gt; Resources
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Resources</span></a></span><span>
+</span><span id="line-72"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Text -&gt; LambdaFunction -&gt; Resource
+forall a. ToResourceProperties a =&gt; Text -&gt; a -&gt; Resource
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.resource</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputFunc"><span class="hs-identifier hs-var">templateOutputFunc</span></a></span><span> </span><span class="annot"><span class="annottext">(LambdaFunction -&gt; Resource) -&gt; LambdaFunction -&gt; Resource
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
+</span><span id="line-73"></span><span>            </span><span class="annot"><span class="annottext">LambdaFunctionCode
+-&gt; Val Text -&gt; Val Text -&gt; Val Runtime -&gt; LambdaFunction
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.lambdaFunction</span></a></span><span>
+</span><span id="line-74"></span><span>              </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">LambdaFunctionCode
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.lambdaFunctionCode</span></a></span><span>
+</span><span id="line-75"></span><span>                  </span><span class="annot"><span class="annottext">LambdaFunctionCode
+-&gt; (LambdaFunctionCode -&gt; LambdaFunctionCode) -&gt; LambdaFunctionCode
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Val Text) -&gt; Identity (Maybe (Val Text)))
+-&gt; LambdaFunctionCode -&gt; Identity LambdaFunctionCode
+Lens' LambdaFunctionCode (Maybe (Val Text))
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.lfcS3Bucket</span></a></span><span>
+</span><span id="line-76"></span><span>                  </span><span class="annot"><span class="annottext">((Maybe (Val Text) -&gt; Identity (Maybe (Val Text)))
+ -&gt; LambdaFunctionCode -&gt; Identity LambdaFunctionCode)
+-&gt; Val Text -&gt; LambdaFunctionCode -&gt; LambdaFunctionCode
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Val Text
+forall a. a -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Literal</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255414"><span class="hs-identifier hs-var">bucketName</span></a></span><span>
+</span><span id="line-77"></span><span>                  </span><span class="annot"><span class="annottext">LambdaFunctionCode
+-&gt; (LambdaFunctionCode -&gt; LambdaFunctionCode) -&gt; LambdaFunctionCode
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Val Text) -&gt; Identity (Maybe (Val Text)))
+-&gt; LambdaFunctionCode -&gt; Identity LambdaFunctionCode
+Lens' LambdaFunctionCode (Maybe (Val Text))
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.lfcS3Key</span></a></span><span>
+</span><span id="line-78"></span><span>                  </span><span class="annot"><span class="annottext">((Maybe (Val Text) -&gt; Identity (Maybe (Val Text)))
+ -&gt; LambdaFunctionCode -&gt; Identity LambdaFunctionCode)
+-&gt; Val Text -&gt; LambdaFunctionCode -&gt; LambdaFunctionCode
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Val Text
+forall a. a -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Literal</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255413"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-79"></span><span>              </span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>              </span><span class="annot"><span class="annottext">Val Text
+</span><span class="hs-string">&quot;handler.handle&quot;</span></span><span>
+</span><span id="line-81"></span><span>              </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Val Text
+forall a. Text -&gt; Text -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.GetAtt</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;role&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Arn&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>              </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Runtime -&gt; Val Runtime
+forall a. a -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Literal</span></a></span><span> </span><span class="annot"><span class="annottext">Runtime
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Python27</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>              </span><span class="annot"><span class="annottext">LambdaFunction
+-&gt; (LambdaFunction -&gt; LambdaFunction) -&gt; LambdaFunction
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Val Integer) -&gt; Identity (Maybe (Val Integer)))
+-&gt; LambdaFunction -&gt; Identity LambdaFunction
+Lens' LambdaFunction (Maybe (Val Integer))
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.lfTimeout</span></a></span><span>
+</span><span id="line-84"></span><span>              </span><span class="annot"><span class="annottext">((Maybe (Val Integer) -&gt; Identity (Maybe (Val Integer)))
+ -&gt; LambdaFunction -&gt; Identity LambdaFunction)
+-&gt; Val Integer -&gt; LambdaFunction -&gt; LambdaFunction
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Val Integer
+forall a. a -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Literal</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">300</span></span><span>
+</span><span id="line-85"></span><span>              </span><span class="annot"><span class="annottext">LambdaFunction
+-&gt; (LambdaFunction -&gt; LambdaFunction) -&gt; LambdaFunction
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Val Integer) -&gt; Identity (Maybe (Val Integer)))
+-&gt; LambdaFunction -&gt; Identity LambdaFunction
+Lens' LambdaFunction (Maybe (Val Integer))
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.lfMemorySize</span></a></span><span>
+</span><span id="line-86"></span><span>              </span><span class="annot"><span class="annottext">((Maybe (Val Integer) -&gt; Identity (Maybe (Val Integer)))
+ -&gt; LambdaFunction -&gt; Identity LambdaFunction)
+-&gt; Val Integer -&gt; LambdaFunction -&gt; LambdaFunction
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Val Integer
+forall a. a -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Literal</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Integer
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679255412"><span class="hs-identifier hs-var">soLambdaMemory</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-87"></span><span>              </span><span class="annot"><span class="annottext">LambdaFunction
+-&gt; (LambdaFunction -&gt; LambdaFunction) -&gt; LambdaFunction
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe LambdaFunctionDeadLetterConfig
+ -&gt; Identity (Maybe LambdaFunctionDeadLetterConfig))
+-&gt; LambdaFunction -&gt; Identity LambdaFunction
+Lens' LambdaFunction (Maybe LambdaFunctionDeadLetterConfig)
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.lfDeadLetterConfig</span></a></span><span>
+</span><span id="line-88"></span><span>              </span><span class="annot"><span class="annottext">((Maybe LambdaFunctionDeadLetterConfig
+  -&gt; Identity (Maybe LambdaFunctionDeadLetterConfig))
+ -&gt; LambdaFunction -&gt; Identity LambdaFunction)
+-&gt; LambdaFunctionDeadLetterConfig
+-&gt; LambdaFunction
+-&gt; LambdaFunction
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe (Val Text) -&gt; LambdaFunctionDeadLetterConfig
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.LambdaFunctionDeadLetterConfig</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Val Text -&gt; Maybe (Val Text)
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">(Val Text -&gt; Maybe (Val Text)) -&gt; Val Text -&gt; Maybe (Val Text)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Val Text
+forall a. Text -&gt; Text -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.GetAtt</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;deadLetterQueue&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Arn&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-89"></span><span>          </span><span class="annot"><span class="annottext">Text -&gt; IAMRole -&gt; Resource
+forall a. ToResourceProperties a =&gt; Text -&gt; a -&gt; Resource
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.resource</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;role&quot;</span></span><span> </span><span class="annot"><span class="annottext">IAMRole
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seRole"><span class="hs-identifier hs-var">seRole</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-90"></span><span>          </span><span class="annot"><span class="annottext">Text -&gt; SQSQueue -&gt; Resource
+forall a. ToResourceProperties a =&gt; Text -&gt; a -&gt; Resource
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.resource</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerQueue"><span class="hs-identifier hs-var">templateOutputAnswerQueue</span></a></span><span> </span><span class="annot"><span class="annottext">SQSQueue
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.sqsQueue</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-91"></span><span>          </span><span class="annot"><span class="annottext">Text -&gt; SQSQueue -&gt; Resource
+forall a. ToResourceProperties a =&gt; Text -&gt; a -&gt; Resource
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.resource</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputDeadLetterQueue"><span class="hs-identifier hs-var">templateOutputDeadLetterQueue</span></a></span><span> </span><span class="annot"><span class="annottext">SQSQueue
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.sqsQueue</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-92"></span><span>          </span><span class="annot"><span class="annottext">Text -&gt; S3Bucket -&gt; Resource
+forall a. ToResourceProperties a =&gt; Text -&gt; a -&gt; Resource
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.resource</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerBucket"><span class="hs-identifier hs-var">templateOutputAnswerBucket</span></a></span><span> </span><span class="annot"><span class="annottext">S3Bucket
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.s3Bucket</span></a></span><span>
+</span><span id="line-93"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-94"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-95"></span><span>    </span><span class="annot"><span class="annottext">Template -&gt; (Template -&gt; Template) -&gt; Template
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Outputs -&gt; Identity (Maybe Outputs))
+-&gt; Template -&gt; Identity Template
+Lens' Template (Maybe Outputs)
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.templateOutputs</span></a></span><span>
+</span><span id="line-96"></span><span>    </span><span class="annot"><span class="annottext">((Maybe Outputs -&gt; Identity (Maybe Outputs))
+ -&gt; Template -&gt; Identity Template)
+-&gt; Outputs -&gt; Template -&gt; Template
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="annot"><span class="annottext">[Output] -&gt; Outputs
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Outputs</span></a></span><span>
+</span><span id="line-97"></span><span>      </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Val Text -&gt; Output
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.output</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputFunc"><span class="hs-identifier hs-var">templateOutputFunc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Val Text
+forall a. Text -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Ref</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputFunc"><span class="hs-identifier hs-var">templateOutputFunc</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-98"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Val Text -&gt; Output
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.output</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerQueue"><span class="hs-identifier hs-var">templateOutputAnswerQueue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Val Text
+forall a. Text -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Ref</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerQueue"><span class="hs-identifier hs-var">templateOutputAnswerQueue</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-99"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Val Text -&gt; Output
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.output</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputDeadLetterQueue"><span class="hs-identifier hs-var">templateOutputDeadLetterQueue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Val Text
+forall a. Text -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Ref</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputDeadLetterQueue"><span class="hs-identifier hs-var">templateOutputDeadLetterQueue</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-100"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Val Text -&gt; Output
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.output</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerBucket"><span class="hs-identifier hs-var">templateOutputAnswerBucket</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Val Text
+forall a. Text -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Ref</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerBucket"><span class="hs-identifier hs-var">templateOutputAnswerBucket</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-101"></span><span>      </span><span class="hs-special">]</span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seRole"><span class="hs-identifier hs-type">seRole</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-type">S.IAMRole</span></a></span><span>
+</span><span id="line-104"></span><span id="seRole"><span class="annot"><span class="annottext">seRole :: IAMRole
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seRole"><span class="hs-identifier hs-var hs-var">seRole</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-105"></span><span>  </span><span class="annot"><span class="annottext">Object -&gt; IAMRole
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.iamRole</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255382"><span class="hs-identifier hs-var">assumeRolePolicy</span></a></span><span>
+</span><span id="line-106"></span><span>    </span><span class="annot"><span class="annottext">IAMRole -&gt; (IAMRole -&gt; IAMRole) -&gt; IAMRole
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe [IAMRolePolicy] -&gt; Identity (Maybe [IAMRolePolicy]))
+-&gt; IAMRole -&gt; Identity IAMRole
+Lens' IAMRole (Maybe [IAMRolePolicy])
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.iamrPolicies</span></a></span><span>
+</span><span id="line-107"></span><span>    </span><span class="annot"><span class="annottext">((Maybe [IAMRolePolicy] -&gt; Identity (Maybe [IAMRolePolicy]))
+ -&gt; IAMRole -&gt; Identity IAMRole)
+-&gt; [IAMRolePolicy] -&gt; IAMRole -&gt; IAMRole
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Object -&gt; Val Text -&gt; IAMRolePolicy
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.iamRolePolicy</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255379"><span class="hs-identifier hs-var">sqsAccessPolicy</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Val Text
+forall a. a -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Literal</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;sqs&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-108"></span><span>         </span><span class="annot"><span class="annottext">Object -&gt; Val Text -&gt; IAMRolePolicy
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.iamRolePolicy</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255378"><span class="hs-identifier hs-var">cloudwatchPolicy</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Val Text
+forall a. a -&gt; Val a
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.Literal</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;cloudwatch&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-109"></span><span>       </span><span class="hs-special">]</span><span>
+</span><span id="line-110"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-111"></span><span>    </span><span id="local-6989586621679255382"><span class="annot"><span class="annottext">assumeRolePolicy :: Object
+</span><a href="#local-6989586621679255382"><span class="hs-identifier hs-var hs-var">assumeRolePolicy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-112"></span><span>      </span><span class="annot"><span class="annottext">Value -&gt; Object
+</span><a href="#local-6989586621679255377"><span class="hs-identifier hs-var">valueToObject</span></a></span><span>
+</span><span id="line-113"></span><span>        </span><span class="annot"><span class="">[aesonQQ|
+      {
+        &quot;Version&quot;:&quot;2012-10-17&quot;,
+        &quot;Statement&quot;: [{
+          &quot;Effect&quot;: &quot;Allow&quot;,
+          &quot;Principal&quot;: {
+            &quot;Service&quot;: [ &quot;lambda.amazonaws.com&quot; ]
+          },
+          &quot;Action&quot;: [ &quot;sts:AssumeRole&quot; ]
+        }]
+      }
+    |]</span></span><span>
+</span><span id="line-125"></span><span>    </span><span id="local-6989586621679255379"><span class="annot"><span class="annottext">sqsAccessPolicy :: Object
+</span><a href="#local-6989586621679255379"><span class="hs-identifier hs-var hs-var">sqsAccessPolicy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-126"></span><span>      </span><span class="annot"><span class="annottext">Value -&gt; Object
+</span><a href="#local-6989586621679255377"><span class="hs-identifier hs-var">valueToObject</span></a></span><span>
+</span><span id="line-127"></span><span>        </span><span class="annot"><span class="">[aesonQQ|
+      {
+        &quot;Version&quot;: &quot;2012-10-17&quot;,
+        &quot;Statement&quot;: [{
+          &quot;Effect&quot;: &quot;Allow&quot;,
+          &quot;Action&quot;: [
+              &quot;sqs:SendMessage&quot;
+          ],
+          &quot;Resource&quot;: &quot;arn:aws:sqs:*&quot;
+        }, {
+          &quot;Effect&quot;: &quot;Allow&quot;,
+          &quot;Action&quot;: [
+              &quot;s3:PutObject&quot;,
+              &quot;s3:GetObject&quot;
+          ],
+          &quot;Resource&quot;: &quot;arn:aws:s3:::*&quot;
+        }]
+      }
+    |]</span></span><span>
+</span><span id="line-146"></span><span>    </span><span id="local-6989586621679255378"><span class="annot"><span class="annottext">cloudwatchPolicy :: Object
+</span><a href="#local-6989586621679255378"><span class="hs-identifier hs-var hs-var">cloudwatchPolicy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-147"></span><span>      </span><span class="annot"><span class="annottext">Value -&gt; Object
+</span><a href="#local-6989586621679255377"><span class="hs-identifier hs-var">valueToObject</span></a></span><span>
+</span><span id="line-148"></span><span>        </span><span class="annot"><span class="">[aesonQQ|
+      {
+        &quot;Version&quot;: &quot;2012-10-17&quot;,
+        &quot;Statement&quot;: [{
+          &quot;Action&quot;: [
+            &quot;logs:CreateLogGroup&quot;,
+            &quot;logs:CreateLogStream&quot;,
+            &quot;logs:PutLogEvents&quot;
+          ],
+          &quot;Effect&quot;: &quot;Allow&quot;,
+          &quot;Resource&quot;: &quot;arn:aws:logs:*:*:*&quot;
+        }]
+      }
+    |]</span></span><span>
+</span><span id="line-162"></span><span>    </span><span id="local-6989586621679255377"><span class="annot"><span class="annottext">valueToObject :: Value -&gt; Object
+</span><a href="#local-6989586621679255377"><span class="hs-identifier hs-var hs-var">valueToObject</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-163"></span><span>      </span><span class="annot"><a href="../file:///nix/store/6d7f942q5kyl0pk8fpd1qzhnxw2ly6g6-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">Object</span></a></span><span> </span><span id="local-6989586621679255371"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255371"><span class="hs-identifier hs-var">hm</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679255371"><span class="hs-identifier hs-var">hm</span></a></span><span>
+</span><span id="line-164"></span><span>      </span><span class="annot"><span class="annottext">Value
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Object
+forall a. HasCallStack =&gt; String -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;invariant violation&quot;</span></span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputFunc"><span class="hs-identifier hs-type">templateOutputFunc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span>
+</span><span id="line-167"></span><span id="templateOutputFunc"><span class="annot"><span class="annottext">templateOutputFunc :: Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputFunc"><span class="hs-identifier hs-var hs-var">templateOutputFunc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;output&quot;</span></span><span>
+</span><span id="line-168"></span><span>
+</span><span id="line-169"></span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerQueue"><span class="hs-identifier hs-type">templateOutputAnswerQueue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span>
+</span><span id="line-170"></span><span id="templateOutputAnswerQueue"><span class="annot"><span class="annottext">templateOutputAnswerQueue :: Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerQueue"><span class="hs-identifier hs-var hs-var">templateOutputAnswerQueue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;answerQueue&quot;</span></span><span>
+</span><span id="line-171"></span><span>
+</span><span id="line-172"></span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputDeadLetterQueue"><span class="hs-identifier hs-type">templateOutputDeadLetterQueue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span>
+</span><span id="line-173"></span><span id="templateOutputDeadLetterQueue"><span class="annot"><span class="annottext">templateOutputDeadLetterQueue :: Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputDeadLetterQueue"><span class="hs-identifier hs-var hs-var">templateOutputDeadLetterQueue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;deadLetterQueue&quot;</span></span><span>
+</span><span id="line-174"></span><span>
+</span><span id="line-175"></span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerBucket"><span class="hs-identifier hs-type">templateOutputAnswerBucket</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span>
+</span><span id="line-176"></span><span id="templateOutputAnswerBucket"><span class="annot"><span class="annottext">templateOutputAnswerBucket :: Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerBucket"><span class="hs-identifier hs-var hs-var">templateOutputAnswerBucket</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;answerBucket&quot;</span></span><span>
+</span><span id="line-177"></span><span>
+</span><span id="line-178"></span><span class="hs-comment">{-
+Before creating a stack, we need to upload the artifact to S3.
+-}</span><span>
+</span><span id="line-181"></span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#awsUploadObject"><span class="hs-identifier hs-type">awsUploadObject</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#S3Loc"><span class="hs-identifier hs-type">S3Loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier hs-type">BS.ByteString</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-type">AWS</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-182"></span><span id="awsUploadObject"><span class="annot"><span class="annottext">awsUploadObject :: S3Loc -&gt; ByteString -&gt; AWS ()
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#awsUploadObject"><span class="hs-identifier hs-var hs-var">awsUploadObject</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#S3Loc"><span class="hs-identifier hs-type">S3Loc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#BucketName"><span class="hs-identifier hs-type">BucketName</span></a></span><span> </span><span id="local-6989586621679255369"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255369"><span class="hs-identifier hs-var">bucket</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679255368"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255368"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679255367"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679255367"><span class="hs-identifier hs-var">contents</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-183"></span><span>  </span><span id="local-6989586621679255366"><span class="annot"><span class="annottext">PutObjectResponse
+</span><a href="#local-6989586621679255366"><span class="hs-identifier hs-var">pors</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-184"></span><span>    </span><span class="annot"><span class="annottext">PutObject -&gt; AWST' Env (ResourceT IO) (Rs PutObject)
+forall (m :: * -&gt; *) a. (MonadAWS m, AWSRequest a) =&gt; a -&gt; m (Rs a)
+</span><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-var">send</span></a></span><span> </span><span class="annot"><span class="annottext">(PutObject -&gt; AWST' Env (ResourceT IO) (Rs PutObject))
+-&gt; PutObject -&gt; AWST' Env (ResourceT IO) (Rs PutObject)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
+</span><span id="line-185"></span><span>      </span><span class="annot"><span class="annottext">BucketName -&gt; ObjectKey -&gt; RqBody -&gt; PutObject
+</span><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-var">S3.putObject</span></a></span><span>
+</span><span id="line-186"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; BucketName
+</span><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-var">S3.BucketName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255369"><span class="hs-identifier hs-var">bucket</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-187"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; ObjectKey
+</span><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-var">S3.ObjectKey</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255368"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-188"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ByteString -&gt; RqBody
+forall a. ToBody a =&gt; a -&gt; RqBody
+</span><a href="../file:///nix/store/dczlsaphw0jnppw3il06hfdim4vfcs80-amazonka-core-1.6.1-doc/share/doc/amazonka-core-1.6.1/html/src"><span class="hs-identifier hs-var">toBody</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679255367"><span class="hs-identifier hs-var">contents</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-189"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; AWS () -&gt; AWS ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">unless</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PutObjectResponse
+</span><a href="#local-6989586621679255366"><span class="hs-identifier hs-var">pors</span></a></span><span> </span><span class="annot"><span class="annottext">PutObjectResponse -&gt; Getting Int PutObjectResponse Int -&gt; Int
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting Int PutObjectResponse Int
+Lens' PutObjectResponse Int
+</span><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-var">S3.porsResponseStatus</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">200</span></span><span class="hs-special">)</span><span>
+</span><span id="line-190"></span><span>    </span><span class="annot"><span class="annottext">(AWS () -&gt; AWS ()) -&gt; AWS () -&gt; AWS ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">StackException -&gt; AWS ()
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">throwM</span></a></span><span>
+</span><span id="line-191"></span><span>      </span><span class="annot"><span class="annottext">(StackException -&gt; AWS ())
+-&gt; (Text -&gt; StackException) -&gt; Text -&gt; AWS ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; StackException
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span><span>
+</span><span id="line-192"></span><span>    </span><span class="annot"><span class="annottext">(Text -&gt; AWS ()) -&gt; Text -&gt; AWS ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Upload failed. Status code: &quot;</span></span><span>
+</span><span id="line-193"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-var">T.pack</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; String) -&gt; Int -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">PutObjectResponse
+</span><a href="#local-6989586621679255366"><span class="hs-identifier hs-var">pors</span></a></span><span> </span><span class="annot"><span class="annottext">PutObjectResponse -&gt; Getting Int PutObjectResponse Int -&gt; Int
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting Int PutObjectResponse Int
+Lens' PutObjectResponse Int
+</span><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-var">S3.porsResponseStatus</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-194"></span><span>
+</span><span id="line-195"></span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#awsObjectExists"><span class="hs-identifier hs-type">awsObjectExists</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#S3Loc"><span class="hs-identifier hs-type">S3Loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-type">AWS</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-196"></span><span id="awsObjectExists"><span class="annot"><span class="annottext">awsObjectExists :: S3Loc -&gt; AWS Bool
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#awsObjectExists"><span class="hs-identifier hs-var hs-var">awsObjectExists</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#S3Loc"><span class="hs-identifier hs-type">S3Loc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#BucketName"><span class="hs-identifier hs-type">BucketName</span></a></span><span> </span><span id="local-6989586621679255353"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255353"><span class="hs-identifier hs-var">bucket</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679255352"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255352"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-197"></span><span>  </span><span id="local-6989586621679255351"><span class="annot"><span class="annottext">ListObjectsResponse
+</span><a href="#local-6989586621679255351"><span class="hs-identifier hs-var">lors</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-198"></span><span>    </span><span class="annot"><span class="annottext">ListObjects -&gt; AWST' Env (ResourceT IO) (Rs ListObjects)
+forall (m :: * -&gt; *) a. (MonadAWS m, AWSRequest a) =&gt; a -&gt; m (Rs a)
+</span><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-var">send</span></a></span><span> </span><span class="annot"><span class="annottext">(ListObjects -&gt; AWST' Env (ResourceT IO) (Rs ListObjects))
+-&gt; ListObjects -&gt; AWST' Env (ResourceT IO) (Rs ListObjects)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
+</span><span id="line-199"></span><span>      </span><span class="annot"><span class="annottext">BucketName -&gt; ListObjects
+</span><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-var">S3.listObjects</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; BucketName
+</span><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-var">S3.BucketName</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255353"><span class="hs-identifier hs-var">bucket</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-200"></span><span>        </span><span class="annot"><span class="annottext">ListObjects -&gt; (ListObjects -&gt; ListObjects) -&gt; ListObjects
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Text -&gt; Identity (Maybe Text))
+-&gt; ListObjects -&gt; Identity ListObjects
+Lens' ListObjects (Maybe Text)
+</span><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-var">S3.loPrefix</span></a></span><span>
+</span><span id="line-201"></span><span>        </span><span class="annot"><span class="annottext">((Maybe Text -&gt; Identity (Maybe Text))
+ -&gt; ListObjects -&gt; Identity ListObjects)
+-&gt; Text -&gt; ListObjects -&gt; ListObjects
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255352"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-202"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; AWS () -&gt; AWS ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">unless</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ListObjectsResponse
+</span><a href="#local-6989586621679255351"><span class="hs-identifier hs-var">lors</span></a></span><span> </span><span class="annot"><span class="annottext">ListObjectsResponse -&gt; Getting Int ListObjectsResponse Int -&gt; Int
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting Int ListObjectsResponse Int
+Lens' ListObjectsResponse Int
+</span><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-var">S3.lorsResponseStatus</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">200</span></span><span class="hs-special">)</span><span>
+</span><span id="line-203"></span><span>    </span><span class="annot"><span class="annottext">(AWS () -&gt; AWS ()) -&gt; AWS () -&gt; AWS ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">StackException -&gt; AWS ()
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">throwM</span></a></span><span>
+</span><span id="line-204"></span><span>      </span><span class="annot"><span class="annottext">(StackException -&gt; AWS ())
+-&gt; (Text -&gt; StackException) -&gt; Text -&gt; AWS ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; StackException
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span><span>
+</span><span id="line-205"></span><span>    </span><span class="annot"><span class="annottext">(Text -&gt; AWS ()) -&gt; Text -&gt; AWS ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;List objects failed. Status code: &quot;</span></span><span>
+</span><span id="line-206"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-var">T.pack</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ListObjectsResponse -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">ListObjectsResponse
+</span><a href="#local-6989586621679255351"><span class="hs-identifier hs-var">lors</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-207"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679255347"><span class="annot"><span class="annottext">files :: [ObjectKey]
+</span><a href="#local-6989586621679255347"><span class="hs-identifier hs-var hs-var">files</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Object -&gt; ObjectKey) -&gt; [Object] -&gt; [ObjectKey]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting ObjectKey Object ObjectKey -&gt; Object -&gt; ObjectKey
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-identifier hs-var">view</span></a></span><span> </span><span class="annot"><span class="annottext">Getting ObjectKey Object ObjectKey
+Lens' Object ObjectKey
+</span><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-var">S3.oKey</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ListObjectsResponse
+</span><a href="#local-6989586621679255351"><span class="hs-identifier hs-var">lors</span></a></span><span> </span><span class="annot"><span class="annottext">ListObjectsResponse
+-&gt; Getting [Object] ListObjectsResponse [Object] -&gt; [Object]
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting [Object] ListObjectsResponse [Object]
+Lens' ListObjectsResponse [Object]
+</span><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-var">S3.lorsContents</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-208"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; AWS Bool
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; AWS Bool) -&gt; Bool -&gt; AWS Bool
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(ObjectKey -&gt; Bool) -&gt; [ObjectKey] -&gt; Bool
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">any</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/mc36vaqz480b285nm0yf3an90mv4jz5j-amazonka-s3-1.6.1-doc/share/doc/amazonka-s3-1.6.1/html/src"><span class="hs-identifier hs-type">S3.ObjectKey</span></a></span><span> </span><span id="local-6989586621679255342"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255342"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255342"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255352"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[ObjectKey]
+</span><a href="#local-6989586621679255347"><span class="hs-identifier hs-var">files</span></a></span><span>
+</span><span id="line-209"></span><span>
+</span><span id="line-210"></span><span class="hs-comment">{-
+Here we are actually creating the stack.
+
+Tricky part is that, since our lambda function publish to answerQueue, it needs
+to know the URL for it. However LambdaFunctionEnvironment in CloudFormation does
+not support referring to stack variables inside, so we need to patch the function
+afterwards to add the URL to the environment
+-}</span><span>
+</span><span id="line-218"></span><span class="hs-keyword">data</span><span> </span><span id="StackInfo"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackInfo"><span class="hs-identifier hs-var">StackInfo</span></a></span></span><span>
+</span><span id="line-219"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="StackInfo"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackInfo"><span class="hs-identifier hs-var">StackInfo</span></a></span></span><span>
+</span><span id="line-220"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="siId"><span class="annot"><span class="annottext">StackInfo -&gt; Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#siId"><span class="hs-identifier hs-var hs-var">siId</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-221"></span><span>        </span><span id="siFunc"><span class="annot"><span class="annottext">StackInfo -&gt; Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#siFunc"><span class="hs-identifier hs-var hs-var">siFunc</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-222"></span><span>        </span><span id="siAnswerQueue"><span class="annot"><span class="annottext">StackInfo -&gt; Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#siAnswerQueue"><span class="hs-identifier hs-var hs-var">siAnswerQueue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-223"></span><span>        </span><span id="siDeadLetterQueue"><span class="annot"><span class="annottext">StackInfo -&gt; Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#siDeadLetterQueue"><span class="hs-identifier hs-var hs-var">siDeadLetterQueue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-224"></span><span>        </span><span id="siAnswerBucket"><span class="annot"><span class="annottext">StackInfo -&gt; Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#siAnswerBucket"><span class="hs-identifier hs-var hs-var">siAnswerBucket</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span>
+</span><span id="line-225"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-226"></span><span>
+</span><span id="line-227"></span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seCreateStack"><span class="hs-identifier hs-type">seCreateStack</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#StackOptions"><span class="hs-identifier hs-type">StackOptions</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-type">AWS</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackInfo"><span class="hs-identifier hs-type">StackInfo</span></a></span><span>
+</span><span id="line-228"></span><span id="seCreateStack"><span class="annot"><span class="annottext">seCreateStack :: StackOptions -&gt; AWS StackInfo
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seCreateStack"><span class="hs-identifier hs-var hs-var">seCreateStack</span></a></span></span><span> </span><span id="local-6989586621679255334"><span class="annot"><span class="annottext">options :: StackOptions
+</span><a href="#local-6989586621679255334"><span class="hs-identifier hs-var">options</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#StackOptions"><span class="hs-identifier hs-type">StackOptions</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">soName :: StackOptions -&gt; StackName
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#soName"><span class="hs-identifier hs-var">soName</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#StackName"><span class="hs-identifier hs-type">StackName</span></a></span><span> </span><span id="local-6989586621679255331"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255331"><span class="hs-identifier hs-var">stackName</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-229"></span><span>  </span><span id="local-6989586621679255330"><span class="annot"><span class="annottext">CreateStackResponse
+</span><a href="#local-6989586621679255330"><span class="hs-identifier hs-var">csrs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-230"></span><span>    </span><span class="annot"><span class="annottext">CreateStack -&gt; AWST' Env (ResourceT IO) (Rs CreateStack)
+forall (m :: * -&gt; *) a. (MonadAWS m, AWSRequest a) =&gt; a -&gt; m (Rs a)
+</span><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-var">send</span></a></span><span> </span><span class="annot"><span class="annottext">(CreateStack -&gt; AWST' Env (ResourceT IO) (Rs CreateStack))
+-&gt; CreateStack -&gt; AWST' Env (ResourceT IO) (Rs CreateStack)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
+</span><span id="line-231"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; CreateStack
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">createStack</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255331"><span class="hs-identifier hs-var">stackName</span></a></span><span>
+</span><span id="line-232"></span><span>        </span><span class="annot"><span class="annottext">CreateStack -&gt; (CreateStack -&gt; CreateStack) -&gt; CreateStack
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Text -&gt; Identity (Maybe Text))
+-&gt; CreateStack -&gt; Identity CreateStack
+Lens' CreateStack (Maybe Text)
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">csTemplateBody</span></a></span><span>
+</span><span id="line-233"></span><span>        </span><span class="annot"><span class="annottext">((Maybe Text -&gt; Identity (Maybe Text))
+ -&gt; CreateStack -&gt; Identity CreateStack)
+-&gt; Text -&gt; CreateStack -&gt; CreateStack
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ByteString -&gt; Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-var">T.decodeUtf8</span></a></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; Text)
+-&gt; (Template -&gt; ByteString) -&gt; Template -&gt; Text
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/bytestring-0.10.10.0/src"><span class="hs-identifier hs-var">BL.toStrict</span></a></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; ByteString)
+-&gt; (Template -&gt; ByteString) -&gt; Template -&gt; ByteString
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Template -&gt; ByteString
+</span><a href="../file:///nix/store/8kh9n91kxfsn28pfpm6cf4a3qhvjah26-stratosphere-0.49.0-doc/share/doc/stratosphere-0.49.0/html/src"><span class="hs-identifier hs-var">S.encodeTemplate</span></a></span><span> </span><span class="annot"><span class="annottext">(Template -&gt; Text) -&gt; Template -&gt; Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">StackOptions -&gt; Template
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seTemplate"><span class="hs-identifier hs-var">seTemplate</span></a></span><span> </span><span class="annot"><span class="annottext">StackOptions
+</span><a href="#local-6989586621679255334"><span class="hs-identifier hs-var">options</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-234"></span><span>        </span><span class="annot"><span class="annottext">CreateStack -&gt; (CreateStack -&gt; CreateStack) -&gt; CreateStack
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">([Capability] -&gt; Identity [Capability])
+-&gt; CreateStack -&gt; Identity CreateStack
+Lens' CreateStack [Capability]
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">csCapabilities</span></a></span><span>
+</span><span id="line-235"></span><span>        </span><span class="annot"><span class="annottext">(([Capability] -&gt; Identity [Capability])
+ -&gt; CreateStack -&gt; Identity CreateStack)
+-&gt; [Capability] -&gt; CreateStack -&gt; CreateStack
+forall s t a b. ASetter s t a b -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">.~</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Capability
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">CapabilityIAM</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-236"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; AWS () -&gt; AWS ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">unless</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CreateStackResponse
+</span><a href="#local-6989586621679255330"><span class="hs-identifier hs-var">csrs</span></a></span><span> </span><span class="annot"><span class="annottext">CreateStackResponse -&gt; Getting Int CreateStackResponse Int -&gt; Int
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting Int CreateStackResponse Int
+Lens' CreateStackResponse Int
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">csrsResponseStatus</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">200</span></span><span class="hs-special">)</span><span>
+</span><span id="line-237"></span><span>    </span><span class="annot"><span class="annottext">(AWS () -&gt; AWS ()) -&gt; AWS () -&gt; AWS ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">StackException -&gt; AWS ()
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">throwM</span></a></span><span>
+</span><span id="line-238"></span><span>    </span><span class="annot"><span class="annottext">(StackException -&gt; AWS ()) -&gt; StackException -&gt; AWS ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; StackException
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span><span>
+</span><span id="line-239"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;CloudFormation stack creation request failed.&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-var">T.pack</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CreateStackResponse -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">CreateStackResponse
+</span><a href="#local-6989586621679255330"><span class="hs-identifier hs-var">csrs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-240"></span><span>  </span><span id="local-6989586621679255320"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255320"><span class="hs-identifier hs-var">stackId</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-241"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CreateStackResponse
+</span><a href="#local-6989586621679255330"><span class="hs-identifier hs-var">csrs</span></a></span><span> </span><span class="annot"><span class="annottext">CreateStackResponse
+-&gt; Getting (Maybe Text) CreateStackResponse (Maybe Text)
+-&gt; Maybe Text
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting (Maybe Text) CreateStackResponse (Maybe Text)
+Lens' CreateStackResponse (Maybe Text)
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">csrsStackId</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-242"></span><span>      </span><span class="annot"><span class="annottext">Maybe Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-243"></span><span>        </span><span class="annot"><span class="annottext">StackException -&gt; AWST' Env (ResourceT IO) Text
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">throwM</span></a></span><span> </span><span class="annot"><span class="annottext">(StackException -&gt; AWST' Env (ResourceT IO) Text)
+-&gt; StackException -&gt; AWST' Env (ResourceT IO) Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
+</span><span id="line-244"></span><span>          </span><span class="annot"><span class="annottext">Text -&gt; StackException
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span><span>
+</span><span id="line-245"></span><span>            </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Could not determine stack id.&quot;</span></span><span>
+</span><span id="line-246"></span><span>      </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621679255318"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255318"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; AWST' Env (ResourceT IO) Text
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255318"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-247"></span><span>  </span><span class="annot"><span class="annottext">Wait DescribeStacks
+-&gt; DescribeStacks -&gt; AWST' Env (ResourceT IO) Accept
+forall (m :: * -&gt; *) a.
+(MonadAWS m, AWSRequest a) =&gt;
+Wait a -&gt; a -&gt; m Accept
+</span><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-var">await</span></a></span><span> </span><span class="annot"><span class="annottext">Wait DescribeStacks
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">stackCreateComplete</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DescribeStacks
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">describeStacks</span></a></span><span> </span><span class="annot"><span class="annottext">DescribeStacks
+-&gt; (DescribeStacks -&gt; DescribeStacks) -&gt; DescribeStacks
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Text -&gt; Identity (Maybe Text))
+-&gt; DescribeStacks -&gt; Identity DescribeStacks
+Lens' DescribeStacks (Maybe Text)
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">dStackName</span></a></span><span> </span><span class="annot"><span class="annottext">((Maybe Text -&gt; Identity (Maybe Text))
+ -&gt; DescribeStacks -&gt; Identity DescribeStacks)
+-&gt; Text -&gt; DescribeStacks -&gt; DescribeStacks
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255320"><span class="hs-identifier hs-var">stackId</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">AWST' Env (ResourceT IO) Accept -&gt; (Accept -&gt; AWS ()) -&gt; AWS ()
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&gt;&gt;=</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-248"></span><span>    </span><span class="annot"><span class="annottext">Accept
+</span><a href="../file:///nix/store/dczlsaphw0jnppw3il06hfdim4vfcs80-amazonka-core-1.6.1-doc/share/doc/amazonka-core-1.6.1/html/src"><span class="hs-identifier hs-var">AcceptSuccess</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; AWS ()
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-249"></span><span>    </span><span id="local-6989586621679255312"><span class="annot"><span class="annottext">Accept
+</span><a href="#local-6989586621679255312"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-250"></span><span>      </span><span class="annot"><span class="annottext">StackException -&gt; AWS ()
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">throwM</span></a></span><span> </span><span class="annot"><span class="annottext">(StackException -&gt; AWS ())
+-&gt; (Text -&gt; StackException) -&gt; Text -&gt; AWS ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; StackException
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; AWS ()) -&gt; Text -&gt; AWS ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;CloudFormation stack creation failed.&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-var">T.pack</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Accept -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">Accept
+</span><a href="#local-6989586621679255312"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-251"></span><span>  </span><span id="local-6989586621679255311"><span class="annot"><span class="annottext">DescribeStacksResponse
+</span><a href="#local-6989586621679255311"><span class="hs-identifier hs-var">dsrs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">DescribeStacks -&gt; AWST' Env (ResourceT IO) (Rs DescribeStacks)
+forall (m :: * -&gt; *) a. (MonadAWS m, AWSRequest a) =&gt; a -&gt; m (Rs a)
+</span><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-var">send</span></a></span><span> </span><span class="annot"><span class="annottext">(DescribeStacks -&gt; AWST' Env (ResourceT IO) (Rs DescribeStacks))
+-&gt; DescribeStacks -&gt; AWST' Env (ResourceT IO) (Rs DescribeStacks)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">DescribeStacks
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">describeStacks</span></a></span><span> </span><span class="annot"><span class="annottext">DescribeStacks
+-&gt; (DescribeStacks -&gt; DescribeStacks) -&gt; DescribeStacks
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Text -&gt; Identity (Maybe Text))
+-&gt; DescribeStacks -&gt; Identity DescribeStacks
+Lens' DescribeStacks (Maybe Text)
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">dStackName</span></a></span><span> </span><span class="annot"><span class="annottext">((Maybe Text -&gt; Identity (Maybe Text))
+ -&gt; DescribeStacks -&gt; Identity DescribeStacks)
+-&gt; Text -&gt; DescribeStacks -&gt; DescribeStacks
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255331"><span class="hs-identifier hs-var">stackName</span></a></span><span>
+</span><span id="line-252"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; AWS () -&gt; AWS ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">unless</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DescribeStacksResponse
+</span><a href="#local-6989586621679255311"><span class="hs-identifier hs-var">dsrs</span></a></span><span> </span><span class="annot"><span class="annottext">DescribeStacksResponse
+-&gt; Getting Int DescribeStacksResponse Int -&gt; Int
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting Int DescribeStacksResponse Int
+Lens' DescribeStacksResponse Int
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">dsrsResponseStatus</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">200</span></span><span class="hs-special">)</span><span>
+</span><span id="line-253"></span><span>    </span><span class="annot"><span class="annottext">(AWS () -&gt; AWS ()) -&gt; AWS () -&gt; AWS ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">StackException -&gt; AWS ()
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">throwM</span></a></span><span>
+</span><span id="line-254"></span><span>      </span><span class="annot"><span class="annottext">(StackException -&gt; AWS ())
+-&gt; (Text -&gt; StackException) -&gt; Text -&gt; AWS ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; StackException
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span><span>
+</span><span id="line-255"></span><span>    </span><span class="annot"><span class="annottext">(Text -&gt; AWS ()) -&gt; Text -&gt; AWS ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;CloudFormation describeStack failed. Status code: &quot;</span></span><span>
+</span><span id="line-256"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-var">T.pack</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; String) -&gt; Int -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">DescribeStacksResponse
+</span><a href="#local-6989586621679255311"><span class="hs-identifier hs-var">dsrs</span></a></span><span> </span><span class="annot"><span class="annottext">DescribeStacksResponse
+-&gt; Getting Int DescribeStacksResponse Int -&gt; Int
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting Int DescribeStacksResponse Int
+Lens' DescribeStacksResponse Int
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">dsrsResponseStatus</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-257"></span><span>  </span><span id="local-6989586621679255309"><span class="annot"><span class="annottext">Stack
+</span><a href="#local-6989586621679255309"><span class="hs-identifier hs-var">stackRs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-258"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">DescribeStacksResponse
+</span><a href="#local-6989586621679255311"><span class="hs-identifier hs-var">dsrs</span></a></span><span> </span><span class="annot"><span class="annottext">DescribeStacksResponse
+-&gt; Getting [Stack] DescribeStacksResponse [Stack] -&gt; [Stack]
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting [Stack] DescribeStacksResponse [Stack]
+Lens' DescribeStacksResponse [Stack]
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">dsrsStacks</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-259"></span><span>      </span><span class="hs-special">[</span><span id="local-6989586621679255307"><span class="annot"><span class="annottext">Stack
+</span><a href="#local-6989586621679255307"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Stack -&gt; AWST' Env (ResourceT IO) Stack
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">Stack
+</span><a href="#local-6989586621679255307"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-260"></span><span>      </span><span class="annot"><span class="annottext">[Stack]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">StackException -&gt; AWST' Env (ResourceT IO) Stack
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">throwM</span></a></span><span> </span><span class="annot"><span class="annottext">(StackException -&gt; AWST' Env (ResourceT IO) Stack)
+-&gt; StackException -&gt; AWST' Env (ResourceT IO) Stack
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; StackException
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Unexpected answer from DescribeStacks.&quot;</span></span><span>
+</span><span id="line-261"></span><span>  </span><span id="local-6989586621679255306"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255306"><span class="hs-identifier hs-var">func</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-262"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Stack -&gt; Text -&gt; Maybe Text
+</span><a href="#local-6989586621679255305"><span class="hs-identifier hs-var">lookupOutput</span></a></span><span> </span><span class="annot"><span class="annottext">Stack
+</span><a href="#local-6989586621679255309"><span class="hs-identifier hs-var">stackRs</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputFunc"><span class="hs-identifier hs-var">templateOutputFunc</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-263"></span><span>      </span><span class="annot"><span class="annottext">Maybe Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">StackException -&gt; AWST' Env (ResourceT IO) Text
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">throwM</span></a></span><span> </span><span class="annot"><span class="annottext">(StackException -&gt; AWST' Env (ResourceT IO) Text)
+-&gt; StackException -&gt; AWST' Env (ResourceT IO) Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; StackException
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Could not determine function name.&quot;</span></span><span>
+</span><span id="line-264"></span><span>      </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621679255304"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255304"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; AWST' Env (ResourceT IO) Text
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255304"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-265"></span><span>  </span><span id="local-6989586621679255303"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255303"><span class="hs-identifier hs-var">answerQueue</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-266"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Stack -&gt; Text -&gt; Maybe Text
+</span><a href="#local-6989586621679255305"><span class="hs-identifier hs-var">lookupOutput</span></a></span><span> </span><span class="annot"><span class="annottext">Stack
+</span><a href="#local-6989586621679255309"><span class="hs-identifier hs-var">stackRs</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerQueue"><span class="hs-identifier hs-var">templateOutputAnswerQueue</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-267"></span><span>      </span><span class="annot"><span class="annottext">Maybe Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">StackException -&gt; AWST' Env (ResourceT IO) Text
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">throwM</span></a></span><span> </span><span class="annot"><span class="annottext">(StackException -&gt; AWST' Env (ResourceT IO) Text)
+-&gt; StackException -&gt; AWST' Env (ResourceT IO) Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; StackException
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Could not determine answerQueue URL.&quot;</span></span><span>
+</span><span id="line-268"></span><span>      </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621679255302"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255302"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; AWST' Env (ResourceT IO) Text
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255302"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-269"></span><span>  </span><span id="local-6989586621679255301"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255301"><span class="hs-identifier hs-var">deadLetterQueue</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-270"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Stack -&gt; Text -&gt; Maybe Text
+</span><a href="#local-6989586621679255305"><span class="hs-identifier hs-var">lookupOutput</span></a></span><span> </span><span class="annot"><span class="annottext">Stack
+</span><a href="#local-6989586621679255309"><span class="hs-identifier hs-var">stackRs</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputDeadLetterQueue"><span class="hs-identifier hs-var">templateOutputDeadLetterQueue</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-271"></span><span>      </span><span class="annot"><span class="annottext">Maybe Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">StackException -&gt; AWST' Env (ResourceT IO) Text
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">throwM</span></a></span><span> </span><span class="annot"><span class="annottext">(StackException -&gt; AWST' Env (ResourceT IO) Text)
+-&gt; StackException -&gt; AWST' Env (ResourceT IO) Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; StackException
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Could not determine deadLetterQueue URL.&quot;</span></span><span>
+</span><span id="line-272"></span><span>      </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621679255300"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255300"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; AWST' Env (ResourceT IO) Text
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255300"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-273"></span><span>  </span><span id="local-6989586621679255299"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255299"><span class="hs-identifier hs-var">answerBucket</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-274"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Stack -&gt; Text -&gt; Maybe Text
+</span><a href="#local-6989586621679255305"><span class="hs-identifier hs-var">lookupOutput</span></a></span><span> </span><span class="annot"><span class="annottext">Stack
+</span><a href="#local-6989586621679255309"><span class="hs-identifier hs-var">stackRs</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#templateOutputAnswerBucket"><span class="hs-identifier hs-var">templateOutputAnswerBucket</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-275"></span><span>      </span><span class="annot"><span class="annottext">Maybe Text
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">StackException -&gt; AWST' Env (ResourceT IO) Text
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">throwM</span></a></span><span> </span><span class="annot"><span class="annottext">(StackException -&gt; AWST' Env (ResourceT IO) Text)
+-&gt; StackException -&gt; AWST' Env (ResourceT IO) Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; StackException
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;Could not determine answerBucket URL.&quot;</span></span><span>
+</span><span id="line-276"></span><span>      </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621679255298"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255298"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; AWST' Env (ResourceT IO) Text
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255298"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-277"></span><span>  </span><span class="annot"><span class="annottext">FunctionConfiguration
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-278"></span><span>    </span><span class="annot"><span class="annottext">UpdateFunctionConfiguration
+-&gt; AWST' Env (ResourceT IO) (Rs UpdateFunctionConfiguration)
+forall (m :: * -&gt; *) a. (MonadAWS m, AWSRequest a) =&gt; a -&gt; m (Rs a)
+</span><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-var">send</span></a></span><span> </span><span class="annot"><span class="annottext">(UpdateFunctionConfiguration
+ -&gt; AWST' Env (ResourceT IO) (Rs UpdateFunctionConfiguration))
+-&gt; UpdateFunctionConfiguration
+-&gt; AWST' Env (ResourceT IO) (Rs UpdateFunctionConfiguration)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
+</span><span id="line-279"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; UpdateFunctionConfiguration
+</span><a href="../file:///nix/store/rqpiw4h1q711y0h2xbav6k1kg3sp3ji9-amazonka-lambda-1.6.1-doc/share/doc/amazonka-lambda-1.6.1/html/src"><span class="hs-identifier hs-var">updateFunctionConfiguration</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255306"><span class="hs-identifier hs-var">func</span></a></span><span>
+</span><span id="line-280"></span><span>        </span><span class="annot"><span class="annottext">UpdateFunctionConfiguration
+-&gt; (UpdateFunctionConfiguration -&gt; UpdateFunctionConfiguration)
+-&gt; UpdateFunctionConfiguration
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Environment -&gt; Identity (Maybe Environment))
+-&gt; UpdateFunctionConfiguration
+-&gt; Identity UpdateFunctionConfiguration
+Lens' UpdateFunctionConfiguration (Maybe Environment)
+</span><a href="../file:///nix/store/rqpiw4h1q711y0h2xbav6k1kg3sp3ji9-amazonka-lambda-1.6.1-doc/share/doc/amazonka-lambda-1.6.1/html/src"><span class="hs-identifier hs-var">ufcEnvironment</span></a></span><span>
+</span><span id="line-281"></span><span>        </span><span class="annot"><span class="annottext">((Maybe Environment -&gt; Identity (Maybe Environment))
+ -&gt; UpdateFunctionConfiguration
+ -&gt; Identity UpdateFunctionConfiguration)
+-&gt; Environment
+-&gt; UpdateFunctionConfiguration
+-&gt; UpdateFunctionConfiguration
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Environment
+</span><a href="../file:///nix/store/rqpiw4h1q711y0h2xbav6k1kg3sp3ji9-amazonka-lambda-1.6.1-doc/share/doc/amazonka-lambda-1.6.1/html/src"><span class="hs-identifier hs-var">environment</span></a></span><span>
+</span><span id="line-282"></span><span>               </span><span class="annot"><span class="annottext">Environment -&gt; (Environment -&gt; Environment) -&gt; Environment
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (HashMap Text Text) -&gt; Identity (Maybe (HashMap Text Text)))
+-&gt; Environment -&gt; Identity Environment
+Lens' Environment (Maybe (HashMap Text Text))
+</span><a href="../file:///nix/store/rqpiw4h1q711y0h2xbav6k1kg3sp3ji9-amazonka-lambda-1.6.1-doc/share/doc/amazonka-lambda-1.6.1/html/src"><span class="hs-identifier hs-var">eVariables</span></a></span><span>
+</span><span id="line-283"></span><span>               </span><span class="annot"><span class="annottext">((Maybe (HashMap Text Text)
+  -&gt; Identity (Maybe (HashMap Text Text)))
+ -&gt; Environment -&gt; Identity Environment)
+-&gt; HashMap Text Text -&gt; Environment -&gt; Environment
+forall s t a b. ASetter s t a (Maybe b) -&gt; b -&gt; s -&gt; t
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">?~</span></a></span><span> </span><span class="annot"><span class="annottext">[(Text, Text)] -&gt; HashMap Text Text
+forall k v. (Eq k, Hashable k) =&gt; [(k, v)] -&gt; HashMap k v
+</span><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier hs-var">HM.fromList</span></a></span><span>
+</span><span id="line-284"></span><span>                 </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Constants.html#envAnswerQueueUrl"><span class="hs-identifier hs-var">envAnswerQueueUrl</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255303"><span class="hs-identifier hs-var">answerQueue</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-285"></span><span>                   </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Constants.html#envAnswerBucketUrl"><span class="hs-identifier hs-var">envAnswerBucketUrl</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255299"><span class="hs-identifier hs-var">answerBucket</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-286"></span><span>                 </span><span class="hs-special">]</span><span>
+</span><span id="line-287"></span><span>           </span><span class="hs-special">)</span><span>
+</span><span id="line-288"></span><span>  </span><span class="annot"><span class="annottext">StackInfo -&gt; AWS StackInfo
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">(StackInfo -&gt; AWS StackInfo) -&gt; StackInfo -&gt; AWS StackInfo
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
+</span><span id="line-289"></span><span>    </span><span class="annot"><span class="annottext">StackInfo :: Text -&gt; Text -&gt; Text -&gt; Text -&gt; Text -&gt; StackInfo
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackInfo"><span class="hs-identifier hs-type">StackInfo</span></a></span><span>
+</span><span id="line-290"></span><span>      </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">siId :: Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#siId"><span class="hs-identifier hs-var">siId</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255320"><span class="hs-identifier hs-var">stackId</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-291"></span><span>        </span><span class="annot"><span class="annottext">siFunc :: Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#siFunc"><span class="hs-identifier hs-var">siFunc</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255306"><span class="hs-identifier hs-var">func</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-292"></span><span>        </span><span class="annot"><span class="annottext">siAnswerQueue :: Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#siAnswerQueue"><span class="hs-identifier hs-var">siAnswerQueue</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255303"><span class="hs-identifier hs-var">answerQueue</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-293"></span><span>        </span><span class="annot"><span class="annottext">siDeadLetterQueue :: Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#siDeadLetterQueue"><span class="hs-identifier hs-var">siDeadLetterQueue</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255301"><span class="hs-identifier hs-var">deadLetterQueue</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-294"></span><span>        </span><span class="annot"><span class="annottext">siAnswerBucket :: Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#siAnswerBucket"><span class="hs-identifier hs-var">siAnswerBucket</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255299"><span class="hs-identifier hs-var">answerBucket</span></a></span><span>
+</span><span id="line-295"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-296"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-297"></span><span>    </span><span class="annot"><a href="#local-6989586621679255305"><span class="hs-identifier hs-type">lookupOutput</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-type">Stack</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span>
+</span><span id="line-298"></span><span>    </span><span id="local-6989586621679255305"><span class="annot"><span class="annottext">lookupOutput :: Stack -&gt; Text -&gt; Maybe Text
+</span><a href="#local-6989586621679255305"><span class="hs-identifier hs-var hs-var">lookupOutput</span></a></span></span><span> </span><span id="local-6989586621679255290"><span class="annot"><span class="annottext">Stack
+</span><a href="#local-6989586621679255290"><span class="hs-identifier hs-var">st</span></a></span></span><span> </span><span id="local-6989586621679255289"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255289"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-299"></span><span>      </span><span class="annot"><span class="annottext">(Output -&gt; Text) -&gt; Maybe Output -&gt; Maybe Text
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679255288"><span class="annot"><span class="annottext">Output
+</span><a href="#local-6989586621679255288"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Text -&gt; Text
+forall a. HasCallStack =&gt; Maybe a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fromJust</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Text -&gt; Text) -&gt; Maybe Text -&gt; Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Output
+</span><a href="#local-6989586621679255288"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Output -&gt; Getting (Maybe Text) Output (Maybe Text) -&gt; Maybe Text
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting (Maybe Text) Output (Maybe Text)
+Lens' Output (Maybe Text)
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">oOutputValue</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-300"></span><span>        </span><span class="annot"><span class="annottext">(Maybe Output -&gt; Maybe Text)
+-&gt; ([Output] -&gt; Maybe Output) -&gt; [Output] -&gt; Maybe Text
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Output -&gt; Bool) -&gt; [Output] -&gt; Maybe Output
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">find</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679255284"><span class="annot"><span class="annottext">Output
+</span><a href="#local-6989586621679255284"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Output
+</span><a href="#local-6989586621679255284"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Output -&gt; Getting (Maybe Text) Output (Maybe Text) -&gt; Maybe Text
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting (Maybe Text) Output (Maybe Text)
+Lens' Output (Maybe Text)
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">oOutputKey</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Text -&gt; Maybe Text -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679255289"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-301"></span><span>        </span><span class="annot"><span class="annottext">([Output] -&gt; Maybe Text) -&gt; [Output] -&gt; Maybe Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Stack
+</span><a href="#local-6989586621679255290"><span class="hs-identifier hs-var">st</span></a></span><span>
+</span><span id="line-302"></span><span>          </span><span class="annot"><span class="annottext">Stack -&gt; Getting [Output] Stack [Output] -&gt; [Output]
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting [Output] Stack [Output]
+Lens' Stack [Output]
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">sOutputs</span></a></span><span>
+</span><span id="line-303"></span><span>
+</span><span id="line-304"></span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seDeleteStack"><span class="hs-identifier hs-type">seDeleteStack</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackInfo"><span class="hs-identifier hs-type">StackInfo</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-type">AWS</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-305"></span><span id="seDeleteStack"><span class="annot"><span class="annottext">seDeleteStack :: StackInfo -&gt; AWS ()
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seDeleteStack"><span class="hs-identifier hs-var hs-var">seDeleteStack</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AWST' Env (ResourceT IO) DeleteStackResponse -&gt; AWS ()
+forall (f :: * -&gt; *) a. Functor f =&gt; f a -&gt; f ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">void</span></a></span><span> </span><span class="annot"><span class="annottext">(AWST' Env (ResourceT IO) DeleteStackResponse -&gt; AWS ())
+-&gt; (StackInfo -&gt; AWST' Env (ResourceT IO) DeleteStackResponse)
+-&gt; StackInfo
+-&gt; AWS ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">DeleteStack -&gt; AWST' Env (ResourceT IO) DeleteStackResponse
+forall (m :: * -&gt; *) a. (MonadAWS m, AWSRequest a) =&gt; a -&gt; m (Rs a)
+</span><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-var">send</span></a></span><span> </span><span class="annot"><span class="annottext">(DeleteStack -&gt; AWST' Env (ResourceT IO) DeleteStackResponse)
+-&gt; (StackInfo -&gt; DeleteStack)
+-&gt; StackInfo
+-&gt; AWST' Env (ResourceT IO) DeleteStackResponse
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; DeleteStack
+</span><a href="../file:///nix/store/xc26higr4yrmgcqgclz968zw9vg0fldm-amazonka-cloudformation-1.6.1-doc/share/doc/amazonka-cloudformation-1.6.1/html/src"><span class="hs-identifier hs-var">deleteStack</span></a></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; DeleteStack)
+-&gt; (StackInfo -&gt; Text) -&gt; StackInfo -&gt; DeleteStack
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">StackInfo -&gt; Text
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#siId"><span class="hs-identifier hs-var hs-var">siId</span></a></span><span>
+</span><span id="line-306"></span><span>
+</span><span id="line-307"></span><span class="hs-keyword">newtype</span><span> </span><span id="StackException"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span></span><span>
+</span><span id="line-308"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="StackException"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-var">StackException</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">T.Text</span></a></span><span>
+</span><span id="line-309"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679255273"><span id="local-6989586621679255275"><span id="local-6989586621679255277"><span class="annot"><span class="annottext">Int -&gt; StackException -&gt; ShowS
+[StackException] -&gt; ShowS
+StackException -&gt; String
+(Int -&gt; StackException -&gt; ShowS)
+-&gt; (StackException -&gt; String)
+-&gt; ([StackException] -&gt; ShowS)
+-&gt; Show StackException
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [StackException] -&gt; ShowS
+$cshowList :: [StackException] -&gt; ShowS
+show :: StackException -&gt; String
+$cshow :: StackException -&gt; String
+showsPrec :: Int -&gt; StackException -&gt; ShowS
+$cshowsPrec :: Int -&gt; StackException -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-310"></span><span>
+</span><span id="line-311"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679255264"><span id="local-6989586621679255266"><span id="local-6989586621679255268"><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Exception</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackException"><span class="hs-identifier hs-type">StackException</span></a></span></span></span></span><span>
+</span><span id="line-312"></span><span>
+</span><span id="line-313"></span><span id="local-6989586621679255262"><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#withStack"><span class="hs-identifier hs-type">withStack</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#StackOptions"><span class="hs-identifier hs-type">StackOptions</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-type">Env</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#StackInfo"><span class="hs-identifier hs-type">StackInfo</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679255262"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679255262"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-314"></span><span id="withStack"><span class="annot"><span class="annottext">withStack :: StackOptions -&gt; Env -&gt; (StackInfo -&gt; IO a) -&gt; IO a
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#withStack"><span class="hs-identifier hs-var hs-var">withStack</span></a></span></span><span> </span><span id="local-6989586621679255261"><span class="annot"><span class="annottext">StackOptions
+</span><a href="#local-6989586621679255261"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span id="local-6989586621679255260"><span class="annot"><span class="annottext">Env
+</span><a href="#local-6989586621679255260"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO StackInfo -&gt; (StackInfo -&gt; IO ()) -&gt; (StackInfo -&gt; IO a) -&gt; IO a
+forall (m :: * -&gt; *) a b c.
+MonadMask m =&gt;
+m a -&gt; (a -&gt; m b) -&gt; (a -&gt; m c) -&gt; m c
+</span><a href="../file:///nix/store/izcyrakv91ykvpja6ivv8rwsk68nc3y8-safe-exceptions-0.1.7.0-doc/share/doc/safe-exceptions-0.1.7.0/html/src"><span class="hs-identifier hs-var">bracket</span></a></span><span> </span><span class="annot"><span class="annottext">IO StackInfo
+</span><a href="#local-6989586621679255258"><span class="hs-identifier hs-var">create</span></a></span><span> </span><span class="annot"><span class="annottext">StackInfo -&gt; IO ()
+</span><a href="#local-6989586621679255257"><span class="hs-identifier hs-var">destroy</span></a></span><span>
+</span><span id="line-315"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-316"></span><span>    </span><span id="local-6989586621679255258"><span class="annot"><span class="annottext">create :: IO StackInfo
+</span><a href="#local-6989586621679255258"><span class="hs-identifier hs-var hs-var">create</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-317"></span><span>      </span><span class="annot"><span class="annottext">ResourceT IO StackInfo -&gt; IO StackInfo
+forall (m :: * -&gt; *) a. MonadUnliftIO m =&gt; ResourceT m a -&gt; m a
+</span><a href="../file:///nix/store/x49rz651v9cgnj874d6smacv0b5w45bn-resourcet-1.2.4-doc/share/doc/resourcet-1.2.4/html/src"><span class="hs-identifier hs-var">runResourceT</span></a></span><span> </span><span class="annot"><span class="annottext">(ResourceT IO StackInfo -&gt; IO StackInfo)
+-&gt; (AWS StackInfo -&gt; ResourceT IO StackInfo)
+-&gt; AWS StackInfo
+-&gt; IO StackInfo
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Env -&gt; AWS StackInfo -&gt; ResourceT IO StackInfo
+forall (m :: * -&gt; *) r a.
+(MonadResource m, HasEnv r) =&gt;
+r -&gt; AWS a -&gt; m a
+</span><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-var">runAWS</span></a></span><span> </span><span class="annot"><span class="annottext">Env
+</span><a href="#local-6989586621679255260"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">(AWS StackInfo -&gt; IO StackInfo) -&gt; AWS StackInfo -&gt; IO StackInfo
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">StackOptions -&gt; AWS StackInfo
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seCreateStack"><span class="hs-identifier hs-var">seCreateStack</span></a></span><span> </span><span class="annot"><span class="annottext">StackOptions
+</span><a href="#local-6989586621679255261"><span class="hs-identifier hs-var">opts</span></a></span><span>
+</span><span id="line-318"></span><span>    </span><span id="local-6989586621679255257"><span class="annot"><span class="annottext">destroy :: StackInfo -&gt; IO ()
+</span><a href="#local-6989586621679255257"><span class="hs-identifier hs-var hs-var">destroy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-319"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">unless</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">StackOptions -&gt; Bool
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Types.html#soKeep"><span class="hs-identifier hs-var hs-var">soKeep</span></a></span><span> </span><span class="annot"><span class="annottext">StackOptions
+</span><a href="#local-6989586621679255261"><span class="hs-identifier hs-var">opts</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; IO ()) -&gt; (StackInfo -&gt; IO ()) -&gt; StackInfo -&gt; IO ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">ResourceT IO () -&gt; IO ()
+forall (m :: * -&gt; *) a. MonadUnliftIO m =&gt; ResourceT m a -&gt; m a
+</span><a href="../file:///nix/store/x49rz651v9cgnj874d6smacv0b5w45bn-resourcet-1.2.4-doc/share/doc/resourcet-1.2.4/html/src"><span class="hs-identifier hs-var">runResourceT</span></a></span><span> </span><span class="annot"><span class="annottext">(ResourceT IO () -&gt; IO ())
+-&gt; (StackInfo -&gt; ResourceT IO ()) -&gt; StackInfo -&gt; IO ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Env -&gt; AWS () -&gt; ResourceT IO ()
+forall (m :: * -&gt; *) r a.
+(MonadResource m, HasEnv r) =&gt;
+r -&gt; AWS a -&gt; m a
+</span><a href="../file:///nix/store/ysgrjq10g1grnpcjmrk3ka8jwvmxflan-amazonka-1.6.1-doc/share/doc/amazonka-1.6.1/html/src"><span class="hs-identifier hs-var">runAWS</span></a></span><span> </span><span class="annot"><span class="annottext">Env
+</span><a href="#local-6989586621679255260"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">(AWS () -&gt; ResourceT IO ())
+-&gt; (StackInfo -&gt; AWS ()) -&gt; StackInfo -&gt; ResourceT IO ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">StackInfo -&gt; AWS ()
+</span><a href="Control.Distributed.Fork.AWS.Lambda.Internal.Stack.html#seDeleteStack"><span class="hs-identifier hs-var">seDeleteStack</span></a></span><span>
+</span><span id="line-320"></span></pre></body></html>

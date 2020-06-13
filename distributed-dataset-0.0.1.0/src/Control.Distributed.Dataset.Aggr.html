@@ -1,0 +1,571 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE RankNTypes #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE StaticPointers #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Dataset.Aggr</span><span>
+</span><span id="line-7"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier">Aggr</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#aggrConst"><span class="hs-identifier">aggrConst</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrCount"><span class="hs-identifier">aggrCount</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrSum"><span class="hs-identifier">aggrSum</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-11"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrMean"><span class="hs-identifier">aggrMean</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrMax"><span class="hs-identifier">aggrMax</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrMin"><span class="hs-identifier">aggrMin</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrCollect"><span class="hs-identifier">aggrCollect</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrDistinct"><span class="hs-identifier">aggrDistinct</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrTopK"><span class="hs-identifier">aggrTopK</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrBottomK"><span class="hs-identifier">aggrBottomK</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrFiltered"><span class="hs-identifier">aggrFiltered</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Creating Aggr's</span></span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#aggrFromMonoid"><span class="hs-identifier">aggrFromMonoid</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#aggrFromReduce"><span class="hs-identifier">aggrFromReduce</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#aggrFromFold"><span class="hs-identifier">aggrFromFold</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">Control.Applicative.Static</span></a></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">Control.Distributed.Closure</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html"><span class="hs-identifier">Control.Distributed.Dataset.Internal.Aggr</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html"><span class="hs-identifier">Control.Distributed.Dataset.Internal.Class</span></a></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier">Control.Foldl</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">F</span></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">Data.Functor.Static</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier">Data.HashSet</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier">HashSet</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/c4iclidz31xfp190gmky4wdkz5yps7f3-heaps-0.3.6.1-doc/share/doc/heaps-0.3.6.1/html/src"><span class="hs-identifier">Data.Heap</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">H</span></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Monoid</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Ord</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">Data.Profunctor.Static</span></a></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- Returns the sum of the inputs.</span><span>
+</span><span id="line-43"></span><span id="local-6989586621679162021"><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrSum"><span class="hs-identifier hs-type">aggrSum</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162021"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-type">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162021"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162021"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162021"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-44"></span><span id="aggrSum"><span class="annot"><span class="annottext">aggrSum :: Closure (Dict (Num a)) -&gt; Aggr a a
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrSum"><span class="hs-identifier hs-var hs-var">aggrSum</span></a></span></span><span> </span><span id="local-6989586621679161912"><span class="annot"><span class="annottext">Closure (Dict (Num a))
+</span><a href="#local-6989586621679161912"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-45"></span><span>  </span><span class="annot"><span class="annottext">Closure (a -&gt; Sum a)
+-&gt; Closure (Sum a -&gt; a) -&gt; Aggr (Sum a) (Sum a) -&gt; Aggr a a
+forall (p :: * -&gt; * -&gt; *) a b c d.
+(StaticProfunctor p, Typeable a, Typeable b, Typeable c,
+ Typeable d) =&gt;
+Closure (a -&gt; b) -&gt; Closure (c -&gt; d) -&gt; p b c -&gt; p a d
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-var">staticDimap</span></a></span><span>
+</span><span id="line-46"></span><span>    </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">a -&gt; Sum a
+forall a. a -&gt; Sum a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Sum</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Sum a -&gt; a
+forall a. Sum a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var">getSum</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Closure (Dict (Monoid (Sum a))) -&gt; Aggr (Sum a) (Sum a)
+forall a.
+StaticSerialise a =&gt;
+Closure (Dict (Monoid a)) -&gt; Aggr a a
+</span><a href="Control.Distributed.Dataset.Internal.Aggr.html#aggrFromMonoid"><span class="hs-identifier hs-var">aggrFromMonoid</span></a></span><span> </span><span class="annot"><span class="annottext">(Closure (Dict (Monoid (Sum a))) -&gt; Aggr (Sum a) (Sum a))
+-&gt; Closure (Dict (Monoid (Sum a))) -&gt; Aggr (Sum a) (Sum a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Num a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Monoid (Sum a))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Num a) -&gt; Dict (Monoid (Sum a)))
+-&gt; Closure (Dict (Num a)) -&gt; Closure (Dict (Monoid (Sum a)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Num a))
+</span><a href="#local-6989586621679161912"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- Returns the number of inputs.</span><span>
+</span><span id="line-52"></span><span id="local-6989586621679162007"><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrCount"><span class="hs-identifier hs-type">aggrCount</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162007"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162007"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.3.0/src"><span class="hs-identifier hs-type">Integer</span></a></span></span><span>
+</span><span id="line-53"></span><span id="aggrCount"><span class="annot"><span class="annottext">aggrCount :: Aggr a Integer
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrCount"><span class="hs-identifier hs-var hs-var">aggrCount</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; a -&gt; Integer
+forall a b. a -&gt; b -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">const</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; Integer) -&gt; Aggr Integer Integer -&gt; Aggr a Integer
+forall (p :: * -&gt; * -&gt; *) a b c.
+(StaticProfunctor p, Typeable a, Typeable b, Typeable c) =&gt;
+Closure (a -&gt; b) -&gt; p b c -&gt; p a c
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`staticLmap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Num Integer)) -&gt; Aggr Integer Integer
+forall a. StaticSerialise a =&gt; Closure (Dict (Num a)) -&gt; Aggr a a
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrSum"><span class="hs-identifier hs-var">aggrSum</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Num Integer)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- Calculates the mean of the inputs.</span><span>
+</span><span id="line-58"></span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrMean"><span class="hs-identifier hs-type">aggrMean</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Double</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Double</span></a></span><span>
+</span><span id="line-59"></span><span id="aggrMean"><span class="annot"><span class="annottext">aggrMean :: Aggr Double Double
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrMean"><span class="hs-identifier hs-var hs-var">aggrMean</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-60"></span><span>  </span><span class="annot"><span class="annottext">Closure (Double -&gt; Double -&gt; Double)
+-&gt; Aggr Double (Double -&gt; Double -&gt; Double)
+forall a t. (Typeable a, Typeable t) =&gt; Closure a -&gt; Aggr t a
+</span><a href="Control.Distributed.Dataset.Internal.Aggr.html#aggrConst"><span class="hs-identifier hs-var">aggrConst</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">(/)</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="annottext">Aggr Double (Double -&gt; Double -&gt; Double)
+-&gt; Aggr Double Double -&gt; Aggr Double (Double -&gt; Double)
+forall (f :: * -&gt; *) a b.
+(StaticApply f, Typeable a, Typeable b) =&gt;
+f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`staticApply`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Num Double)) -&gt; Aggr Double Double
+forall a. StaticSerialise a =&gt; Closure (Dict (Num a)) -&gt; Aggr a a
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrSum"><span class="hs-identifier hs-var">aggrSum</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Num Double)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">Aggr Double (Double -&gt; Double)
+-&gt; Aggr Double Double -&gt; Aggr Double Double
+forall (f :: * -&gt; *) a b.
+(StaticApply f, Typeable a, Typeable b) =&gt;
+f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`staticApply`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Integer -&gt; Double)
+-&gt; Aggr Double Integer -&gt; Aggr Double Double
+forall (f :: * -&gt; *) a b.
+(StaticFunctor f, Typeable a, Typeable b) =&gt;
+Closure (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-var">staticMap</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Double
+forall a b. (Real a, Fractional b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">realToFrac</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Aggr Double Integer
+forall a. Typeable a =&gt; Aggr a Integer
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrCount"><span class="hs-identifier hs-var">aggrCount</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-65"></span><span class="hs-comment">-- Return the maximum of the inputs.</span><span>
+</span><span id="line-66"></span><span>
+</span><span id="line-67"></span><span class="hs-comment">-- Returns 'Nothing' on empty 'Dataset's.</span><span>
+</span><span id="line-68"></span><span id="local-6989586621679161901"><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrMax"><span class="hs-identifier hs-type">aggrMax</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161901"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-type">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161901"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161901"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161901"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-69"></span><span id="aggrMax"><span class="annot"><span class="annottext">aggrMax :: Closure (Dict (Ord a)) -&gt; Aggr a (Maybe a)
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrMax"><span class="hs-identifier hs-var hs-var">aggrMax</span></a></span></span><span> </span><span id="local-6989586621679161900"><span class="annot"><span class="annottext">Closure (Dict (Ord a))
+</span><a href="#local-6989586621679161900"><span class="hs-identifier hs-var">dict</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; a -&gt; a) -&gt; Aggr a (Maybe a)
+forall a.
+StaticSerialise a =&gt;
+Closure (a -&gt; a -&gt; a) -&gt; Aggr a (Maybe a)
+</span><a href="Control.Distributed.Dataset.Internal.Aggr.html#aggrFromReduce"><span class="hs-identifier hs-var">aggrFromReduce</span></a></span><span> </span><span class="annot"><span class="annottext">(Closure (a -&gt; a -&gt; a) -&gt; Aggr a (Maybe a))
+-&gt; Closure (a -&gt; a -&gt; a) -&gt; Aggr a (Maybe a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Ord a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var">max</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Ord a) -&gt; a -&gt; a -&gt; a)
+-&gt; Closure (Dict (Ord a)) -&gt; Closure (a -&gt; a -&gt; a)
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Ord a))
+</span><a href="#local-6989586621679161900"><span class="hs-identifier hs-var">dict</span></a></span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-72"></span><span class="hs-comment">-- Return the minimum of the inputs.</span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-comment">-- Returns 'Nothing' on empty 'Dataset's.</span><span>
+</span><span id="line-75"></span><span id="local-6989586621679161898"><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrMin"><span class="hs-identifier hs-type">aggrMin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161898"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-type">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161898"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161898"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161898"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-76"></span><span id="aggrMin"><span class="annot"><span class="annottext">aggrMin :: Closure (Dict (Ord a)) -&gt; Aggr a (Maybe a)
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrMin"><span class="hs-identifier hs-var hs-var">aggrMin</span></a></span></span><span> </span><span id="local-6989586621679161897"><span class="annot"><span class="annottext">Closure (Dict (Ord a))
+</span><a href="#local-6989586621679161897"><span class="hs-identifier hs-var">dict</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; a -&gt; a) -&gt; Aggr a (Maybe a)
+forall a.
+StaticSerialise a =&gt;
+Closure (a -&gt; a -&gt; a) -&gt; Aggr a (Maybe a)
+</span><a href="Control.Distributed.Dataset.Internal.Aggr.html#aggrFromReduce"><span class="hs-identifier hs-var">aggrFromReduce</span></a></span><span> </span><span class="annot"><span class="annottext">(Closure (a -&gt; a -&gt; a) -&gt; Aggr a (Maybe a))
+-&gt; Closure (a -&gt; a -&gt; a) -&gt; Aggr a (Maybe a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Ord a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var">min</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Ord a) -&gt; a -&gt; a -&gt; a)
+-&gt; Closure (Dict (Ord a)) -&gt; Closure (a -&gt; a -&gt; a)
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Ord a))
+</span><a href="#local-6989586621679161897"><span class="hs-identifier hs-var">dict</span></a></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-79"></span><span class="hs-comment">-- Returns a new Aggr which only aggregates rows matching the predicate,</span><span>
+</span><span id="line-80"></span><span class="hs-comment">-- discarding others.</span><span>
+</span><span id="line-81"></span><span id="local-6989586621679161894"><span id="local-6989586621679161895"><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrFiltered"><span class="hs-identifier hs-type">aggrFiltered</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679161895"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Bool</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161895"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161894"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161895"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161894"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-82"></span><span id="aggrFiltered"><span class="annot"><span class="annottext">aggrFiltered :: Closure (a -&gt; Bool) -&gt; Aggr a b -&gt; Aggr a b
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrFiltered"><span class="hs-identifier hs-var hs-var">aggrFiltered</span></a></span></span><span> </span><span id="local-6989586621679161893"><span class="annot"><span class="annottext">Closure (a -&gt; Bool)
+</span><a href="#local-6989586621679161893"><span class="hs-identifier hs-var">predc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span id="local-6989586621679161891"><span class="annot"><span class="annottext">Closure (Fold a t)
+</span><a href="#local-6989586621679161891"><span class="hs-identifier hs-var">f1</span></a></span></span><span> </span><span id="local-6989586621679161890"><span class="annot"><span class="annottext">Closure (Fold t b)
+</span><a href="#local-6989586621679161890"><span class="hs-identifier hs-var">f2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-83"></span><span>  </span><span class="annot"><span class="annottext">Closure (Fold a t) -&gt; Closure (Fold t b) -&gt; Aggr a b
+forall a b t.
+(StaticSerialise t, Typeable a, Typeable b) =&gt;
+Closure (Fold a t) -&gt; Closure (Fold t b) -&gt; Aggr a b
+</span><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-var">Aggr</span></a></span><span>
+</span><span id="line-84"></span><span>    </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">(a -&gt; Bool) -&gt; Fold a t -&gt; Fold a t
+forall a r. (a -&gt; Bool) -&gt; Fold a r -&gt; Fold a r
+</span><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-var">F.prefilter</span></a></span><span> </span><span class="annot"><span class="annottext">Closure ((a -&gt; Bool) -&gt; Fold a t -&gt; Fold a t)
+-&gt; Closure (a -&gt; Bool) -&gt; Closure (Fold a t -&gt; Fold a t)
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; Bool)
+</span><a href="#local-6989586621679161893"><span class="hs-identifier hs-var">predc</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Fold a t -&gt; Fold a t)
+-&gt; Closure (Fold a t) -&gt; Closure (Fold a t)
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Fold a t)
+</span><a href="#local-6989586621679161891"><span class="hs-identifier hs-var">f1</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span>    </span><span class="annot"><span class="annottext">Closure (Fold t b)
+</span><a href="#local-6989586621679161890"><span class="hs-identifier hs-var">f2</span></a></span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-88"></span><span class="hs-comment">-- Collects the inputs as a list.</span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="hs-comment">-- Warning: Ordering of the resulting list is non-deterministic.</span><span>
+</span><span id="line-91"></span><span id="local-6989586621679161888"><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrCollect"><span class="hs-identifier hs-type">aggrCollect</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161888"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161888"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679161888"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-92"></span><span id="aggrCollect"><span class="annot"><span class="annottext">aggrCollect :: Aggr a [a]
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrCollect"><span class="hs-identifier hs-var hs-var">aggrCollect</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-93"></span><span>  </span><span class="annot"><span class="annottext">Closure (Fold a [a]) -&gt; Closure (Fold [a] [a]) -&gt; Aggr a [a]
+forall t a b.
+(StaticSerialise t, Typeable a, Typeable b) =&gt;
+Closure (Fold a t) -&gt; Closure (Fold t b) -&gt; Aggr a b
+</span><a href="Control.Distributed.Dataset.Internal.Aggr.html#aggrFromFold"><span class="hs-identifier hs-var">aggrFromFold</span></a></span><span>
+</span><span id="line-94"></span><span>    </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Fold a [a]
+forall a. Fold a [a]
+</span><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-var">F.list</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-95"></span><span>    </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[[a]] -&gt; [a]
+forall (t :: * -&gt; *) a. Foldable t =&gt; t [a] -&gt; [a]
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">concat</span></a></span><span> </span><span class="annot"><span class="annottext">([[a]] -&gt; [a]) -&gt; Fold [a] [[a]] -&gt; Fold [a] [a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Fold [a] [[a]]
+forall a. Fold a [a]
+</span><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-var">F.list</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- Collects the inputs to a 'HashSet'.</span><span>
+</span><span id="line-99"></span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrDistinct"><span class="hs-identifier hs-type">aggrDistinct</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679161884"><span class="annot"><a href="#local-6989586621679161884"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161884"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161884"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161884"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier hs-type">HashSet</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161884"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-100"></span><span id="aggrDistinct"><span class="annot"><span class="annottext">aggrDistinct :: Aggr a (HashSet a)
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrDistinct"><span class="hs-identifier hs-var hs-var">aggrDistinct</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-101"></span><span>  </span><span class="annot"><span class="annottext">Closure (Fold a (HashSet a))
+-&gt; Closure (Fold (HashSet a) (HashSet a)) -&gt; Aggr a (HashSet a)
+forall t a b.
+(StaticSerialise t, Typeable a, Typeable b) =&gt;
+Closure (Fold a t) -&gt; Closure (Fold t b) -&gt; Aggr a b
+</span><a href="Control.Distributed.Dataset.Internal.Aggr.html#aggrFromFold"><span class="hs-identifier hs-var">aggrFromFold</span></a></span><span>
+</span><span id="line-102"></span><span>    </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Eq a, Hashable a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Fold a (HashSet a)
+forall a. (Eq a, Hashable a) =&gt; Fold a (HashSet a)
+</span><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-var">F.hashSet</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Typeable a, Eq a, Hashable a) -&gt; Fold a (HashSet a))
+-&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+-&gt; Closure (Fold a (HashSet a))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable a =&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161884"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-103"></span><span>    </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable a, Eq a, Hashable a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[HashSet a] -&gt; HashSet a
+forall a. Monoid a =&gt; [a] -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">mconcat</span></a></span><span> </span><span class="annot"><span class="annottext">([HashSet a] -&gt; HashSet a)
+-&gt; Fold (HashSet a) [HashSet a] -&gt; Fold (HashSet a) (HashSet a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Fold (HashSet a) [HashSet a]
+forall a. Fold a [a]
+</span><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-var">F.list</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable a, Eq a, Hashable a)
+   -&gt; Fold (HashSet a) (HashSet a))
+-&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+-&gt; Closure (Fold (HashSet a) (HashSet a))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable a =&gt; Closure (Dict (Typeable a, Eq a, Hashable a))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679161884"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-104"></span><span>
+</span><span id="line-105"></span><span class="hs-comment">-- * Top K</span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span class="hs-keyword">data</span><span> </span><span id="TopK"><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#TopK"><span class="hs-identifier hs-var">TopK</span></a></span></span><span> </span><span id="local-6989586621679161969"><span class="annot"><a href="#local-6989586621679161969"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TopK"><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#TopK"><span class="hs-identifier hs-var">TopK</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/c4iclidz31xfp190gmky4wdkz5yps7f3-heaps-0.3.6.1-doc/share/doc/heaps-0.3.6.1/html/src"><span class="hs-identifier hs-type">H.Heap</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161969"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span id="local-6989586621679161880"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679161875"><span id="local-6989586621679161877"><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#TopK"><span class="hs-identifier hs-type">TopK</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161880"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-111"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#TopK"><span class="hs-identifier hs-type">TopK</span></a></span><span> </span><span id="local-6989586621679161873"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161873"><span class="hs-identifier hs-var">c1</span></a></span></span><span> </span><span id="local-6989586621679161872"><span class="annot"><span class="annottext">Heap a
+</span><a href="#local-6989586621679161872"><span class="hs-identifier hs-var">h1</span></a></span></span><span> </span><span id="local-6989586621679161871"><span class="annot"><span class="annottext">&lt;&gt; :: TopK a -&gt; TopK a -&gt; TopK a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></a></span></span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#TopK"><span class="hs-identifier hs-type">TopK</span></a></span><span> </span><span id="local-6989586621679161870"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161870"><span class="hs-identifier hs-var">c2</span></a></span></span><span> </span><span id="local-6989586621679161869"><span class="annot"><span class="annottext">Heap a
+</span><a href="#local-6989586621679161869"><span class="hs-identifier hs-var">h2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-112"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161868"><span class="annot"><span class="annottext">m :: Int
+</span><a href="#local-6989586621679161868"><span class="hs-identifier hs-var hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var">min</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161873"><span class="hs-identifier hs-var">c1</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161870"><span class="hs-identifier hs-var">c2</span></a></span><span>
+</span><span id="line-113"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Heap a -&gt; TopK a
+forall a. Int -&gt; Heap a -&gt; TopK a
+</span><a href="Control.Distributed.Dataset.Aggr.html#TopK"><span class="hs-identifier hs-var">TopK</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161868"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Heap a -&gt; Heap a
+forall a. Int -&gt; Heap a -&gt; Heap a
+</span><a href="../file:///nix/store/c4iclidz31xfp190gmky4wdkz5yps7f3-heaps-0.3.6.1-doc/share/doc/heaps-0.3.6.1/html/src"><span class="hs-identifier hs-var">H.drop</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Heap a -&gt; Int
+forall a. Heap a -&gt; Int
+</span><a href="../file:///nix/store/c4iclidz31xfp190gmky4wdkz5yps7f3-heaps-0.3.6.1-doc/share/doc/heaps-0.3.6.1/html/src"><span class="hs-identifier hs-var">H.size</span></a></span><span> </span><span class="annot"><span class="annottext">Heap a
+</span><a href="#local-6989586621679161872"><span class="hs-identifier hs-var">h1</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Heap a -&gt; Int
+forall a. Heap a -&gt; Int
+</span><a href="../file:///nix/store/c4iclidz31xfp190gmky4wdkz5yps7f3-heaps-0.3.6.1-doc/share/doc/heaps-0.3.6.1/html/src"><span class="hs-identifier hs-var">H.size</span></a></span><span> </span><span class="annot"><span class="annottext">Heap a
+</span><a href="#local-6989586621679161869"><span class="hs-identifier hs-var">h2</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161868"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Heap a -&gt; Heap a) -&gt; Heap a -&gt; Heap a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Heap a -&gt; Heap a -&gt; Heap a
+forall a. Heap a -&gt; Heap a -&gt; Heap a
+</span><a href="../file:///nix/store/c4iclidz31xfp190gmky4wdkz5yps7f3-heaps-0.3.6.1-doc/share/doc/heaps-0.3.6.1/html/src"><span class="hs-identifier hs-var">H.union</span></a></span><span> </span><span class="annot"><span class="annottext">Heap a
+</span><a href="#local-6989586621679161872"><span class="hs-identifier hs-var">h1</span></a></span><span> </span><span class="annot"><span class="annottext">Heap a
+</span><a href="#local-6989586621679161869"><span class="hs-identifier hs-var">h2</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span id="local-6989586621679161863"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679161857"><span id="local-6989586621679161859"><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#TopK"><span class="hs-identifier hs-type">TopK</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161863"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-116"></span><span>  </span><span id="local-6989586621679161855"><span class="annot"><span class="annottext">mempty :: TopK a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Heap a -&gt; TopK a
+forall a. Int -&gt; Heap a -&gt; TopK a
+</span><a href="Control.Distributed.Dataset.Aggr.html#TopK"><span class="hs-identifier hs-var">TopK</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+forall a. Bounded a =&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">maxBound</span></a></span><span> </span><span class="annot"><span class="annottext">Heap a
+forall a. Heap a
+</span><a href="../file:///nix/store/c4iclidz31xfp190gmky4wdkz5yps7f3-heaps-0.3.6.1-doc/share/doc/heaps-0.3.6.1/html/src"><span class="hs-identifier hs-var">H.empty</span></a></span></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-119"></span><span class="hs-comment">-- Returns the 'n' greatest elements according to a key function. Similar to:</span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- @take n . sortOn (Down . f)@</span><span>
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span class="hs-comment">-- Warning: Ordering of the repeated elements is non-deterministic.</span><span>
+</span><span id="line-123"></span><span id="local-6989586621679161927"><span id="local-6989586621679161928"><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrTopK"><span class="hs-identifier hs-type">aggrTopK</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-124"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161928"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161927"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-125"></span><span>  </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-type">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161927"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-126"></span><span>  </span><span class="hs-comment">-- | Number of rows to return</span><span>
+</span><span id="line-127"></span><span>  </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-128"></span><span>  </span><span class="hs-comment">-- | Sorting key</span><span>
+</span><span id="line-129"></span><span>  </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679161928"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679161927"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-130"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161928"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679161928"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-131"></span><span id="aggrTopK"><span class="annot"><span class="annottext">aggrTopK :: Closure (Dict (Ord k)) -&gt; Int -&gt; Closure (a -&gt; k) -&gt; Aggr a [a]
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrTopK"><span class="hs-identifier hs-var hs-var">aggrTopK</span></a></span></span><span> </span><span id="local-6989586621679161852"><span class="annot"><span class="annottext">Closure (Dict (Ord k))
+</span><a href="#local-6989586621679161852"><span class="hs-identifier hs-var">dict</span></a></span></span><span> </span><span id="local-6989586621679161851"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161851"><span class="hs-identifier hs-var">count</span></a></span></span><span> </span><span id="local-6989586621679161850"><span class="annot"><span class="annottext">Closure (a -&gt; k)
+</span><a href="#local-6989586621679161850"><span class="hs-identifier hs-var">fc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-132"></span><span>  </span><span class="annot"><span class="annottext">Closure (Fold a [a]) -&gt; Closure (Fold [a] [a]) -&gt; Aggr a [a]
+forall t a b.
+(StaticSerialise t, Typeable a, Typeable b) =&gt;
+Closure (Fold a t) -&gt; Closure (Fold t b) -&gt; Aggr a b
+</span><a href="Control.Distributed.Dataset.Internal.Aggr.html#aggrFromFold"><span class="hs-identifier hs-var">aggrFromFold</span></a></span><span>
+</span><span id="line-133"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">static</span><span>
+</span><span id="line-134"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Ord k)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span id="local-6989586621679161849"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161849"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621679161848"><span class="annot"><span class="annottext">a -&gt; k
+</span><a href="#local-6989586621679161848"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-135"></span><span>            </span><span class="annot"><span class="annottext">(a -&gt; TopK (Entry k a)) -&gt; (TopK (Entry k a) -&gt; [a]) -&gt; Fold a [a]
+forall w a b. Monoid w =&gt; (a -&gt; w) -&gt; (w -&gt; b) -&gt; Fold a b
+</span><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-var">F.foldMap</span></a></span><span>
+</span><span id="line-136"></span><span>              </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679161846"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161846"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Heap (Entry k a) -&gt; TopK (Entry k a)
+forall a. Int -&gt; Heap a -&gt; TopK a
+</span><a href="Control.Distributed.Dataset.Aggr.html#TopK"><span class="hs-identifier hs-var">TopK</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161849"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">(Heap (Entry k a) -&gt; TopK (Entry k a))
+-&gt; (Entry k a -&gt; Heap (Entry k a)) -&gt; Entry k a -&gt; TopK (Entry k a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Entry k a -&gt; Heap (Entry k a)
+forall a. Ord a =&gt; a -&gt; Heap a
+</span><a href="../file:///nix/store/c4iclidz31xfp190gmky4wdkz5yps7f3-heaps-0.3.6.1-doc/share/doc/heaps-0.3.6.1/html/src"><span class="hs-identifier hs-var">H.singleton</span></a></span><span> </span><span class="annot"><span class="annottext">(Entry k a -&gt; TopK (Entry k a)) -&gt; Entry k a -&gt; TopK (Entry k a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">k -&gt; a -&gt; Entry k a
+forall p a. p -&gt; a -&gt; Entry p a
+</span><a href="../file:///nix/store/c4iclidz31xfp190gmky4wdkz5yps7f3-heaps-0.3.6.1-doc/share/doc/heaps-0.3.6.1/html/src"><span class="hs-identifier hs-var">H.Entry</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; k
+</span><a href="#local-6989586621679161848"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161846"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161846"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-137"></span><span>              </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#TopK"><span class="hs-identifier hs-type">TopK</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679161842"><span class="annot"><span class="annottext">Heap (Entry k a)
+</span><a href="#local-6989586621679161842"><span class="hs-identifier hs-var">h</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Entry k a -&gt; a) -&gt; [Entry k a] -&gt; [a]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">map</span></a></span><span> </span><span class="annot"><span class="annottext">Entry k a -&gt; a
+forall p a. Entry p a -&gt; a
+</span><a href="../file:///nix/store/c4iclidz31xfp190gmky4wdkz5yps7f3-heaps-0.3.6.1-doc/share/doc/heaps-0.3.6.1/html/src"><span class="hs-identifier hs-var hs-var">H.payload</span></a></span><span> </span><span class="annot"><span class="annottext">([Entry k a] -&gt; [a])
+-&gt; ([Entry k a] -&gt; [Entry k a]) -&gt; [Entry k a] -&gt; [a]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Entry k a -&gt; Down (Entry k a)) -&gt; [Entry k a] -&gt; [Entry k a]
+forall b a. Ord b =&gt; (a -&gt; b) -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">sortOn</span></a></span><span> </span><span class="annot"><span class="annottext">Entry k a -&gt; Down (Entry k a)
+forall a. a -&gt; Down a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Down</span></a></span><span> </span><span class="annot"><span class="annottext">([Entry k a] -&gt; [a]) -&gt; [Entry k a] -&gt; [a]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Heap (Entry k a) -&gt; [Entry k a]
+forall a. Heap a -&gt; [a]
+</span><a href="../file:///nix/store/c4iclidz31xfp190gmky4wdkz5yps7f3-heaps-0.3.6.1-doc/share/doc/heaps-0.3.6.1/html/src"><span class="hs-identifier hs-var">H.toUnsortedList</span></a></span><span> </span><span class="annot"><span class="annottext">Heap (Entry k a)
+</span><a href="#local-6989586621679161842"><span class="hs-identifier hs-var">h</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-138"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>        </span><span class="annot"><span class="annottext">Closure (Dict (Ord k) -&gt; Int -&gt; (a -&gt; k) -&gt; Fold a [a])
+-&gt; Closure (Dict (Ord k))
+-&gt; Closure (Int -&gt; (a -&gt; k) -&gt; Fold a [a])
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Ord k))
+</span><a href="#local-6989586621679161852"><span class="hs-identifier hs-var">dict</span></a></span><span>
+</span><span id="line-140"></span><span>        </span><span class="annot"><span class="annottext">Closure (Int -&gt; (a -&gt; k) -&gt; Fold a [a])
+-&gt; Closure Int -&gt; Closure ((a -&gt; k) -&gt; Fold a [a])
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Serializable Int)) -&gt; Int -&gt; Closure Int
+forall a. Closure (Dict (Serializable a)) -&gt; a -&gt; Closure a
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-var">cpure</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Serializable Int)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161851"><span class="hs-identifier hs-var">count</span></a></span><span>
+</span><span id="line-141"></span><span>        </span><span class="annot"><span class="annottext">Closure ((a -&gt; k) -&gt; Fold a [a])
+-&gt; Closure (a -&gt; k) -&gt; Closure (Fold a [a])
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; k)
+</span><a href="#local-6989586621679161850"><span class="hs-identifier hs-var">fc</span></a></span><span>
+</span><span id="line-142"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-143"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">static</span><span>
+</span><span id="line-144"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Ord k)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span id="local-6989586621679161836"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161836"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621679161835"><span class="annot"><span class="annottext">a -&gt; k
+</span><a href="#local-6989586621679161835"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-145"></span><span>            </span><span class="annot"><span class="annottext">([a] -&gt; [a] -&gt; [a]) -&gt; [a] -&gt; ([a] -&gt; [a]) -&gt; Fold [a] [a]
+forall a b x. (x -&gt; a -&gt; x) -&gt; x -&gt; (x -&gt; b) -&gt; Fold a b
+</span><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-var">F.Fold</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679161833"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161833"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679161832"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161832"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [a] -&gt; [a]
+forall a. Int -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">take</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161836"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">([a] -&gt; [a]) -&gt; [a] -&gt; [a]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; k) -&gt; [a] -&gt; [a] -&gt; [a]
+forall a a. Ord a =&gt; (a -&gt; a) -&gt; [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679161830"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; k
+</span><a href="#local-6989586621679161835"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161833"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161832"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a]
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-146"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-147"></span><span>        </span><span class="annot"><span class="annottext">Closure (Dict (Ord k) -&gt; Int -&gt; (a -&gt; k) -&gt; Fold [a] [a])
+-&gt; Closure (Dict (Ord k))
+-&gt; Closure (Int -&gt; (a -&gt; k) -&gt; Fold [a] [a])
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Ord k))
+</span><a href="#local-6989586621679161852"><span class="hs-identifier hs-var">dict</span></a></span><span>
+</span><span id="line-148"></span><span>        </span><span class="annot"><span class="annottext">Closure (Int -&gt; (a -&gt; k) -&gt; Fold [a] [a])
+-&gt; Closure Int -&gt; Closure ((a -&gt; k) -&gt; Fold [a] [a])
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Serializable Int)) -&gt; Int -&gt; Closure Int
+forall a. Closure (Dict (Serializable a)) -&gt; a -&gt; Closure a
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-var">cpure</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">Dict (Serializable Int)
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161851"><span class="hs-identifier hs-var">count</span></a></span><span>
+</span><span id="line-149"></span><span>        </span><span class="annot"><span class="annottext">Closure ((a -&gt; k) -&gt; Fold [a] [a])
+-&gt; Closure (a -&gt; k) -&gt; Closure (Fold [a] [a])
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; k)
+</span><a href="#local-6989586621679161850"><span class="hs-identifier hs-var">fc</span></a></span><span>
+</span><span id="line-150"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-151"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-152"></span><span>    </span><span id="local-6989586621679161830"><span class="annot"><span class="annottext">merge :: (a -&gt; a) -&gt; [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679161830"><span class="hs-identifier hs-var hs-var">merge</span></a></span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679161828"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161828"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161828"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-153"></span><span>    </span><span class="annot"><a href="#local-6989586621679161830"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span id="local-6989586621679161827"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161827"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161827"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-154"></span><span>    </span><span class="annot"><a href="#local-6989586621679161830"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span id="local-6989586621679161826"><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621679161826"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679161825"><span class="annot"><span class="annottext">xss :: [a]
+</span><a href="#local-6989586621679161825"><span class="hs-identifier hs-var">xss</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679161824"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161824"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-glyph hs-type">:</span></a></span><span> </span><span id="local-6989586621679161823"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161823"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679161822"><span class="annot"><span class="annottext">yss :: [a]
+</span><a href="#local-6989586621679161822"><span class="hs-identifier hs-var">yss</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679161821"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161821"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-glyph hs-type">:</span></a></span><span> </span><span id="local-6989586621679161820"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161820"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-155"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621679161826"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161824"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-operator hs-var">&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621679161826"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161821"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-156"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161824"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679161830"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621679161826"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161823"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161822"><span class="hs-identifier hs-var">yss</span></a></span><span>
+</span><span id="line-157"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679161821"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679161830"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621679161826"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161825"><span class="hs-identifier hs-var">xss</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679161820"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-158"></span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- Returns the 'n' least elements according to a key function. Similar to:</span><span>
+</span><span id="line-161"></span><span class="hs-comment">-- @take n . sortOn (Down . f)@</span><span>
+</span><span id="line-162"></span><span>
+</span><span id="line-163"></span><span class="hs-comment">-- Warning: Ordering of the repeated elements is non-deterministic.</span><span>
+</span><span id="line-164"></span><span id="local-6989586621679161817"><span id="local-6989586621679161818"><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html#aggrBottomK"><span class="hs-identifier hs-type">aggrBottomK</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-165"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161818"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161817"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-166"></span><span>  </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-type">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161817"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-167"></span><span>  </span><span class="hs-comment">-- | Number of rows to return</span><span>
+</span><span id="line-168"></span><span>  </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-169"></span><span>  </span><span class="hs-comment">-- | Sorting key</span><span>
+</span><span id="line-170"></span><span>  </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679161818"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679161817"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-171"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161818"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679161818"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-172"></span><span id="aggrBottomK"><span class="annot"><span class="annottext">aggrBottomK :: Closure (Dict (Ord k)) -&gt; Int -&gt; Closure (a -&gt; k) -&gt; Aggr a [a]
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrBottomK"><span class="hs-identifier hs-var hs-var">aggrBottomK</span></a></span></span><span> </span><span id="local-6989586621679161816"><span class="annot"><span class="annottext">Closure (Dict (Ord k))
+</span><a href="#local-6989586621679161816"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621679161815"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161815"><span class="hs-identifier hs-var">count</span></a></span></span><span> </span><span id="local-6989586621679161814"><span class="annot"><span class="annottext">Closure (a -&gt; k)
+</span><a href="#local-6989586621679161814"><span class="hs-identifier hs-var">fc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-173"></span><span>  </span><span class="annot"><span class="annottext">Closure (Dict (Ord (Down k)))
+-&gt; Int -&gt; Closure (a -&gt; Down k) -&gt; Aggr a [a]
+forall a k.
+(StaticSerialise a, Typeable k) =&gt;
+Closure (Dict (Ord k)) -&gt; Int -&gt; Closure (a -&gt; k) -&gt; Aggr a [a]
+</span><a href="Control.Distributed.Dataset.Aggr.html#aggrTopK"><span class="hs-identifier hs-var">aggrTopK</span></a></span><span>
+</span><span id="line-174"></span><span>    </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Ord k)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Dict (Ord (Down k))
+forall (a :: Constraint). a =&gt; Dict a
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Ord k) -&gt; Dict (Ord (Down k)))
+-&gt; Closure (Dict (Ord k)) -&gt; Closure (Dict (Ord (Down k)))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Ord k))
+</span><a href="#local-6989586621679161816"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-175"></span><span>    </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679161815"><span class="hs-identifier hs-var">count</span></a></span><span>
+</span><span id="line-176"></span><span>    </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">k -&gt; Down k
+forall a. a -&gt; Down a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Down</span></a></span><span> </span><span class="annot"><span class="annottext">(k -&gt; Down k) -&gt; (a -&gt; k) -&gt; a -&gt; Down k
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure ((a -&gt; k) -&gt; a -&gt; Down k)
+-&gt; Closure (a -&gt; k) -&gt; Closure (a -&gt; Down k)
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; k)
+</span><a href="#local-6989586621679161814"><span class="hs-identifier hs-var">fc</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-177"></span></pre></body></html>

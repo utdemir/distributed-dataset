@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- It uses</span><span>
+</span><span id="line-2"></span><span class="hs-comment">-- &lt;https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#static-pointers StaticPointers language extension&gt; and</span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- &lt;https://hackage.haskell.org/package/distributed-closure distributed-closure&gt; library</span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- for serializing closures to run remotely.</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- &lt;https://ocharles.org.uk/blog/guest-posts/2014-12-23-static-pointers.html This blog post&gt;</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- is a good introduction for those.</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- In short, if you you need a @'Closure' a@:</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-comment">--     * If @a@ is statically known (eg. a top level value, or if it does not</span><span>
+</span><span id="line-11"></span><span class="hs-comment">--   depend on anything on the scope), use @static@ keyword coming from</span><span>
+</span><span id="line-12"></span><span class="hs-comment">--   @StaticPointers@ extension.</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-comment">--     * If @a@ is a runtime value, use 'cpure' to lift it to @Closure a@. It will ask</span><span>
+</span><span id="line-15"></span><span class="hs-comment">--   for a @('Closure' ('Dict' ('Serializable' a)))@. If there is @('Binary' a)@ and</span><span>
+</span><span id="line-16"></span><span class="hs-comment">--   @('Typeable' a)@ instances, you can just use @(static 'Dict')@ for that.</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- One important constraint when using this library is that it assumes the remote</span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- environment is capable of executing the exact same binary. On most cases, this</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- requires your host environment to be Linux. In future I plan to provide a set</span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- of scripts using Docker to overcome this limitation.</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-24"></span><span class="hs-comment">-- This module provides a common interface for offloading an IO action to remote executors.</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Fork</span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.html#fork"><span class="hs-identifier">fork</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#initDistributedFork"><span class="hs-identifier">initDistributedFork</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier">Backend</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Handle</span></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Handle"><span class="hs-identifier">Handle</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.html#await"><span class="hs-identifier">await</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><span class="hs-comment">-- * ExecutorStatus</span></span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#pollHandle"><span class="hs-identifier">pollHandle</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorStatus"><span class="hs-identifier">ExecutorStatus</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorPendingStatus"><span class="hs-identifier">ExecutorPendingStatus</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#ExecutorFinalStatus"><span class="hs-identifier">ExecutorFinalStatus</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Exceptions</span></span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.html#ExecutorFailedException"><span class="hs-identifier">ExecutorFailedException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Re-exports</span></span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">Serializable</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">Closure</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">cap</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-47"></span><span>    </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">cpure</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier">Dict</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">Control.Distributed.Closure</span></a></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html"><span class="hs-identifier">Control.Distributed.Fork.Internal</span></a></span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Control.Monad</span></a></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/exceptions-0.10.4/src"><span class="hs-identifier">Control.Monad.Catch</span></a></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Control.Monad.IO.Class</span></a></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Data.Text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier">Text</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- Asynchronously executes the given function using the 'Backend' and returns</span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- an 'Handle'.</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- {-\# LANGUAGE StaticPointers #-}</span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- import Control.Distributed.Fork</span><span>
+</span><span id="line-67"></span><span class="hs-comment">-- import Control.Distributed.Fork.Local</span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- main :: IO ()</span><span>
+</span><span id="line-70"></span><span class="hs-comment">-- main = do</span><span>
+</span><span id="line-71"></span><span class="hs-comment">--   'initDistributedFork'</span><span>
+</span><span id="line-72"></span><span class="hs-comment">--   handle &lt;- 'fork' 'Control.Distributed.Fork.Local.localProcessBackend' (static 'Dict') (static (return &quot;Hello World!&quot;))</span><span>
+</span><span id="line-73"></span><span class="hs-comment">--   await handle &gt;&gt;= putStrLn</span><span>
+</span><span id="line-74"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-75"></span><span id="local-6989586621679160988"><span id="local-6989586621679160989"><span class="annot"><a href="Control.Distributed.Fork.html#fork"><span class="hs-identifier hs-type">fork</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-76"></span><span>  </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">MonadIO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160989"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-77"></span><span>  </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier hs-type">Backend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-78"></span><span>  </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-type">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Serializable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160988"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-79"></span><span>  </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160988"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-80"></span><span>  </span><span class="annot"><a href="#local-6989586621679160989"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Handle"><span class="hs-identifier hs-type">Handle</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160988"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-81"></span><span id="fork"><span class="annot"><span class="annottext">fork :: Backend
+-&gt; Closure (Dict (Serializable a))
+-&gt; Closure (IO a)
+-&gt; m (Handle a)
+</span><a href="Control.Distributed.Fork.html#fork"><span class="hs-identifier hs-var hs-var">fork</span></a></span></span><span> </span><span id="local-6989586621679160987"><span class="annot"><span class="annottext">Backend
+</span><a href="#local-6989586621679160987"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679160986"><span class="annot"><span class="annottext">Closure (Dict (Serializable a))
+</span><a href="#local-6989586621679160986"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621679160985"><span class="annot"><span class="annottext">Closure (IO a)
+</span><a href="#local-6989586621679160985"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO (Handle a) -&gt; m (Handle a)
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">liftIO</span></a></span><span> </span><span class="annot"><span class="annottext">(IO (Handle a) -&gt; m (Handle a)) -&gt; IO (Handle a) -&gt; m (Handle a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Serializable a))
+-&gt; Closure (IO a) -&gt; Backend -&gt; IO (Handle a)
+forall i.
+Closure (Dict (Serializable i))
+-&gt; Closure (IO i) -&gt; Backend -&gt; IO (Handle i)
+</span><a href="Control.Distributed.Fork.Internal.html#runBackend"><span class="hs-identifier hs-var">runBackend</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Dict (Serializable a))
+</span><a href="#local-6989586621679160986"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (IO a)
+</span><a href="#local-6989586621679160985"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Backend
+</span><a href="#local-6989586621679160987"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- Blocks until the 'Handle' completes.</span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-comment">-- Can throw 'ExecutorFailedException'.</span><span>
+</span><span id="line-87"></span><span id="local-6989586621679160981"><span id="local-6989586621679160982"><span class="annot"><a href="Control.Distributed.Fork.html#await"><span class="hs-identifier hs-type">await</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">MonadIO</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160982"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/exceptions-0.10.4/src"><span class="hs-identifier hs-type">MonadThrow</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160982"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Handle"><span class="hs-identifier hs-type">Handle</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160981"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679160982"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679160981"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-88"></span><span id="await"><span class="annot"><span class="annottext">await :: Handle a -&gt; m a
+</span><a href="Control.Distributed.Fork.html#await"><span class="hs-identifier hs-var hs-var">await</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO (Either Text a) -&gt; m (Either Text a)
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">liftIO</span></a></span><span> </span><span class="annot"><span class="annottext">(IO (Either Text a) -&gt; m (Either Text a))
+-&gt; (Handle a -&gt; IO (Either Text a))
+-&gt; Handle a
+-&gt; m (Either Text a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Handle a -&gt; IO (Either Text a)
+forall a. Handle a -&gt; IO (Either Text a)
+</span><a href="Control.Distributed.Fork.Internal.html#tryAwait"><span class="hs-identifier hs-var">tryAwait</span></a></span><span> </span><span class="annot"><span class="annottext">(Handle a -&gt; m (Either Text a))
+-&gt; (Either Text a -&gt; m a) -&gt; Handle a -&gt; m a
+forall (m :: * -&gt; *) a b c.
+Monad m =&gt;
+(a -&gt; m b) -&gt; (b -&gt; m c) -&gt; a -&gt; m c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&gt;=&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; m a) -&gt; (a -&gt; m a) -&gt; Either Text a -&gt; m a
+forall a c b. (a -&gt; c) -&gt; (b -&gt; c) -&gt; Either a b -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">either</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ExecutorFailedException -&gt; m a
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/exceptions-0.10.4/src"><span class="hs-identifier hs-var">throwM</span></a></span><span> </span><span class="annot"><span class="annottext">(ExecutorFailedException -&gt; m a)
+-&gt; (Text -&gt; ExecutorFailedException) -&gt; Text -&gt; m a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; ExecutorFailedException
+</span><a href="Control.Distributed.Fork.html#ExecutorFailedException"><span class="hs-identifier hs-var">ExecutorFailedException</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a -&gt; m a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="hs-keyword">newtype</span><span> </span><span id="ExecutorFailedException"><span class="annot"><a href="Control.Distributed.Fork.html#ExecutorFailedException"><span class="hs-identifier hs-var">ExecutorFailedException</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ExecutorFailedException"><span class="annot"><a href="Control.Distributed.Fork.html#ExecutorFailedException"><span class="hs-identifier hs-var">ExecutorFailedException</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/text-1.2.3.2/src"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-91"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679160969"><span id="local-6989586621679160971"><span id="local-6989586621679160973"><span class="annot"><span class="annottext">Int -&gt; ExecutorFailedException -&gt; ShowS
+[ExecutorFailedException] -&gt; ShowS
+ExecutorFailedException -&gt; String
+(Int -&gt; ExecutorFailedException -&gt; ShowS)
+-&gt; (ExecutorFailedException -&gt; String)
+-&gt; ([ExecutorFailedException] -&gt; ShowS)
+-&gt; Show ExecutorFailedException
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ExecutorFailedException] -&gt; ShowS
+$cshowList :: [ExecutorFailedException] -&gt; ShowS
+show :: ExecutorFailedException -&gt; String
+$cshow :: ExecutorFailedException -&gt; String
+showsPrec :: Int -&gt; ExecutorFailedException -&gt; ShowS
+$cshowsPrec :: Int -&gt; ExecutorFailedException -&gt; ShowS
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679160964"><span id="local-6989586621679160966"><span class="annot"><span class="annottext">ExecutorFailedException -&gt; ExecutorFailedException -&gt; Bool
+(ExecutorFailedException -&gt; ExecutorFailedException -&gt; Bool)
+-&gt; (ExecutorFailedException -&gt; ExecutorFailedException -&gt; Bool)
+-&gt; Eq ExecutorFailedException
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ExecutorFailedException -&gt; ExecutorFailedException -&gt; Bool
+$c/= :: ExecutorFailedException -&gt; ExecutorFailedException -&gt; Bool
+== :: ExecutorFailedException -&gt; ExecutorFailedException -&gt; Bool
+$c== :: ExecutorFailedException -&gt; ExecutorFailedException -&gt; Bool
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679160955"><span id="local-6989586621679160957"><span id="local-6989586621679160959"><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Exception</span></a></span><span> </span><span class="annot"><a href="Control.Distributed.Fork.html#ExecutorFailedException"><span class="hs-identifier hs-type">ExecutorFailedException</span></a></span></span></span></span><span>
+</span><span id="line-94"></span></pre></body></html>

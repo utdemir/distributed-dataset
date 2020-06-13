@@ -1,0 +1,700 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE GADTs #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE StaticPointers #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Distributed.Dataset</span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier">Dataset</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Transformations</span></span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#dMap"><span class="hs-identifier">dMap</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#dFilter"><span class="hs-identifier">dFilter</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#dConcatMap"><span class="hs-identifier">dConcatMap</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#dGroupedAggr"><span class="hs-identifier">dGroupedAggr</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#dDistinct"><span class="hs-identifier">dDistinct</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#dDistinctBy"><span class="hs-identifier">dDistinctBy</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Low-level transformations</span></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#dCoalesce"><span class="hs-identifier">dCoalesce</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#dPipe"><span class="hs-identifier">dPipe</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#dPartition"><span class="hs-identifier">dPartition</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Aggregations</span></span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html"><span class="hs-identifier">Control.Distributed.Dataset.Aggr</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Execution</span></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#dAggr"><span class="hs-identifier">dAggr</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#dFetch"><span class="hs-identifier">dFetch</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#dToList"><span class="hs-identifier">dToList</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#DD"><span class="hs-identifier">DD</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#runDD"><span class="hs-identifier">runDD</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#runDDWith"><span class="hs-identifier">runDDWith</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#Backend"><span class="hs-identifier">Backend</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html#ShuffleStore"><span class="hs-identifier">ShuffleStore</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Creating datasets</span></span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Partition"><span class="hs-identifier">Partition</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#mkPartition"><span class="hs-identifier">mkPartition</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.html#dExternal"><span class="hs-identifier">dExternal</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Class</span></span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier">StaticSerialise</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-47"></span><span>    </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier">StaticHashable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Re-exports</span></span><span>
+</span><span id="line-50"></span><span>    </span><span class="annot"><a href="Control.Distributed.Fork.Internal.html#initDistributedFork"><span class="hs-identifier">initDistributedFork</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">liftIO</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator">(&amp;)</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Closure</span></span><span>
+</span><span id="line-55"></span><span>    </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">Closure</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">cap</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">cpure</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier">Dict</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier">Dict</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">Conduit</span></a></span><span> </span><span class="hs-keyword">hiding</span><span>
+</span><span id="line-63"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">Consumer</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-64"></span><span>    </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">Producer</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-65"></span><span>    </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">await</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-66"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier">Conduit</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">C</span></span><span>
+</span><span id="line-68"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier">Control.Distributed.Closure</span></a></span><span>
+</span><span id="line-69"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Aggr.html"><span class="hs-identifier">Control.Distributed.Dataset.Aggr</span></a></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html"><span class="hs-identifier">Control.Distributed.Dataset.Internal.Aggr</span></a></span><span>
+</span><span id="line-71"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html"><span class="hs-identifier">Control.Distributed.Dataset.Internal.Class</span></a></span><span>
+</span><span id="line-72"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html"><span class="hs-identifier">Control.Distributed.Dataset.Internal.Dataset</span></a></span><span>
+</span><span id="line-73"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.ShuffleStore.html"><span class="hs-identifier">Control.Distributed.Dataset.ShuffleStore</span></a></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Distributed.Fork.html"><span class="hs-identifier">Control.Distributed.Fork</span></a></span><span>
+</span><span id="line-75"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier">Control.Foldl</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">F</span></span><span>
+</span><span id="line-76"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/10rh5i1rpdfkqiswqgrsrzv661j373vx-lens-4.19.2-doc/share/doc/lens-4.19.2/html/src"><span class="hs-identifier">Control.Lens</span></a></span><span>
+</span><span id="line-77"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier">Data.HashMap.Strict</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">HM</span></span><span>
+</span><span id="line-78"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier">Data.HashSet</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">HS</span></span><span>
+</span><span id="line-79"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/4dmjxkc7la3hg9sk7sd3q8hl8ff8w3g5-hashable-1.3.0.0-doc/share/doc/hashable-1.3.0.0/html/src"><span class="hs-identifier">Data.Hashable</span></a></span><span>
+</span><span id="line-80"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-83"></span><span class="hs-comment">-- Create a 'Partition' given a Source conduit.</span><span>
+</span><span id="line-84"></span><span id="local-6989586621679162716"><span class="annot"><a href="Control.Distributed.Dataset.html#mkPartition"><span class="hs-identifier hs-type">mkPartition</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162716"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-type">ConduitT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679162716"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/x49rz651v9cgnj874d6smacv0b5w45bn-resourcet-1.2.4-doc/share/doc/resourcet-1.2.4/html/src"><span class="hs-identifier hs-type">ResourceT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Partition"><span class="hs-identifier hs-type">Partition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162716"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-85"></span><span id="mkPartition"><span class="annot"><span class="annottext">mkPartition :: Closure (ConduitT () a (ResourceT IO) ()) -&gt; Partition a
+</span><a href="Control.Distributed.Dataset.html#mkPartition"><span class="hs-identifier hs-var hs-var">mkPartition</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Closure (ConduitT () a (ResourceT IO) ()) -&gt; Partition a
+forall a. Closure (ConduitT () a (ResourceT IO) ()) -&gt; Partition a
+</span><a href="Control.Distributed.Dataset.Internal.Dataset.html#PSimple"><span class="hs-identifier hs-var">PSimple</span></a></span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span class="hs-comment">-- * Dataset</span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-90"></span><span class="hs-comment">-- Transforms a 'Dataset' by passing every partition through the given Conduit.</span><span>
+</span><span id="line-91"></span><span id="local-6989586621679162713"><span id="local-6989586621679162714"><span class="annot"><a href="Control.Distributed.Dataset.html#dPipe"><span class="hs-identifier hs-type">dPipe</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-92"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162714"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162713"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-93"></span><span>  </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-type">ConduitT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162714"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162713"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/x49rz651v9cgnj874d6smacv0b5w45bn-resourcet-1.2.4-doc/share/doc/resourcet-1.2.4/html/src"><span class="hs-identifier hs-type">ResourceT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-94"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162714"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-95"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162713"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-96"></span><span id="dPipe"><span class="annot"><span class="annottext">dPipe :: Closure (ConduitT a b (ResourceT IO) ()) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.html#dPipe"><span class="hs-identifier hs-var hs-var">dPipe</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Closure (ConduitT a b (ResourceT IO) ()) -&gt; Dataset a -&gt; Dataset b
+forall a b.
+(StaticSerialise a, StaticSerialise b) =&gt;
+Closure (ConduitT a b (ResourceT IO) ()) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.Internal.Dataset.html#DPipe"><span class="hs-identifier hs-var">DPipe</span></a></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-99"></span><span class="hs-comment">-- Create a dataset from given `Partition`'s.</span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span class="hs-comment">-- This is how every 'Dataset' is created initially.</span><span>
+</span><span id="line-102"></span><span id="local-6989586621679162711"><span class="annot"><a href="Control.Distributed.Dataset.html#dExternal"><span class="hs-identifier hs-type">dExternal</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162711"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Partition"><span class="hs-identifier hs-type">Partition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162711"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162711"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-103"></span><span id="dExternal"><span class="annot"><span class="annottext">dExternal :: [Partition a] -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.html#dExternal"><span class="hs-identifier hs-var hs-var">dExternal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Partition a] -&gt; Dataset a
+forall a. StaticSerialise a =&gt; [Partition a] -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.Internal.Dataset.html#DExternal"><span class="hs-identifier hs-var">DExternal</span></a></span><span>
+</span><span id="line-104"></span><span>
+</span><span id="line-105"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-106"></span><span class="hs-comment">-- Re-partition the dataset using the given function so that the items with the same 'k' will</span><span>
+</span><span id="line-107"></span><span class="hs-comment">-- end up in the same partition.</span><span>
+</span><span id="line-108"></span><span id="local-6989586621679162784"><span id="local-6989586621679162785"><span class="annot"><a href="Control.Distributed.Dataset.html#dPartition"><span class="hs-identifier hs-type">dPartition</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162785"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162784"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162785"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679162784"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162785"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162785"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-109"></span><span id="dPartition"><span class="annot"><span class="annottext">dPartition :: Int -&gt; Closure (a -&gt; k) -&gt; Dataset a -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.html#dPartition"><span class="hs-identifier hs-var hs-var">dPartition</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Closure (a -&gt; k) -&gt; Dataset a -&gt; Dataset a
+forall k a.
+(StaticHashable k, StaticSerialise a) =&gt;
+Int -&gt; Closure (a -&gt; k) -&gt; Dataset a -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.Internal.Dataset.html#DPartition"><span class="hs-identifier hs-var">DPartition</span></a></span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-112"></span><span class="hs-comment">-- Coalesce partitions together to get the specified number of partitions.</span><span>
+</span><span id="line-113"></span><span id="local-6989586621679162708"><span class="annot"><a href="Control.Distributed.Dataset.html#dCoalesce"><span class="hs-identifier hs-type">dCoalesce</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162708"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162708"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162708"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-114"></span><span id="dCoalesce"><span class="annot"><span class="annottext">dCoalesce :: Int -&gt; Dataset a -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.html#dCoalesce"><span class="hs-identifier hs-var hs-var">dCoalesce</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Dataset a -&gt; Dataset a
+forall a. Int -&gt; Dataset a -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.Internal.Dataset.html#DCoalesce"><span class="hs-identifier hs-var">DCoalesce</span></a></span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="hs-comment">-- * Dataset API</span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-119"></span><span class="hs-comment">-- Returns a new Dataset by first applying a function to all elements of this Dataset, and then</span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- flattening the results.</span><span>
+</span><span id="line-121"></span><span id="local-6989586621679162846"><span id="local-6989586621679162847"><span class="annot"><a href="Control.Distributed.Dataset.html#dConcatMap"><span class="hs-identifier hs-type">dConcatMap</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162847"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162846"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162847"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679162846"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162847"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162846"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-122"></span><span id="dConcatMap"><span class="annot"><span class="annottext">dConcatMap :: Closure (a -&gt; [b]) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.html#dConcatMap"><span class="hs-identifier hs-var hs-var">dConcatMap</span></a></span></span><span> </span><span id="local-6989586621679162706"><span class="annot"><span class="annottext">Closure (a -&gt; [b])
+</span><a href="#local-6989586621679162706"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Closure (ConduitT a b (ResourceT IO) ()) -&gt; Dataset a -&gt; Dataset b
+forall a b.
+(StaticSerialise a, StaticSerialise b) =&gt;
+Closure (ConduitT a b (ResourceT IO) ()) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.html#dPipe"><span class="hs-identifier hs-var">dPipe</span></a></span><span> </span><span class="annot"><span class="annottext">(Closure (ConduitT a b (ResourceT IO) ())
+ -&gt; Dataset a -&gt; Dataset b)
+-&gt; Closure (ConduitT a b (ResourceT IO) ())
+-&gt; Dataset a
+-&gt; Dataset b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall mono a.
+(Monad (ResourceT IO), MonoFoldable mono) =&gt;
+(a -&gt; mono) -&gt; ConduitT a (Element mono) (ResourceT IO) ()
+forall (m :: * -&gt; *) mono a.
+(Monad m, MonoFoldable mono) =&gt;
+(a -&gt; mono) -&gt; ConduitT a (Element mono) m ()
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-var">C.concatMapC</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/x49rz651v9cgnj874d6smacv0b5w45bn-resourcet-1.2.4-doc/share/doc/resourcet-1.2.4/html/src"><span class="hs-identifier hs-type">ResourceT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure ((a -&gt; [b]) -&gt; ConduitT a b (ResourceT IO) ())
+-&gt; Closure (a -&gt; [b]) -&gt; Closure (ConduitT a b (ResourceT IO) ())
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; [b])
+</span><a href="#local-6989586621679162706"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-123"></span><span>
+</span><span id="line-124"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-125"></span><span class="hs-comment">-- Returns a new Dataset that contains the result of applying the given function to each element.</span><span>
+</span><span id="line-126"></span><span id="local-6989586621679162771"><span id="local-6989586621679162772"><span class="annot"><a href="Control.Distributed.Dataset.html#dMap"><span class="hs-identifier hs-type">dMap</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162772"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162771"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162772"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679162771"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162772"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162771"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-127"></span><span id="dMap"><span class="annot"><span class="annottext">dMap :: Closure (a -&gt; b) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.html#dMap"><span class="hs-identifier hs-var hs-var">dMap</span></a></span></span><span> </span><span id="local-6989586621679162704"><span class="annot"><span class="annottext">Closure (a -&gt; b)
+</span><a href="#local-6989586621679162704"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; [b]) -&gt; Dataset a -&gt; Dataset b
+forall a b.
+(StaticSerialise a, StaticSerialise b) =&gt;
+Closure (a -&gt; [b]) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.html#dConcatMap"><span class="hs-identifier hs-var">dConcatMap</span></a></span><span> </span><span class="annot"><span class="annottext">(Closure (a -&gt; [b]) -&gt; Dataset a -&gt; Dataset b)
+-&gt; Closure (a -&gt; [b]) -&gt; Dataset a -&gt; Dataset b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; [b]
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; [b]) -&gt; (a -&gt; b) -&gt; a -&gt; [b]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure ((a -&gt; b) -&gt; a -&gt; [b])
+-&gt; Closure (a -&gt; b) -&gt; Closure (a -&gt; [b])
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; b)
+</span><a href="#local-6989586621679162704"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-130"></span><span class="hs-comment">-- Returns a new Dataset that only contains elements where the given function returns true.</span><span>
+</span><span id="line-131"></span><span id="local-6989586621679162702"><span class="annot"><a href="Control.Distributed.Dataset.html#dFilter"><span class="hs-identifier hs-type">dFilter</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162702"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162702"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Bool</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162702"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162702"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-132"></span><span id="dFilter"><span class="annot"><span class="annottext">dFilter :: Closure (a -&gt; Bool) -&gt; Dataset a -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.html#dFilter"><span class="hs-identifier hs-var hs-var">dFilter</span></a></span></span><span> </span><span id="local-6989586621679162701"><span class="annot"><span class="annottext">Closure (a -&gt; Bool)
+</span><a href="#local-6989586621679162701"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; [a]) -&gt; Dataset a -&gt; Dataset a
+forall a b.
+(StaticSerialise a, StaticSerialise b) =&gt;
+Closure (a -&gt; [b]) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.html#dConcatMap"><span class="hs-identifier hs-var">dConcatMap</span></a></span><span> </span><span class="annot"><span class="annottext">(Closure (a -&gt; [a]) -&gt; Dataset a -&gt; Dataset a)
+-&gt; Closure (a -&gt; [a]) -&gt; Dataset a -&gt; Dataset a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679162700"><span class="annot"><span class="annottext">a -&gt; Bool
+</span><a href="#local-6989586621679162700"><span class="hs-identifier hs-var">f_</span></a></span></span><span> </span><span id="local-6989586621679162699"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679162699"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">a -&gt; Bool
+</span><a href="#local-6989586621679162700"><span class="hs-identifier hs-var">f_</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679162699"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679162699"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-keyword">else</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure ((a -&gt; Bool) -&gt; a -&gt; [a])
+-&gt; Closure (a -&gt; Bool) -&gt; Closure (a -&gt; [a])
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; Bool)
+</span><a href="#local-6989586621679162701"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-135"></span><span class="hs-comment">-- Apply an aggregation to all items on a Dataset, and fetch the result.</span><span>
+</span><span id="line-136"></span><span id="local-6989586621679162697"><span id="local-6989586621679162698"><span class="annot"><a href="Control.Distributed.Dataset.html#dAggr"><span class="hs-identifier hs-type">dAggr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162698"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162697"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162698"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162697"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162698"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#DD"><span class="hs-identifier hs-type">DD</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162697"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-137"></span><span id="dAggr"><span class="annot"><span class="annottext">dAggr :: Aggr a b -&gt; Dataset a -&gt; DD b
+</span><a href="Control.Distributed.Dataset.html#dAggr"><span class="hs-identifier hs-var hs-var">dAggr</span></a></span></span><span> </span><span id="local-6989586621679162696"><span class="annot"><span class="annottext">aggr :: Aggr a b
+</span><a href="#local-6989586621679162696"><span class="hs-identifier hs-var">aggr</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Fold a t)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679162694"><span class="annot"><span class="annottext">Closure (Fold t b)
+</span><a href="#local-6989586621679162694"><span class="hs-identifier hs-var">fc</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679162693"><span class="annot"><span class="annottext">Dataset a
+</span><a href="#local-6989586621679162693"><span class="hs-identifier hs-var">ds</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-138"></span><span>  </span><span id="local-6989586621679162692"><span class="annot"><span class="annottext">ConduitT () ((), b) (ResourceT IO) ()
+</span><a href="#local-6989586621679162692"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-139"></span><span>    </span><span class="annot"><span class="annottext">Dataset a
+</span><a href="#local-6989586621679162693"><span class="hs-identifier hs-var">ds</span></a></span><span>
+</span><span id="line-140"></span><span>      </span><span class="annot"><span class="annottext">Dataset a -&gt; (Dataset a -&gt; Dataset ((), b)) -&gt; Dataset ((), b)
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+-&gt; Closure (a -&gt; ()) -&gt; Aggr a b -&gt; Dataset a -&gt; Dataset ((), b)
+forall k b a.
+(StaticHashable k, StaticSerialise k, StaticSerialise b) =&gt;
+Int -&gt; Closure (a -&gt; k) -&gt; Aggr a b -&gt; Dataset a -&gt; Dataset (k, b)
+</span><a href="Control.Distributed.Dataset.html#dGroupedAggr"><span class="hs-identifier hs-var">dGroupedAggr</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">() -&gt; a -&gt; ()
+forall a b. a -&gt; b -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">const</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Aggr a b
+</span><a href="#local-6989586621679162696"><span class="hs-identifier hs-var">aggr</span></a></span><span>
+</span><span id="line-141"></span><span>      </span><span class="annot"><span class="annottext">Dataset ((), b)
+-&gt; (Dataset ((), b) -&gt; DD (ConduitT () ((), b) (ResourceT IO) ()))
+-&gt; DD (ConduitT () ((), b) (ResourceT IO) ())
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Dataset ((), b) -&gt; DD (ConduitT () ((), b) (ResourceT IO) ())
+forall a.
+StaticSerialise a =&gt;
+Dataset a -&gt; DD (ConduitT () a (ResourceT IO) ())
+</span><a href="Control.Distributed.Dataset.Internal.Dataset.html#dFetch"><span class="hs-identifier hs-var">dFetch</span></a></span><span>
+</span><span id="line-142"></span><span>  </span><span class="annot"><span class="annottext">IO (Maybe ((), b)) -&gt; DD (Maybe ((), b))
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">liftIO</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ConduitT () Void (ResourceT IO) (Maybe ((), b))
+-&gt; IO (Maybe ((), b))
+forall (m :: * -&gt; *) r.
+MonadUnliftIO m =&gt;
+ConduitT () Void (ResourceT m) r -&gt; m r
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-var">runConduitRes</span></a></span><span> </span><span class="annot"><span class="annottext">(ConduitT () Void (ResourceT IO) (Maybe ((), b))
+ -&gt; IO (Maybe ((), b)))
+-&gt; ConduitT () Void (ResourceT IO) (Maybe ((), b))
+-&gt; IO (Maybe ((), b))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">ConduitT () ((), b) (ResourceT IO) ()
+</span><a href="#local-6989586621679162692"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">ConduitT () ((), b) (ResourceT IO) ()
+-&gt; ConduitM ((), b) Void (ResourceT IO) (Maybe ((), b))
+-&gt; ConduitT () Void (ResourceT IO) (Maybe ((), b))
+forall (m :: * -&gt; *) a b c r.
+Monad m =&gt;
+ConduitM a b m () -&gt; ConduitM b c m r -&gt; ConduitM a c m r
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-operator hs-var">.|</span></a></span><span> </span><span class="annot"><span class="annottext">ConduitM ((), b) Void (ResourceT IO) (Maybe ((), b))
+forall (m :: * -&gt; *) i. Monad m =&gt; Consumer i m (Maybe i)
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-var">C.await</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">DD (Maybe ((), b)) -&gt; (Maybe ((), b) -&gt; DD b) -&gt; DD b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&gt;&gt;=</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; DD b
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; DD b) -&gt; (Maybe ((), b) -&gt; b) -&gt; Maybe ((), b) -&gt; DD b
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-143"></span><span>    </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679162688"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679162688"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679162688"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-144"></span><span>    </span><span class="annot"><span class="annottext">Maybe ((), b)
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Fold t b -&gt; [t] -&gt; b
+forall (f :: * -&gt; *) a b. Foldable f =&gt; Fold a b -&gt; f a -&gt; b
+</span><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-var">F.fold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Closure (Fold t b) -&gt; Fold t b
+forall a. Closure a -&gt; a
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-var">unclosure</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Fold t b)
+</span><a href="#local-6989586621679162694"><span class="hs-identifier hs-var">fc</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-147"></span><span class="hs-comment">-- Removes a new dataset with duplicate rows removed.</span><span>
+</span><span id="line-148"></span><span id="local-6989586621679162685"><span class="annot"><a href="Control.Distributed.Dataset.html#dDistinct"><span class="hs-identifier hs-type">dDistinct</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162685"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162685"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162685"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-149"></span><span id="dDistinct"><span class="annot"><span class="annottext">dDistinct :: Int -&gt; Dataset a -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.html#dDistinct"><span class="hs-identifier hs-var hs-var">dDistinct</span></a></span></span><span> </span><span id="local-6989586621679162684"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679162684"><span class="hs-identifier hs-var">partitionCount</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Closure (a -&gt; a) -&gt; Dataset a -&gt; Dataset a
+forall b a.
+StaticHashable b =&gt;
+Int -&gt; Closure (a -&gt; b) -&gt; Dataset a -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.html#dDistinctBy"><span class="hs-identifier hs-var">dDistinctBy</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679162684"><span class="hs-identifier hs-var">partitionCount</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-150"></span><span>
+</span><span id="line-151"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-152"></span><span class="hs-comment">-- Removes a new dataset with rows with the duplicate keys removed.</span><span>
+</span><span id="line-153"></span><span id="local-6989586621679162798"><span id="local-6989586621679162799"><span class="annot"><a href="Control.Distributed.Dataset.html#dDistinctBy"><span class="hs-identifier hs-type">dDistinctBy</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-154"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162799"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-155"></span><span>  </span><span class="hs-comment">-- | Target number of partitions</span><span>
+</span><span id="line-156"></span><span>  </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-157"></span><span>  </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162798"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679162799"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-158"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162798"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-159"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162798"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-160"></span><span id="dDistinctBy"><span class="annot"><span class="annottext">dDistinctBy :: Int -&gt; Closure (a -&gt; b) -&gt; Dataset a -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.html#dDistinctBy"><span class="hs-identifier hs-var hs-var">dDistinctBy</span></a></span></span><span> </span><span id="local-6989586621679162682"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679162682"><span class="hs-identifier hs-var">partitionCount</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679162680"><span id="local-6989586621679162681"><span id="local-6989586621679162679"><span class="annot"><span class="annottext">Closure (a -&gt; b)
+</span><a href="#local-6989586621679162679"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162681"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679162680"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679162678"><span class="annot"><span class="annottext">Dataset a
+</span><a href="#local-6989586621679162678"><span class="hs-identifier hs-var">ds</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-161"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Dataset a -&gt; Dict (StaticSerialise a)
+forall a. Dataset a -&gt; Dict (StaticSerialise a)
+</span><a href="Control.Distributed.Dataset.Internal.Dataset.html#dStaticSerialise"><span class="hs-identifier hs-var">dStaticSerialise</span></a></span><span> </span><span class="annot"><span class="annottext">Dataset a
+</span><a href="#local-6989586621679162678"><span class="hs-identifier hs-var">ds</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-162"></span><span>    </span><span class="annot"><span class="annottext">Dict (StaticSerialise a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-163"></span><span>      </span><span class="annot"><span class="annottext">Dataset a
+</span><a href="#local-6989586621679162678"><span class="hs-identifier hs-var">ds</span></a></span><span>
+</span><span id="line-164"></span><span>        </span><span class="annot"><span class="annottext">Dataset a -&gt; (Dataset a -&gt; Dataset a) -&gt; Dataset a
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (ConduitT a a (ResourceT IO) ()) -&gt; Dataset a -&gt; Dataset a
+forall a b.
+(StaticSerialise a, StaticSerialise b) =&gt;
+Closure (ConduitT a b (ResourceT IO) ()) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.html#dPipe"><span class="hs-identifier hs-var">dPipe</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable b, Eq b, Hashable b)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">HashSet b -&gt; (a -&gt; b) -&gt; ConduitT a a (ResourceT IO) ()
+forall (m :: * -&gt; *) a i.
+(Monad m, Eq a, Hashable a) =&gt;
+HashSet a -&gt; (i -&gt; a) -&gt; ConduitT i i m ()
+</span><a href="#local-6989586621679162676"><span class="hs-identifier hs-var">dedupe</span></a></span><span> </span><span class="annot"><span class="annottext">HashSet b
+forall a. HashSet a
+</span><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier hs-var">HS.empty</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable b, Eq b, Hashable b)
+   -&gt; (a -&gt; b) -&gt; ConduitT a a (ResourceT IO) ())
+-&gt; Closure (Dict (Typeable b, Eq b, Hashable b))
+-&gt; Closure ((a -&gt; b) -&gt; ConduitT a a (ResourceT IO) ())
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable b =&gt; Closure (Dict (Typeable b, Eq b, Hashable b))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162680"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><span class="annottext">Closure ((a -&gt; b) -&gt; ConduitT a a (ResourceT IO) ())
+-&gt; Closure (a -&gt; b) -&gt; Closure (ConduitT a a (ResourceT IO) ())
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; b)
+</span><a href="#local-6989586621679162679"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-165"></span><span>        </span><span class="annot"><span class="annottext">Dataset a -&gt; (Dataset a -&gt; Dataset a) -&gt; Dataset a
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Closure (a -&gt; b) -&gt; Dataset a -&gt; Dataset a
+forall a k.
+(StaticSerialise a, StaticHashable k) =&gt;
+Int -&gt; Closure (a -&gt; k) -&gt; Dataset a -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.html#dPartition"><span class="hs-identifier hs-var">dPartition</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679162682"><span class="hs-identifier hs-var">partitionCount</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; b)
+</span><a href="#local-6989586621679162679"><span class="hs-identifier hs-var">key</span></a></span><span>
+</span><span id="line-166"></span><span>        </span><span class="annot"><span class="annottext">Dataset a -&gt; (Dataset a -&gt; Dataset a) -&gt; Dataset a
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (ConduitT a a (ResourceT IO) ()) -&gt; Dataset a -&gt; Dataset a
+forall a b.
+(StaticSerialise a, StaticSerialise b) =&gt;
+Closure (ConduitT a b (ResourceT IO) ()) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.html#dPipe"><span class="hs-identifier hs-var">dPipe</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable b, Eq b, Hashable b)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">HashSet b -&gt; (a -&gt; b) -&gt; ConduitT a a (ResourceT IO) ()
+forall (m :: * -&gt; *) a i.
+(Monad m, Eq a, Hashable a) =&gt;
+HashSet a -&gt; (i -&gt; a) -&gt; ConduitT i i m ()
+</span><a href="#local-6989586621679162676"><span class="hs-identifier hs-var">dedupe</span></a></span><span> </span><span class="annot"><span class="annottext">HashSet b
+forall a. HashSet a
+</span><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier hs-var">HS.empty</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable b, Eq b, Hashable b)
+   -&gt; (a -&gt; b) -&gt; ConduitT a a (ResourceT IO) ())
+-&gt; Closure (Dict (Typeable b, Eq b, Hashable b))
+-&gt; Closure ((a -&gt; b) -&gt; ConduitT a a (ResourceT IO) ())
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable b =&gt; Closure (Dict (Typeable b, Eq b, Hashable b))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162680"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><span class="annottext">Closure ((a -&gt; b) -&gt; ConduitT a a (ResourceT IO) ())
+-&gt; Closure (a -&gt; b) -&gt; Closure (ConduitT a a (ResourceT IO) ())
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; b)
+</span><a href="#local-6989586621679162679"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-167"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-168"></span><span>    </span><span id="local-6989586621679162676"><span class="annot"><span class="annottext">dedupe :: HashSet a -&gt; (i -&gt; a) -&gt; ConduitT i i m ()
+</span><a href="#local-6989586621679162676"><span class="hs-identifier hs-var hs-var">dedupe</span></a></span></span><span> </span><span id="local-6989586621679162673"><span class="annot"><span class="annottext">HashSet a
+</span><a href="#local-6989586621679162673"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span id="local-6989586621679162672"><span class="annot"><span class="annottext">i -&gt; a
+</span><a href="#local-6989586621679162672"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-169"></span><span>      </span><span class="annot"><span class="annottext">ConduitT i i m (Maybe i)
+forall (m :: * -&gt; *) i. Monad m =&gt; Consumer i m (Maybe i)
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-var">C.await</span></a></span><span> </span><span class="annot"><span class="annottext">ConduitT i i m (Maybe i)
+-&gt; (Maybe i -&gt; ConduitT i i m ()) -&gt; ConduitT i i m ()
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&gt;&gt;=</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-170"></span><span>        </span><span class="annot"><span class="annottext">Maybe i
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; ConduitT i i m ()
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-171"></span><span>        </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621679162671"><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679162671"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-172"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679162670"><span class="annot"><span class="annottext">b :: a
+</span><a href="#local-6989586621679162670"><span class="hs-identifier hs-var hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">i -&gt; a
+</span><a href="#local-6989586621679162672"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679162671"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-173"></span><span>           </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679162670"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; HashSet a -&gt; Bool
+forall a. (Eq a, Hashable a) =&gt; a -&gt; HashSet a -&gt; Bool
+</span><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-operator hs-var">`HS.member`</span></a></span><span> </span><span class="annot"><span class="annottext">HashSet a
+</span><a href="#local-6989586621679162673"><span class="hs-identifier hs-var">acc</span></a></span><span>
+</span><span id="line-174"></span><span>                </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">HashSet a -&gt; (i -&gt; a) -&gt; ConduitT i i m ()
+</span><a href="#local-6989586621679162676"><span class="hs-identifier hs-var">dedupe</span></a></span><span> </span><span class="annot"><span class="annottext">HashSet a
+</span><a href="#local-6989586621679162673"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">i -&gt; a
+</span><a href="#local-6989586621679162672"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-175"></span><span>                </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">i -&gt; ConduitT i i m ()
+forall (m :: * -&gt; *) o i. Monad m =&gt; o -&gt; ConduitT i o m ()
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-var">yield</span></a></span><span> </span><span class="annot"><span class="annottext">i
+</span><a href="#local-6989586621679162671"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">ConduitT i i m () -&gt; ConduitT i i m () -&gt; ConduitT i i m ()
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&gt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">HashSet a -&gt; (i -&gt; a) -&gt; ConduitT i i m ()
+</span><a href="#local-6989586621679162676"><span class="hs-identifier hs-var">dedupe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679162670"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; HashSet a -&gt; HashSet a
+forall a. (Eq a, Hashable a) =&gt; a -&gt; HashSet a -&gt; HashSet a
+</span><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-operator hs-var">`HS.insert`</span></a></span><span> </span><span class="annot"><span class="annottext">HashSet a
+</span><a href="#local-6989586621679162673"><span class="hs-identifier hs-var">acc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">i -&gt; a
+</span><a href="#local-6989586621679162672"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-176"></span><span>
+</span><span id="line-177"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-178"></span><span class="hs-comment">-- Apply an aggregation to all rows sharing the same key.</span><span>
+</span><span id="line-179"></span><span id="local-6989586621679162828"><span id="local-6989586621679162829"><span id="local-6989586621679162830"><span class="annot"><a href="Control.Distributed.Dataset.html#dGroupedAggr"><span class="hs-identifier hs-type">dGroupedAggr</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-180"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticHashable"><span class="hs-identifier hs-type">StaticHashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162830"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162830"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Class.html#StaticSerialise"><span class="hs-identifier hs-type">StaticSerialise</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162829"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-181"></span><span>  </span><span class="hs-comment">-- | Target number of partitions</span><span>
+</span><span id="line-182"></span><span>  </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-183"></span><span>  </span><span class="hs-comment">-- | Grouping key</span><span>
+</span><span id="line-184"></span><span>  </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162828"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679162830"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-185"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162828"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162829"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-186"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162828"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-187"></span><span>  </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Dataset.html#Dataset"><span class="hs-identifier hs-type">Dataset</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162830"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679162829"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-188"></span><span id="dGroupedAggr"><span class="annot"><span class="annottext">dGroupedAggr :: Int -&gt; Closure (a -&gt; k) -&gt; Aggr a b -&gt; Dataset a -&gt; Dataset (k, b)
+</span><a href="Control.Distributed.Dataset.html#dGroupedAggr"><span class="hs-identifier hs-var hs-var">dGroupedAggr</span></a></span></span><span>
+</span><span id="line-189"></span><span>  </span><span id="local-6989586621679162666"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679162666"><span class="hs-identifier hs-var">partitionCount</span></a></span></span><span>
+</span><span id="line-190"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679162664"><span id="local-6989586621679162665"><span id="local-6989586621679162663"><span class="annot"><span class="annottext">Closure (a -&gt; k)
+</span><a href="#local-6989586621679162663"><span class="hs-identifier hs-var">kc</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162665"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679162664"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-191"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Control.Distributed.Dataset.Internal.Aggr.html#Aggr"><span class="hs-identifier hs-type">Aggr</span></a></span><span>
+</span><span id="line-192"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621679162662"><span id="local-6989586621679162661"><span class="annot"><span class="annottext">Closure (Fold a t)
+</span><a href="#local-6989586621679162661"><span class="hs-identifier hs-var">f1c</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-type">F.Fold</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162665"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162662"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-193"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621679162660"><span id="local-6989586621679162659"><span class="annot"><span class="annottext">Closure (Fold t b)
+</span><a href="#local-6989586621679162659"><span class="hs-identifier hs-var">f2c</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-identifier hs-type">Closure</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-type">F.Fold</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162662"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162660"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-194"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-195"></span><span>  </span><span id="local-6989586621679162658"><span class="annot"><span class="annottext">Dataset a
+</span><a href="#local-6989586621679162658"><span class="hs-identifier hs-var">ds</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-196"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Dataset a -&gt; Dict (StaticSerialise a)
+forall a. Dataset a -&gt; Dict (StaticSerialise a)
+</span><a href="Control.Distributed.Dataset.Internal.Dataset.html#dStaticSerialise"><span class="hs-identifier hs-var">dStaticSerialise</span></a></span><span> </span><span class="annot"><span class="annottext">Dataset a
+</span><a href="#local-6989586621679162658"><span class="hs-identifier hs-var">ds</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-197"></span><span>      </span><span class="annot"><span class="annottext">Dict (StaticSerialise a)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-198"></span><span>        </span><span class="annot"><span class="annottext">Dataset a
+</span><a href="#local-6989586621679162658"><span class="hs-identifier hs-var">ds</span></a></span><span>
+</span><span id="line-199"></span><span>          </span><span class="annot"><span class="annottext">Dataset a -&gt; (Dataset a -&gt; Dataset (k, a)) -&gt; Dataset (k, a)
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; (k, a)) -&gt; Dataset a -&gt; Dataset (k, a)
+forall a b.
+(StaticSerialise a, StaticSerialise b) =&gt;
+Closure (a -&gt; b) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.html#dMap"><span class="hs-identifier hs-var">dMap</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679162657"><span class="annot"><span class="annottext">a -&gt; k
+</span><a href="#local-6989586621679162657"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span id="local-6989586621679162656"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679162656"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; k
+</span><a href="#local-6989586621679162657"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679162656"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679162656"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Closure ((a -&gt; k) -&gt; a -&gt; (k, a))
+-&gt; Closure (a -&gt; k) -&gt; Closure (a -&gt; (k, a))
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (a -&gt; k)
+</span><a href="#local-6989586621679162663"><span class="hs-identifier hs-var">kc</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-200"></span><span>          </span><span class="annot"><span class="annottext">Dataset (k, a)
+-&gt; (Dataset (k, a) -&gt; Dataset (k, t)) -&gt; Dataset (k, t)
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (ConduitT (k, a) (k, t) (ResourceT IO) ())
+-&gt; Dataset (k, a) -&gt; Dataset (k, t)
+forall a b.
+(StaticSerialise a, StaticSerialise b) =&gt;
+Closure (ConduitT a b (ResourceT IO) ()) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.html#dPipe"><span class="hs-identifier hs-var">dPipe</span></a></span><span>
+</span><span id="line-201"></span><span>            </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable k, Eq k, Hashable k)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Eq k, Hashable k) =&gt;
+Fold a t -&gt; ConduitT (k, a) (k, t) (ResourceT IO) ()
+forall a' b' k'.
+(Eq k', Hashable k') =&gt;
+Fold a' b' -&gt; ConduitT (k', a') (k', b') (ResourceT IO) ()
+</span><a href="#local-6989586621679162655"><span class="hs-identifier hs-var">aggrC</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162665"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162662"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162664"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-202"></span><span>                </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable k, Eq k, Hashable k)
+   -&gt; Fold a t -&gt; ConduitT (k, a) (k, t) (ResourceT IO) ())
+-&gt; Closure (Dict (Typeable k, Eq k, Hashable k))
+-&gt; Closure (Fold a t -&gt; ConduitT (k, a) (k, t) (ResourceT IO) ())
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable k =&gt; Closure (Dict (Typeable k, Eq k, Hashable k))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162664"><span class="hs-identifier hs-type">k</span></a></span><span>
+</span><span id="line-203"></span><span>                </span><span class="annot"><span class="annottext">Closure (Fold a t -&gt; ConduitT (k, a) (k, t) (ResourceT IO) ())
+-&gt; Closure (Fold a t)
+-&gt; Closure (ConduitT (k, a) (k, t) (ResourceT IO) ())
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Fold a t)
+</span><a href="#local-6989586621679162661"><span class="hs-identifier hs-var">f1c</span></a></span><span>
+</span><span id="line-204"></span><span>            </span><span class="hs-special">)</span><span>
+</span><span id="line-205"></span><span>          </span><span class="annot"><span class="annottext">Dataset (k, t)
+-&gt; (Dataset (k, t) -&gt; Dataset (k, t)) -&gt; Dataset (k, t)
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Closure ((k, t) -&gt; k) -&gt; Dataset (k, t) -&gt; Dataset (k, t)
+forall a k.
+(StaticSerialise a, StaticHashable k) =&gt;
+Int -&gt; Closure (a -&gt; k) -&gt; Dataset a -&gt; Dataset a
+</span><a href="Control.Distributed.Dataset.html#dPartition"><span class="hs-identifier hs-var">dPartition</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679162666"><span class="hs-identifier hs-var">partitionCount</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(k, t) -&gt; k
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162664"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162662"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-206"></span><span>          </span><span class="annot"><span class="annottext">Dataset (k, t)
+-&gt; (Dataset (k, t) -&gt; Dataset (k, b)) -&gt; Dataset (k, b)
+forall a b. a -&gt; (a -&gt; b) -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (ConduitT (k, t) (k, b) (ResourceT IO) ())
+-&gt; Dataset (k, t) -&gt; Dataset (k, b)
+forall a b.
+(StaticSerialise a, StaticSerialise b) =&gt;
+Closure (ConduitT a b (ResourceT IO) ()) -&gt; Dataset a -&gt; Dataset b
+</span><a href="Control.Distributed.Dataset.html#dPipe"><span class="hs-identifier hs-var">dPipe</span></a></span><span>
+</span><span id="line-207"></span><span>            </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">static</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Dict (Typeable k, Eq k, Hashable k)
+</span><a href="../file:///nix/store/4jpai2h6b0j4n52h6j98s4v8afs01fr1-constraints-0.11.2-doc/share/doc/constraints-0.11.2/html/src"><span class="hs-identifier hs-var">Dict</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Eq k, Hashable k) =&gt;
+Fold t b -&gt; ConduitT (k, t) (k, b) (ResourceT IO) ()
+forall a' b' k'.
+(Eq k', Hashable k') =&gt;
+Fold a' b' -&gt; ConduitT (k', a') (k', b') (ResourceT IO) ()
+</span><a href="#local-6989586621679162655"><span class="hs-identifier hs-var">aggrC</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162662"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162660"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162664"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-208"></span><span>                </span><span class="annot"><span class="annottext">Closure
+  (Dict (Typeable k, Eq k, Hashable k)
+   -&gt; Fold t b -&gt; ConduitT (k, t) (k, b) (ResourceT IO) ())
+-&gt; Closure (Dict (Typeable k, Eq k, Hashable k))
+-&gt; Closure (Fold t b -&gt; ConduitT (k, t) (k, b) (ResourceT IO) ())
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">StaticHashable k =&gt; Closure (Dict (Typeable k, Eq k, Hashable k))
+forall a.
+StaticHashable a =&gt;
+Closure (Dict (Typeable a, Eq a, Hashable a))
+</span><a href="Control.Distributed.Dataset.Internal.Class.html#staticHashable"><span class="hs-identifier hs-var">staticHashable</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679162664"><span class="hs-identifier hs-type">k</span></a></span><span>
+</span><span id="line-209"></span><span>                </span><span class="annot"><span class="annottext">Closure (Fold t b -&gt; ConduitT (k, t) (k, b) (ResourceT IO) ())
+-&gt; Closure (Fold t b)
+-&gt; Closure (ConduitT (k, t) (k, b) (ResourceT IO) ())
+forall a b.
+Typeable a =&gt;
+Closure (a -&gt; b) -&gt; Closure a -&gt; Closure b
+</span><a href="../file:///nix/store/njgyaw2jbdchp0qz873744qkw2fdx1il-distributed-closure-0.4.2.0-doc/share/doc/distributed-closure-0.4.2.0/html/src"><span class="hs-operator hs-var">`cap`</span></a></span><span> </span><span class="annot"><span class="annottext">Closure (Fold t b)
+</span><a href="#local-6989586621679162659"><span class="hs-identifier hs-var">f2c</span></a></span><span>
+</span><span id="line-210"></span><span>            </span><span class="hs-special">)</span><span>
+</span><span id="line-211"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-212"></span><span>      </span><span class="annot"><a href="#local-6989586621679162655"><span class="hs-identifier hs-type">aggrC</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-213"></span><span>        </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679162769"><span class="annot"><a href="#local-6989586621679162769"><span class="hs-identifier hs-type">a'</span></a></span></span><span> </span><span id="local-6989586621679162768"><span class="annot"><a href="#local-6989586621679162768"><span class="hs-identifier hs-type">b'</span></a></span></span><span> </span><span id="local-6989586621679162770"><span class="annot"><a href="#local-6989586621679162770"><span class="hs-identifier hs-type">k'</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-214"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162770"><span class="hs-identifier hs-type">k'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/4dmjxkc7la3hg9sk7sd3q8hl8ff8w3g5-hashable-1.3.0.0-doc/share/doc/hashable-1.3.0.0/html/src"><span class="hs-identifier hs-type">Hashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162770"><span class="hs-identifier hs-type">k'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-215"></span><span>        </span><span class="annot"><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-type">F.Fold</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162769"><span class="hs-identifier hs-type">a'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162768"><span class="hs-identifier hs-type">b'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-216"></span><span>        </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-type">ConduitT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162770"><span class="hs-identifier hs-type">k'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679162769"><span class="hs-identifier hs-type">a'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162770"><span class="hs-identifier hs-type">k'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679162768"><span class="hs-identifier hs-type">b'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/x49rz651v9cgnj874d6smacv0b5w45bn-resourcet-1.2.4-doc/share/doc/resourcet-1.2.4/html/src"><span class="hs-identifier hs-type">ResourceT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-217"></span><span>      </span><span id="local-6989586621679162655"><span class="annot"><span class="annottext">aggrC :: Fold a' b' -&gt; ConduitT (k', a') (k', b') (ResourceT IO) ()
+</span><a href="#local-6989586621679162655"><span class="hs-identifier hs-var hs-var">aggrC</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/4n2z3s26xn99cnzfrh8irix00zvy4hdp-foldl-1.4.6-doc/share/doc/foldl-1.4.6/html/src"><span class="hs-identifier hs-type">F.Fold</span></a></span><span> </span><span id="local-6989586621679162653"><span class="annot"><span class="annottext">x -&gt; a' -&gt; x
+</span><a href="#local-6989586621679162653"><span class="hs-identifier hs-var">step</span></a></span></span><span> </span><span id="local-6989586621679162652"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679162652"><span class="hs-identifier hs-var">init'</span></a></span></span><span> </span><span id="local-6989586621679162651"><span class="annot"><span class="annottext">x -&gt; b'
+</span><a href="#local-6989586621679162651"><span class="hs-identifier hs-var">extract</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-218"></span><span>        </span><span class="annot"><span class="annottext">(x -&gt; a' -&gt; x)
+-&gt; x
+-&gt; (x -&gt; b')
+-&gt; HashMap k' x
+-&gt; ConduitT (k', a') (k', b') (ResourceT IO) ()
+forall a' b' x' k'.
+(Eq k', Hashable k') =&gt;
+(b' -&gt; a' -&gt; b')
+-&gt; b'
+-&gt; (b' -&gt; x')
+-&gt; HashMap k' b'
+-&gt; ConduitT (k', a') (k', x') (ResourceT IO) ()
+</span><a href="#local-6989586621679162650"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">x -&gt; a' -&gt; x
+</span><a href="#local-6989586621679162653"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679162652"><span class="hs-identifier hs-var">init'</span></a></span><span> </span><span class="annot"><span class="annottext">x -&gt; b'
+</span><a href="#local-6989586621679162651"><span class="hs-identifier hs-var">extract</span></a></span><span> </span><span class="annot"><span class="annottext">HashMap k' x
+forall k v. HashMap k v
+</span><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier hs-var">HM.empty</span></a></span><span>
+</span><span id="line-219"></span><span>      </span><span class="annot"><a href="#local-6989586621679162650"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-220"></span><span>        </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679162758"><span class="annot"><a href="#local-6989586621679162758"><span class="hs-identifier hs-type">a'</span></a></span></span><span> </span><span id="local-6989586621679162759"><span class="annot"><a href="#local-6989586621679162759"><span class="hs-identifier hs-type">b'</span></a></span></span><span> </span><span id="local-6989586621679162757"><span class="annot"><a href="#local-6989586621679162757"><span class="hs-identifier hs-type">x'</span></a></span></span><span> </span><span id="local-6989586621679162760"><span class="annot"><a href="#local-6989586621679162760"><span class="hs-identifier hs-type">k'</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-221"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162760"><span class="hs-identifier hs-type">k'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/4dmjxkc7la3hg9sk7sd3q8hl8ff8w3g5-hashable-1.3.0.0-doc/share/doc/hashable-1.3.0.0/html/src"><span class="hs-identifier hs-type">Hashable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162760"><span class="hs-identifier hs-type">k'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-222"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162759"><span class="hs-identifier hs-type">b'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679162758"><span class="hs-identifier hs-type">a'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679162759"><span class="hs-identifier hs-type">b'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-223"></span><span>        </span><span class="annot"><a href="#local-6989586621679162759"><span class="hs-identifier hs-type">b'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-224"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162759"><span class="hs-identifier hs-type">b'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679162757"><span class="hs-identifier hs-type">x'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-225"></span><span>        </span><span class="annot"><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier hs-type">HM.HashMap</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162760"><span class="hs-identifier hs-type">k'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679162759"><span class="hs-identifier hs-type">b'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-226"></span><span>        </span><span class="annot"><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-type">ConduitT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162760"><span class="hs-identifier hs-type">k'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679162758"><span class="hs-identifier hs-type">a'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679162760"><span class="hs-identifier hs-type">k'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679162757"><span class="hs-identifier hs-type">x'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/x49rz651v9cgnj874d6smacv0b5w45bn-resourcet-1.2.4-doc/share/doc/resourcet-1.2.4/html/src"><span class="hs-identifier hs-type">ResourceT</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/ghc-prim-0.6.1/src"><span class="hs-identifier hs-type">IO</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-227"></span><span>      </span><span id="local-6989586621679162650"><span class="annot"><span class="annottext">go :: (b' -&gt; a' -&gt; b')
+-&gt; b'
+-&gt; (b' -&gt; x')
+-&gt; HashMap k' b'
+-&gt; ConduitT (k', a') (k', x') (ResourceT IO) ()
+</span><a href="#local-6989586621679162650"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span id="local-6989586621679162648"><span class="annot"><span class="annottext">b' -&gt; a' -&gt; b'
+</span><a href="#local-6989586621679162648"><span class="hs-identifier hs-var">step</span></a></span></span><span> </span><span id="local-6989586621679162647"><span class="annot"><span class="annottext">b'
+</span><a href="#local-6989586621679162647"><span class="hs-identifier hs-var">init'</span></a></span></span><span> </span><span id="local-6989586621679162646"><span class="annot"><span class="annottext">b' -&gt; x'
+</span><a href="#local-6989586621679162646"><span class="hs-identifier hs-var">extract</span></a></span></span><span> </span><span id="local-6989586621679162645"><span class="annot"><span class="annottext">HashMap k' b'
+</span><a href="#local-6989586621679162645"><span class="hs-identifier hs-var">hm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-228"></span><span>        </span><span class="annot"><span class="annottext">ConduitT (k', a') (k', x') (ResourceT IO) (Maybe (k', a'))
+forall (m :: * -&gt; *) i. Monad m =&gt; Consumer i m (Maybe i)
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-var">C.await</span></a></span><span> </span><span class="annot"><span class="annottext">ConduitT (k', a') (k', x') (ResourceT IO) (Maybe (k', a'))
+-&gt; (Maybe (k', a') -&gt; ConduitT (k', a') (k', x') (ResourceT IO) ())
+-&gt; ConduitT (k', a') (k', x') (ResourceT IO) ()
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">&gt;&gt;=</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-229"></span><span>          </span><span class="annot"><span class="annottext">Maybe (k', a')
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-230"></span><span>            </span><span class="annot"><span class="annottext">((k', b') -&gt; ConduitT (k', a') (k', x') (ResourceT IO) ())
+-&gt; [(k', b')] -&gt; ConduitT (k', a') (k', x') (ResourceT IO) ()
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Foldable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m ()
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">mapM_</span></a></span><span>
+</span><span id="line-231"></span><span>              </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679162643"><span class="annot"><span class="annottext">k'
+</span><a href="#local-6989586621679162643"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679162642"><span class="annot"><span class="annottext">b'
+</span><a href="#local-6989586621679162642"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(k', x') -&gt; ConduitT (k', a') (k', x') (ResourceT IO) ()
+forall (m :: * -&gt; *) o i. Monad m =&gt; o -&gt; ConduitT i o m ()
+</span><a href="../file:///nix/store/kdhpqqclg12pcmqzh5hc4ycqlvwqps6g-conduit-1.3.2-doc/share/doc/conduit-1.3.2/html/src"><span class="hs-identifier hs-var">C.yield</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">k'
+</span><a href="#local-6989586621679162643"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b' -&gt; x'
+</span><a href="#local-6989586621679162646"><span class="hs-identifier hs-var">extract</span></a></span><span> </span><span class="annot"><span class="annottext">b'
+</span><a href="#local-6989586621679162642"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-232"></span><span>              </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HashMap k' b' -&gt; [(k', b')]
+forall k v. HashMap k v -&gt; [(k, v)]
+</span><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier hs-var">HM.toList</span></a></span><span> </span><span class="annot"><span class="annottext">HashMap k' b'
+</span><a href="#local-6989586621679162645"><span class="hs-identifier hs-var">hm</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-233"></span><span>          </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679162640"><span class="annot"><span class="annottext">k'
+</span><a href="#local-6989586621679162640"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679162639"><span class="annot"><span class="annottext">a'
+</span><a href="#local-6989586621679162639"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-234"></span><span>            </span><span class="annot"><span class="annottext">(b' -&gt; a' -&gt; b')
+-&gt; b'
+-&gt; (b' -&gt; x')
+-&gt; HashMap k' b'
+-&gt; ConduitT (k', a') (k', x') (ResourceT IO) ()
+forall a' b' x' k'.
+(Eq k', Hashable k') =&gt;
+(b' -&gt; a' -&gt; b')
+-&gt; b'
+-&gt; (b' -&gt; x')
+-&gt; HashMap k' b'
+-&gt; ConduitT (k', a') (k', x') (ResourceT IO) ()
+</span><a href="#local-6989586621679162650"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">b' -&gt; a' -&gt; b'
+</span><a href="#local-6989586621679162648"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">b'
+</span><a href="#local-6989586621679162647"><span class="hs-identifier hs-var">init'</span></a></span><span> </span><span class="annot"><span class="annottext">b' -&gt; x'
+</span><a href="#local-6989586621679162646"><span class="hs-identifier hs-var">extract</span></a></span><span> </span><span class="annot"><span class="annottext">(HashMap k' b' -&gt; ConduitT (k', a') (k', x') (ResourceT IO) ())
+-&gt; HashMap k' b' -&gt; ConduitT (k', a') (k', x') (ResourceT IO) ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
+</span><span id="line-235"></span><span>              </span><span class="annot"><span class="annottext">(Maybe b' -&gt; Maybe b') -&gt; k' -&gt; HashMap k' b' -&gt; HashMap k' b'
+forall k v.
+(Eq k, Hashable k) =&gt;
+(Maybe v -&gt; Maybe v) -&gt; k -&gt; HashMap k v -&gt; HashMap k v
+</span><a href="../file:///nix/store/nc36kb033j09cjys0w1hqvi7kyr90dzi-unordered-containers-0.2.10.0-doc/share/doc/unordered-containers-0.2.10.0/html/src"><span class="hs-identifier hs-var">HM.alter</span></a></span><span>
+</span><span id="line-236"></span><span>                </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">b' -&gt; Maybe b'
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">(b' -&gt; Maybe b') -&gt; (Maybe b' -&gt; b') -&gt; Maybe b' -&gt; Maybe b'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-237"></span><span>                    </span><span class="annot"><span class="annottext">Maybe b'
+</span><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">b' -&gt; a' -&gt; b'
+</span><a href="#local-6989586621679162648"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">b'
+</span><a href="#local-6989586621679162647"><span class="hs-identifier hs-var">init'</span></a></span><span> </span><span class="annot"><span class="annottext">a'
+</span><a href="#local-6989586621679162639"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-238"></span><span>                    </span><span class="annot"><a href="../file:///nix/store/0z7pkxg8ybr9djlmx845qgjc51n6baha-ghc-8.10.1-doc/share/doc/ghc/html/libraries/base-4.14.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621679162637"><span class="annot"><span class="annottext">b'
+</span><a href="#local-6989586621679162637"><span class="hs-identifier hs-var">st</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">b' -&gt; a' -&gt; b'
+</span><a href="#local-6989586621679162648"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">b'
+</span><a href="#local-6989586621679162637"><span class="hs-identifier hs-var">st</span></a></span><span> </span><span class="annot"><span class="annottext">a'
+</span><a href="#local-6989586621679162639"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-239"></span><span>                </span><span class="hs-special">)</span><span>
+</span><span id="line-240"></span><span>                </span><span class="annot"><span class="annottext">k'
+</span><a href="#local-6989586621679162640"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><span id="line-241"></span><span>                </span><span class="annot"><span class="annottext">HashMap k' b'
+</span><a href="#local-6989586621679162645"><span class="hs-identifier hs-var">hm</span></a></span><span>
+</span><span id="line-242"></span></pre></body></html>
