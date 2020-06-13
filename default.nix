@@ -97,24 +97,43 @@ rec
   "distributed-dataset-opendatasets" = haskellPackages.distributed-dataset-opendatasets;
   "example-gh" = haskellPackages.example-gh;
 
-  # standalone-haddock does not compile with cabal3 yet.
-  # See: https://github.com/ktvoelker/standalone-haddock/issues/30
-  #
-  # docs = pkgsMusl.runCommand "distributed-dataset-docs" {
-  #   buildInputs =
-  #     [ (haskellPackages.ghcWithPackages (hp: with hp;
-  #         [ distributed-dataset distributed-dataset-aws distributed-dataset-opendatasets ]))
-  #       haskellPackages.standalone-haddock
-  #     ];
-  # } ''
-  #   mkdir "$out"
-  #   standalone-haddock \
-  #     --dist-dir "$(mktemp -d)" \
-  #     -o "$out" \
-  #     ${distributed-dataset.src} \
-  #     ${distributed-dataset-aws.src} \
-  #     ${distributed-dataset-opendatasets.src}
-  # '';
+  docs =
+    let ds = [
+      distributed-dataset
+      distributed-dataset-aws
+      distributed-dataset-opendatasets
+    ];
+    in
+    pkgsOrig.runCommand "distributed-dataset-docs"
+      { buildInputs = [ pkgsOrig.tree ]; } ''
+      mkdir -p $out
+
+      ${pkgsOrig.lib.concatMapStringsSep
+        "\n"
+        (d: "cp -r ${d.doc}/share/doc/${d.name}/html $out/${d.name}")
+        ds
+      }
+
+      cat <<EOF > $out/index.html
+      <html>
+      <head>
+        <title>distributed-dataset docs</title>
+         <link rel="stylesheet" href="${(builtins.head ds).name}/linuwial.css">
+      </head>
+      <body>
+        <div id="content">
+          <h1>distributed-dataset docs</h1>
+          <ul>
+       ${pkgsOrig.lib.concatMapStringsSep
+        "\n"
+        (d: "<li><a href=\"./${d.name}/index.html\">${d.name}</a></li>")
+        ds}
+          </ul>
+        </div>
+      </body>
+      </html>
+      EOF
+    '';
 
   shell = haskellPackages.shellFor {
     packages = p: with p; [
